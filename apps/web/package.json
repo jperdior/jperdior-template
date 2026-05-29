@@ -7,7 +7,7 @@
     "dev":        "next dev -p ${PORT:-3000}",
     "build":      "next build",
     "start":      "next start -p ${PORT:-3000}",
-    "lint":       "next lint",
+    "lint":       "eslint .",
     "typecheck":  "tsc --noEmit",
     "test":       "echo 'no unit tests; see e2e'",
     "test:e2e":   "playwright test"
