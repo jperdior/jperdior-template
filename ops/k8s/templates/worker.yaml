@@ -1,0 +1,37 @@
+{{- if .Values.worker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name | default "jperdior" }}-worker
+  labels:
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: worker
+    spec:
+      containers:
+        - name: worker
+          image: {{ include "jperdior.image" (dict "Values" .Values "image" .Values.worker.image) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          workingDir: /app/apps/api/code
+          command:
+            - php
+            - bin/console
+            - messenger:consume
+            - async
+            - "-vv"
+            - "--time-limit=3600"
+            - "--memory-limit=256M"
+          env: {{ include "jperdior.appEnv" . | nindent 12 }}
+          resources: {{ toYaml .Values.worker.resources | nindent 12 }}
+          volumeMounts:
+            - { name: jwt-keys, mountPath: /var/jwt, readOnly: true }
+      volumes:
+        {{- include "jperdior.jwtVolume" . | nindent 8 }}
+{{- end }}

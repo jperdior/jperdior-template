@@ -11,6 +11,7 @@ Owns the `Note` aggregate as a reference example. Demonstrates the four-layer pa
 | `/api/notes/{id}` | GET | user | Single note; 409 if not owner. |
 | `/api/notes/{id}` | PATCH | user | Update title/body. |
 | `/api/notes/{id}` | DELETE | user | Soft-delete (aggregate emits `NoteDeleted`). |
+| `/api/admin/notes` | GET | `ROLE_ADMIN` | Paginated list of every note across users. |
 
 ## Always
 

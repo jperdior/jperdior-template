@@ -17,4 +17,6 @@ interface NoteRepository
 
     /** @return list<Note> */
     public function findAll(int $limit, int $offset): array;
+
+    public function countAll(): int;
 }

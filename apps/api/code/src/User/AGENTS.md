@@ -10,6 +10,7 @@ Owns: authentication, account lifecycle, password hashing, role assignment.
 | `/auth/login` | POST | public | Lexik JWT `json_login`. Returns `token` + `refresh_token`. |
 | `/auth/refresh` | POST | public | Gesdinet refresh-token rotation. |
 | `/api/me` | GET | `IS_AUTHENTICATED_FULLY` | Current user payload. |
+| `/api/admin/users` | GET | `ROLE_ADMIN` | Paginated list of every user. |
 
 CLI: `app:user:promote-admin <email>` grants `ROLE_ADMIN`.
 

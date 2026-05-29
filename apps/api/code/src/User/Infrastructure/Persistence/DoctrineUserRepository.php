@@ -33,4 +33,28 @@ final class DoctrineUserRepository extends DoctrineRepository implements UserRep
 
         return $qb->getQuery()->getOneOrNullResult();
     }
+
+    public function findAll(int $limit, int $offset): array
+    {
+        $qb = $this->entityManager()->createQueryBuilder();
+        $qb->select('u')
+            ->from(User::class, 'u')
+            ->orderBy('u.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+
+        /** @var list<User> $rows */
+        $rows = $qb->getQuery()->getResult();
+
+        return $rows;
+    }
+
+    public function countAll(): int
+    {
+        $qb = $this->entityManager()->createQueryBuilder();
+        $qb->select('COUNT(u.id)')
+            ->from(User::class, 'u');
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 }

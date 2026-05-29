@@ -1,0 +1,113 @@
+# Skeleton values. Override per environment via -f values.<env>.yaml.
+
+global:
+  imageRegistry: ghcr.io
+  imageRepositoryPrefix: your-org/jperdior-template
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: []
+
+api:
+  enabled: true
+  image:
+    name: api
+    tag: latest
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  livenessProbe:
+    httpGet:
+      path: /api/doc
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 30
+  readinessProbe:
+    httpGet:
+      path: /api/doc
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+worker:
+  enabled: true
+  image:
+    name: api
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+web:
+  enabled: true
+  image:
+    name: web
+    tag: latest
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+admin:
+  enabled: true
+  image:
+    name: admin
+    tag: latest
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: api.example.com
+      service: api
+    - host: example.com
+      service: web
+    - host: admin.example.com
+      service: admin
+  tls: []
+
+# Non-secret application config. Mounted as a ConfigMap.
+appConfig:
+  APP_ENV: prod
+  APP_DEBUG: "0"
+  JWT_TTL: "3600"
+  JWT_REFRESH_TTL: "2592000"
+  MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=1
+
+# Names of pre-existing Kubernetes Secrets the project must create (NOT inlined here).
+# Each secret is expected to contain the keys listed in the comment.
+secrets:
+  appSecret: jperdior-app-secret           # keys: APP_SECRET
+  databaseUrl: jperdior-database-url       # keys: DATABASE_URL
+  redisUrl: jperdior-redis-url             # keys: REDIS_URL
+  jwt: jperdior-jwt                        # keys: JWT_SECRET_KEY (file), JWT_PUBLIC_KEY (file), JWT_PASSPHRASE

@@ -58,4 +58,13 @@ final class DoctrineNoteRepository extends DoctrineRepository implements NoteRep
 
         return $rows;
     }
+
+    public function countAll(): int
+    {
+        $qb = $this->entityManager()->createQueryBuilder();
+        $qb->select('COUNT(n.id)')
+            ->from(Note::class, 'n');
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
 }

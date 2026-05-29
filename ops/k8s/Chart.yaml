@@ -1,0 +1,12 @@
+apiVersion: v2
+name: jperdior-template
+description: |
+  Skeleton Helm chart for deploying a jperdior-template app to Kubernetes.
+  Not required to use the template — Compose is the supported dev/prod path
+  until a project outgrows it. Treat this as a starting point.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://example.com/jperdior-template
+maintainers:
+  - name: jperdior-template

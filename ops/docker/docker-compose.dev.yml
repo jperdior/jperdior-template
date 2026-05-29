@@ -1,0 +1,129 @@
+name: ${COMPOSE_PROJECT_NAME:-jperdior}
+
+# Local development overlays for docker-compose.base.yml. Adds:
+#   - Source mounts so edits are live.
+#   - Dev commands (composer install + php-fpm; pnpm dev for web/admin).
+#   - Exposed ports for direct DB/Redis access.
+#   - JWT key auto-generation on first start.
+#
+# Used via the Makefile:  make start  ->  docker compose -f base -f dev up -d
+#
+# Note: uses Compose-spec !reset to neutralize the build: stanza inherited from
+# the base file for web/admin (Compose v2.24+ required).
+
+services:
+  postgres:
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  redis:
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  api:
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+    volumes:
+      - ../../apps/api:/app/apps/api
+      - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
+      - ../../packages/tenancy-php:/app/packages/tenancy-php
+      - composer_cache:/var/cache/composer
+      - api_jwt:/app/apps/api/code/config/jwt
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        cd /app/apps/api
+        if [ ! -f code/vendor/autoload.php ] && [ ! -f code/vendor/composer/autoload_real.php ]; then
+          composer install --no-interaction
+        fi
+        if [ ! -f code/config/jwt/private.pem ]; then
+          (cd code && php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction) || true
+        fi
+        exec php-fpm --nodaemonize
+
+  worker:
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+    volumes:
+      - ../../apps/api:/app/apps/api
+      - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
+      - ../../packages/tenancy-php:/app/packages/tenancy-php
+      - composer_cache:/var/cache/composer
+      - api_jwt:/app/apps/api/code/config/jwt
+    user: "0:0"
+    working_dir: /app/apps/api/code
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        # Wait for the api container to finish composer install.
+        while [ ! -f /app/apps/api/code/vendor/autoload.php ] && [ ! -f /app/apps/api/code/vendor/composer/autoload_real.php ]; do
+          sleep 1
+        done
+        exec php bin/console messenger:consume async -vv
+
+  nginx:
+    volumes:
+      - ../../apps/api/code/public:/app/apps/api/code/public:ro
+
+  web:
+    build: !reset
+    image: node:22-alpine
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
+    volumes:
+      - ../..:/repo
+      - web_node_modules:/repo/node_modules
+      - web_next_cache:/repo/apps/web/.next
+    working_dir: /repo
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        corepack enable
+        corepack prepare pnpm@9.15.0 --activate
+        pnpm install --filter "@jperdior/web..."
+        exec pnpm -C apps/web dev
+
+  admin:
+    build: !reset
+    image: node:22-alpine
+    environment:
+      NODE_ENV: development
+      PORT: "3001"
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
+    volumes:
+      - ../..:/repo
+      - admin_node_modules:/repo/node_modules
+      - admin_next_cache:/repo/apps/admin/.next
+    working_dir: /repo
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        corepack enable
+        corepack prepare pnpm@9.15.0 --activate
+        pnpm install --filter "@jperdior/admin..."
+        exec pnpm -C apps/admin dev
+
+volumes:
+  composer_cache:
+  api_jwt:
+  web_node_modules:
+  web_next_cache:
+  admin_node_modules:
+  admin_next_cache:

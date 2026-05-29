@@ -23,6 +23,13 @@ export interface CurrentUser {
   createdAt: string;
 }
 
+export interface UserSummary {
+  id: string;
+  email: string;
+  roles: string[];
+  createdAt: string;
+}
+
 interface LoginResponse {
   token: string;
   refresh_token: string;
@@ -39,6 +46,9 @@ export interface ApiClient {
   createNote(req: { title: string; body: string }): Promise<{ id: string }>;
   updateNote(id: string, req: { title: string; body: string }): Promise<void>;
   deleteNote(id: string): Promise<void>;
+  // Admin (ROLE_ADMIN)
+  listAllUsers(params?: { limit?: number; offset?: number }): Promise<{ total: number; users: UserSummary[] }>;
+  listAllNotes(params?: { limit?: number; offset?: number }): Promise<{ total: number; notes: Note[] }>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -104,5 +114,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     createNote:(req) => request('POST',  '/api/notes', { body: req }),
     updateNote:(id, req) => request('PATCH', `/api/notes/${encodeURIComponent(id)}`, { body: req }),
     deleteNote:(id) => request('DELETE', `/api/notes/${encodeURIComponent(id)}`),
+    listAllUsers: (params) => request('GET', '/api/admin/users', { query: { limit: params?.limit, offset: params?.offset } }),
+    listAllNotes: (params) => request('GET', '/api/admin/notes', { query: { limit: params?.limit, offset: params?.offset } }),
   };
 }

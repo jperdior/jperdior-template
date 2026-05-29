@@ -1,0 +1,25 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    Jperdior\Tenancy\Domain\TenantContext:
+        public: true
+
+    Jperdior\Tenancy\Infrastructure\Resolver\JwtClaimTenantResolver:
+        arguments:
+            $claim: '%tenancy.jwt_claim.claim_name%'
+
+    Jperdior\Tenancy\Infrastructure\Resolver\SubdomainTenantResolver:
+        arguments:
+            $baseDomain: '%tenancy.subdomain.base_domain%'
+
+    Jperdior\Tenancy\Symfony\EventListener\ResolveTenantListener:
+        arguments:
+            $resolver: '@Jperdior\Tenancy\Domain\TenantResolverInterface'
+            $context: '@Jperdior\Tenancy\Domain\TenantContext'
+            $managerRegistry: '@doctrine'
+            $filterName: '%tenancy.filter_name%'
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, priority: 4 }

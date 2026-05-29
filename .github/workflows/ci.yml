@@ -1,0 +1,200 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: "8.4"
+  NODE_VERSION: "22"
+  PNPM_VERSION: "9.15.0"
+
+jobs:
+  php-lint:
+    name: PHP lint (PHPStan + cs-fixer + deptrac)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: composer-${{ runner.os }}-
+      - name: Install (apps/api)
+        run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
+      - name: Install (shared-kernel-php)
+        run: cd packages/shared-kernel-php && composer install --no-interaction --no-progress --prefer-dist
+      - name: Install (tenancy-php)
+        run: cd packages/tenancy-php && composer install --no-interaction --no-progress --prefer-dist
+      - name: PHPStan (apps/api)
+        run: cd apps/api && php code/vendor/bin/phpstan analyse -c code/phpstan.dist.neon --memory-limit=512M --no-progress
+      - name: PHPStan (shared-kernel-php)
+        run: cd packages/shared-kernel-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress
+      - name: PHPStan (tenancy-php)
+        run: cd packages/tenancy-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress
+      - name: php-cs-fixer
+        run: cd apps/api && php code/vendor/bin/php-cs-fixer fix --dry-run --diff
+      - name: deptrac (cross-bounded-context guard)
+        run: cd apps/api && php code/vendor/bin/deptrac analyse --no-progress
+
+  php-tests-unit:
+    name: PHP unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+      - name: Install (shared-kernel-php)
+        run: cd packages/shared-kernel-php && composer install --no-interaction --no-progress --prefer-dist
+      - name: Install (tenancy-php)
+        run: cd packages/tenancy-php && composer install --no-interaction --no-progress --prefer-dist
+      - name: Install (apps/api)
+        run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
+      - name: PHPUnit (shared-kernel-php)
+        run: cd packages/shared-kernel-php && vendor/bin/phpunit
+      - name: PHPUnit (tenancy-php)
+        run: cd packages/tenancy-php && vendor/bin/phpunit
+      - name: PHPUnit (apps/api Unit suite)
+        run: cd apps/api && php code/vendor/bin/phpunit --testsuite Unit -c code/phpunit.xml.dist
+
+  php-tests-functional:
+    name: PHP functional tests (against Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: app
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: "postgresql://app:app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+      APP_ENV: test
+      APP_SECRET: ci-secret
+      JWT_PASSPHRASE: ci-passphrase
+      JWT_SECRET_KEY: "%kernel.project_dir%/config/jwt/private.pem"
+      JWT_PUBLIC_KEY: "%kernel.project_dir%/config/jwt/public.pem"
+      JWT_TTL: "3600"
+      JWT_REFRESH_TTL: "2592000"
+      MESSENGER_TRANSPORT_DSN: "doctrine://default?auto_setup=1"
+      MESSENGER_FAILED_TRANSPORT_DSN: "doctrine://default?queue_name=failed&auto_setup=1"
+      CORS_ALLOW_ORIGIN: "^https?://localhost(:[0-9]+)?$"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          extensions: pdo_pgsql, intl, opcache
+          tools: composer:v2
+      - name: Install (apps/api)
+        run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
+      - name: Generate JWT keypair
+        run: cd apps/api/code && php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+      - name: Create + migrate test DB
+        run: |
+          cd apps/api/code
+          php bin/console doctrine:database:create --env=test --if-not-exists
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+      - name: PHPUnit (Functional suite)
+        run: cd apps/api && php code/vendor/bin/phpunit --testsuite Functional -c code/phpunit.xml.dist
+
+  js-lint:
+    name: JS typecheck + ESLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm -r --filter './apps/*' --filter './packages/*' typecheck
+      - run: pnpm -r --filter './apps/*' lint
+
+  js-build:
+    name: JS production build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm -C apps/web build
+      - run: pnpm -C apps/admin build
+
+  e2e-playwright:
+    name: Playwright e2e (ephemeral compose)
+    runs-on: ubuntu-latest
+    needs: [php-tests-functional, js-build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - run: pnpm install --frozen-lockfile=false
+      - name: Install Playwright browsers
+        run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - name: Boot the stack
+        run: |
+          cp .env.dist .env.local
+          make start
+      - name: Wait for API
+        run: |
+          for i in {1..60}; do
+            if curl -sf http://localhost:8080/api/doc >/dev/null; then echo "API up"; exit 0; fi
+            sleep 2
+          done
+          echo "API did not become ready in 120s"
+          docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml logs --tail=200
+          exit 1
+      - name: Migrate
+        run: make migrate
+      - name: Playwright
+        run: pnpm -C apps/web exec playwright test
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
+      - name: Compose logs on failure
+        if: failure()
+        run: docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml logs --tail=300
+      - name: Stop the stack
+        if: always()
+        run: make stop
