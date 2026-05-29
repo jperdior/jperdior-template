@@ -1,0 +1,47 @@
+{
+  "$schema": "./tiers.schema.json",
+  "default": ["core"],
+  "tiers": {
+    "core": {
+      "description": "Daily-driver skills installed by default.",
+      "skills": [
+        "spec-writing",
+        "pre-implement-spec",
+        "implement-spec",
+        "code-review",
+        "integration-tests",
+        "check-and-commit",
+        "fix-specs",
+        "skill-creator",
+        "create-agents-md",
+        "scaffold-bounded-context",
+        "add-command",
+        "add-query",
+        "add-route",
+        "scaffold-doctrine-migration",
+        "scaffold-nextjs-page",
+        "scaffold-shadcn-form",
+        "regenerate-api-client"
+      ]
+    },
+    "automation": {
+      "description": "PR/issue automation skills. Opt-in; agent-driven workflows.",
+      "skills": [
+        "auto-create-pr",
+        "auto-continue-pr",
+        "auto-review-pr",
+        "merge-buddy",
+        "root-cause",
+        "fix",
+        "open-pr",
+        "verify-in-repo",
+        "sync-merged-pr-issues",
+        "auto-update-changelog"
+      ]
+    },
+    "security": {
+      "description": "Security audit skills. Opt-in.",
+      "skills": ["auto-sec-report"]
+    }
+  }
+}

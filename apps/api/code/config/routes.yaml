@@ -1,0 +1,9 @@
+controllers:
+    resource:
+        path: ../src/
+        namespace: App
+    type: attribute
+
+nelmio_api_doc:
+    resource: '@NelmioApiDocBundle/Resources/config/routing/swaggerui.xml'
+    prefix: /api/doc

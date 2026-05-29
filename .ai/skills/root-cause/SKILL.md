@@ -1,0 +1,68 @@
+---
+name: root-cause
+description: Drill from a failing test, production error, or user-reported bug to the offending change. Produces a "this is what broke and when" report. Triggers on "root cause", "what broke", "why is X failing", "bisect".
+---
+
+# Root Cause
+
+Find the root cause of a bug or failing test. Output a precise report identifying the offending change (file:line, commit, PR).
+
+## Workflow
+
+1. **Reproduce** the failure locally. If you can't reproduce, ask the user for exact steps + environment.
+2. **Read the error**: stack trace, failing assertion, log lines. Don't guess — look at the actual output.
+3. **Map to code**: identify the function / class / route involved. Read the source.
+4. **Form a hypothesis** about which change introduced the regression.
+5. **Use `git bisect` or `git log -S`** to find the commit:
+   ```sh
+   git log -S '<symbol from the diff>' --oneline -- <path>
+   git log --oneline <path>
+   git bisect start <known-bad> <known-good>
+   ```
+6. **Verify the suspect commit**: check out the parent, confirm the bug is absent. Check out the suspect, confirm the bug is present.
+7. **Identify the change**: the exact lines that introduced the regression.
+8. **Identify the PR**: `gh pr list --state merged --search "<commit-sha>"`.
+9. **Output the report** (template below).
+
+## Output Format
+
+```markdown
+# Root Cause: {bug description}
+
+## Symptom
+{What the user / test reported.}
+
+## Reproduction
+{Exact steps to reproduce.}
+
+## First-bad commit
+- SHA: `{sha}`
+- PR: #{N} ({title})
+- Author: {name}
+- Date: {YYYY-MM-DD}
+
+## Offending change
+- File: `{path}:{line}`
+- What changed: {one-sentence description}
+
+## Why it broke
+{Mechanism — the actual chain from the change to the symptom.}
+
+## Fix direction
+{The minimal change that would resolve it. Don't write the fix here — that's `/fix`'s job.}
+
+## Confidence
+- HIGH if bisect localized to a single commit AND the failing test maps cleanly to the offending lines.
+- MEDIUM if bisect is clean but the mechanism is not 100% pinned.
+- LOW if multiple commits in the bisect range plausibly cause the issue. Ask for help.
+
+## Suggested follow-up
+- Add a regression test at: `{file path}`
+- Update `.ai/lessons.md` if this pattern is likely to recur.
+```
+
+## Rules
+
+- Never propose a fix in this skill. Hand off to `/fix` with the report.
+- Never blame "flakiness" without evidence (rerun 5+ times; check for shared state).
+- Never close the investigation at "weird, works for me". If you can't reproduce, document the gap.

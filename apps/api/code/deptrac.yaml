@@ -1,0 +1,57 @@
+deptrac:
+    paths:
+        - ./src
+
+    exclude_files:
+        - '#.*Kernel\.php#'
+
+    layers:
+        - name: User
+          collectors:
+              - { type: classLike, value: '^App\\User\\.*' }
+        - name: Note
+          collectors:
+              - { type: classLike, value: '^App\\Note\\.*' }
+        - name: Shared
+          collectors:
+              - { type: classLike, value: '^App\\Shared\\.*' }
+        - name: SharedKernel
+          collectors:
+              - { type: classLike, value: '^Jperdior\\SharedKernel\\.*' }
+        - name: Symfony
+          collectors:
+              - { type: classLike, value: '^Symfony\\.*' }
+        - name: Doctrine
+          collectors:
+              - { type: classLike, value: '^Doctrine\\.*' }
+        - name: Vendor
+          collectors:
+              - { type: classLike, value: '^(?!App\\|Jperdior\\).*' }
+
+    ruleset:
+        # Bounded contexts can depend on Shared adapters, the shared kernel, and the framework.
+        User:
+            - Shared
+            - SharedKernel
+            - Symfony
+            - Doctrine
+            - Vendor
+        Note:
+            - Shared
+            - SharedKernel
+            - Symfony
+            - Doctrine
+            - Vendor
+
+        # Shared adapters depend on the kernel + framework but never on a specific context.
+        Shared:
+            - SharedKernel
+            - Symfony
+            - Doctrine
+            - Vendor
+
+        # The shared kernel is pure PHP — only Symfony Uid is allowed (covered under Vendor).
+        SharedKernel:
+            - Vendor
+
+    skip_violations: []

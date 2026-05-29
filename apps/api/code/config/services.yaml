@@ -1,0 +1,36 @@
+imports:
+    - { resource: '../src/Shared/Infrastructure/Symfony/Resources/config/services.yaml' }
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    _instanceof:
+        Jperdior\SharedKernel\Domain\Bus\Command\CommandHandler:
+            tags:
+                - { name: messenger.message_handler, bus: messenger.bus.command }
+        Jperdior\SharedKernel\Domain\Bus\Query\QueryHandler:
+            tags:
+                - { name: messenger.message_handler, bus: messenger.bus.query }
+        Jperdior\SharedKernel\Domain\Bus\Event\DomainEventSubscriber:
+            tags:
+                - { name: messenger.message_handler, bus: messenger.bus.event }
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/Kernel.php'
+            - '../src/**/{Domain,Application}/**/*Command.php'
+            - '../src/**/{Domain,Application}/**/*Query.php'
+            - '../src/**/{Domain,Application}/**/*Event.php'
+
+    # ---- Per-context repository aliases get appended below in their respective sections ----
+
+    # User
+    App\User\Domain\UserRepository:
+        alias: App\User\Infrastructure\Persistence\DoctrineUserRepository
+
+    # Note
+    App\Note\Domain\NoteRepository:
+        alias: App\Note\Infrastructure\Persistence\DoctrineNoteRepository

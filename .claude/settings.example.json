@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make *)",
+      "Bash(pnpm *)",
+      "Bash(composer *)",
+      "Bash(php bin/console *)",
+      "Bash(docker compose *)",
+      "Bash(gh *)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git checkout *)"
+    ]
+  },
+  "skills": {
+    "directory": ".ai/skills"
+  }
+}

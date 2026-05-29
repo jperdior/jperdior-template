@@ -1,0 +1,39 @@
+# --- PHP / Symfony ---
+**/vendor/
+**/var/
+**/.env.local
+**/.env.*.local
+**/.php-cs-fixer.cache
+**/.phpunit.result.cache
+**/.phpstan/
+
+# --- Node / pnpm / Next.js / Turbo ---
+node_modules/
+.pnpm-store/
+.turbo/
+**/.next/
+**/dist/
+**/build/
+**/coverage/
+**/.tsbuildinfo
+**/.eslintcache
+
+# --- Generated artefacts ---
+apps/*/openapi.json
+packages/api-client-ts/src/types.gen.ts
+
+# --- Docker ---
+ops/docker/.env
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+.fleet/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Claude / AI runs ---
+.claude/settings.local.json
+.ai/runs/

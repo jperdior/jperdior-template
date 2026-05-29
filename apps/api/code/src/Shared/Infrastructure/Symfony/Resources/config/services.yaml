@@ -1,0 +1,32 @@
+services:
+    # ---- Bus aliases ----
+    Jperdior\SharedKernel\Domain\Bus\Command\CommandBus:
+        alias: App\Shared\Infrastructure\Bus\MessengerCommandBus
+
+    App\Shared\Infrastructure\Bus\MessengerCommandBus:
+        arguments:
+            $bus: '@messenger.bus.command'
+
+    Jperdior\SharedKernel\Domain\Bus\Query\QueryBus:
+        alias: App\Shared\Infrastructure\Bus\MessengerQueryBus
+
+    App\Shared\Infrastructure\Bus\MessengerQueryBus:
+        arguments:
+            $bus: '@messenger.bus.query'
+
+    Jperdior\SharedKernel\Domain\Bus\Event\EventBus:
+        alias: App\Shared\Infrastructure\Bus\MessengerEventBus
+
+    App\Shared\Infrastructure\Bus\MessengerEventBus:
+        arguments:
+            $bus: '@messenger.bus.event'
+
+    # ---- Transactions ----
+    Jperdior\SharedKernel\Domain\Repository\TransactionInterface:
+        alias: App\Shared\Infrastructure\Doctrine\DoctrineTransaction
+
+    # ---- Clock ----
+    Jperdior\SharedKernel\Domain\Clock\ClockInterface:
+        alias: Jperdior\SharedKernel\Infrastructure\Clock\SystemClock
+
+    Jperdior\SharedKernel\Infrastructure\Clock\SystemClock: ~
