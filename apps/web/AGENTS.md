@@ -1,6 +1,6 @@
 # apps/web — Agents Guidelines
 
-Next.js 15 public app (App Router, RSC by default). Consumes the API via `@jperdior/api-client-ts/server`. Built on `@jperdior/ui-react` + Tailwind + shadcn primitives.
+Next.js 16 public app (App Router, RSC by default). Consumes the API via `@jperdior/api-client-ts/server`. Built on `@jperdior/ui-react` + Tailwind + shadcn primitives.
 
 ## Always
 

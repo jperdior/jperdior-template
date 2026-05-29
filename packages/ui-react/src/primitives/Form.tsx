@@ -50,17 +50,16 @@ function useFormField() {
   };
 }
 
-const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('space-y-2', className)} {...props} />
-  ),
-);
+function FormItem({ className, ref, ...props }: React.ComponentProps<'div'>) {
+  return <div ref={ref} className={cn('space-y-2', className)} {...props} />;
+}
 FormItem.displayName = 'FormItem';
 
-const FormLabel = React.forwardRef<
-  React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
->(({ className, ...props }, ref) => {
+function FormLabel({
+  className,
+  ref,
+  ...props
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
   const { error, formItemId } = useFormField();
   return (
     <Label
@@ -70,13 +69,10 @@ const FormLabel = React.forwardRef<
       {...props}
     />
   );
-});
+}
 FormLabel.displayName = 'FormLabel';
 
-const FormControl = React.forwardRef<
-  React.ElementRef<typeof Slot>,
-  React.ComponentPropsWithoutRef<typeof Slot>
->(({ ...props }, ref) => {
+function FormControl({ ref, ...props }: React.ComponentProps<typeof Slot>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
   return (
     <Slot
@@ -87,26 +83,24 @@ const FormControl = React.forwardRef<
       {...props}
     />
   );
-});
+}
 FormControl.displayName = 'FormControl';
 
-const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-  ({ className, children, ...props }, ref) => {
-    const { error, formMessageId } = useFormField();
-    const body = error ? String(error?.message) : children;
-    if (!body) return null;
-    return (
-      <p
-        ref={ref}
-        id={formMessageId}
-        className={cn('text-sm font-medium text-destructive', className)}
-        {...props}
-      >
-        {body}
-      </p>
-    );
-  },
-);
+function FormMessage({ className, children, ref, ...props }: React.ComponentProps<'p'>) {
+  const { error, formMessageId } = useFormField();
+  const body = error ? String(error?.message) : children;
+  if (!body) return null;
+  return (
+    <p
+      ref={ref}
+      id={formMessageId}
+      className={cn('text-sm font-medium text-destructive', className)}
+      {...props}
+    >
+      {body}
+    </p>
+  );
+}
 FormMessage.displayName = 'FormMessage';
 
 export { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, useFormField };

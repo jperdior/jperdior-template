@@ -1,6 +1,6 @@
 # apps/admin — Agents Guidelines
 
-Next.js 15 admin back-office. Same stack as `apps/web` (App Router, RSC by default) but **gated to `ROLE_ADMIN`**. Lists every user and every note across users.
+Next.js 16 admin back-office. Same stack as `apps/web` (App Router, RSC by default) but **gated to `ROLE_ADMIN`**. Lists every user and every note across users.
 
 ## Always
 
