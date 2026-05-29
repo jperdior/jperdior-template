@@ -49,7 +49,6 @@ services:
     volumes:
       - ../../apps/api:/app/apps/api
       - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
-      - ../../packages/tenancy-php:/app/packages/tenancy-php
       - composer_cache:/var/cache/composer
       - api_jwt:/app/apps/api/config/jwt
     user: "0:0"
@@ -63,7 +62,6 @@ services:
     volumes:
       - ../../apps/api:/app/apps/api
       - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
-      - ../../packages/tenancy-php:/app/packages/tenancy-php
       - composer_cache:/var/cache/composer
       - api_jwt:/app/apps/api/config/jwt
     user: "0:0"

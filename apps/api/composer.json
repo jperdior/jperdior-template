@@ -6,8 +6,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "repositories": [
-        { "type": "path", "url": "../../packages/shared-kernel-php" },
-        { "type": "path", "url": "../../packages/tenancy-php", "options": { "symlink": true } }
+        { "type": "path", "url": "../../packages/shared-kernel-php" }
     ],
     "require": {
         "php": ">=8.4",

@@ -36,14 +36,10 @@ jobs:
         run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
       - name: Install (shared-kernel-php)
         run: cd packages/shared-kernel-php && composer install --no-interaction --no-progress --prefer-dist
-      - name: Install (tenancy-php)
-        run: cd packages/tenancy-php && composer install --no-interaction --no-progress --prefer-dist
       - name: PHPStan (apps/api)
         run: cd apps/api && vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M --no-progress
       - name: PHPStan (shared-kernel-php)
         run: cd packages/shared-kernel-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress
-      - name: PHPStan (tenancy-php)
-        run: cd packages/tenancy-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress
       - name: php-cs-fixer
         run: cd apps/api && vendor/bin/php-cs-fixer fix --dry-run --diff
       - name: deptrac (cross-bounded-context guard)
@@ -61,14 +57,10 @@ jobs:
           tools: composer:v2
       - name: Install (shared-kernel-php)
         run: cd packages/shared-kernel-php && composer install --no-interaction --no-progress --prefer-dist
-      - name: Install (tenancy-php)
-        run: cd packages/tenancy-php && composer install --no-interaction --no-progress --prefer-dist
       - name: Install (apps/api)
         run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
       - name: PHPUnit (shared-kernel-php)
         run: cd packages/shared-kernel-php && vendor/bin/phpunit
-      - name: PHPUnit (tenancy-php)
-        run: cd packages/tenancy-php && vendor/bin/phpunit
       - name: PHPUnit (apps/api Unit suite)
         run: cd apps/api && vendor/bin/phpunit --testsuite Unit
 
