@@ -19,6 +19,13 @@ else
 		$(MAKEFILE_LIST) | grep -v '@awk' | sort
 endif
 
+# ----- Init (first-time setup) -----
+
+init: ## Bootstrap a fresh clone: copy .env.local, patch /etc/hosts, start stack
+	@[ -f .env.local ] || cp .env.dist .env.local
+	@sh ops/scripts/init-hosts.sh
+	@${MAKE} start
+
 # ----- Lifecycle -----
 
 start: build up logs ## Build, start, and tail logs

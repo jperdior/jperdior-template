@@ -22,7 +22,8 @@
         "scaffold-nextjs-page",
         "scaffold-shadcn-form",
         "regenerate-api-client",
-        "new-feature"
+        "new-feature",
+        "init"
       ]
     },
     "automation": {

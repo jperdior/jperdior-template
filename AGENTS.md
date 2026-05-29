@@ -71,6 +71,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Regenerating the TS API client | `.ai/skills/regenerate-api-client/SKILL.md` |
 | Shared component in `ui-react` | `packages/ui-react/AGENTS.md` |
 | **Workflow** | |
+| First-time local setup (hosts, .env.local, stack boot) | `.ai/skills/init/SKILL.md` |
 | Starting any new feature (creates worktree + branch from main) | `.ai/skills/new-feature/SKILL.md` |
 | **Specs & PR Automation** | |
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
