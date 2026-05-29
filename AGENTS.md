@@ -82,6 +82,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Testing** | |
 | Functional / integration tests | `apps/api/AGENTS.md` → Testing + `.ai/qa/AGENTS.md` |
 | Playwright end-to-end | `.ai/skills/integration-tests/SKILL.md` |
+| Run PHP quality locally (PHPStan / cs-fixer / deptrac) | `.ai/skills/lint-php/SKILL.md` |
+| Run JS quality locally (tsc / ESLint) | `.ai/skills/lint-js/SKILL.md` |
 | **Ops** | |
 | Docker, compose, K8s | `docs/ops.md` + `ops/AGENTS.md` |
 | CI / GitHub Actions | `.github/workflows/` + `docs/ops.md` |

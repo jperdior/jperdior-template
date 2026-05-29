@@ -31,13 +31,14 @@ abstract class FunctionalTestCase extends WebTestCase
         parent::tearDown();
     }
 
+    /** @param array<string, mixed> $body */
     protected function postJson(string $uri, array $body = [], ?string $token = null): void
     {
         $server = ['CONTENT_TYPE' => 'application/json'];
         if ($token !== null) {
             $server['HTTP_AUTHORIZATION'] = 'Bearer '.$token;
         }
-        $this->client?->request('POST', $uri, server: $server, content: json_encode($body, JSON_THROW_ON_ERROR));
+        $this->client?->request('POST', $uri, server: $server, content: json_encode($body, \JSON_THROW_ON_ERROR));
     }
 
     protected function getJson(string $uri, ?string $token = null): void
@@ -49,11 +50,14 @@ abstract class FunctionalTestCase extends WebTestCase
         $this->client?->request('GET', $uri, server: $server);
     }
 
+    /** @return array<string, mixed> */
     protected function jsonResponse(): array
     {
         $content = (string) $this->client?->getResponse()->getContent();
+        /** @var array<string, mixed> $data */
+        $data = json_decode($content, true, flags: \JSON_THROW_ON_ERROR);
 
-        return json_decode($content, true, flags: JSON_THROW_ON_ERROR);
+        return $data;
     }
 
     protected function loginAs(string $email, string $password = 'secret'): string

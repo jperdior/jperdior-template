@@ -11,6 +11,7 @@ final class NoteEndpointsTest extends FunctionalTestCase
     private function authenticatedToken(string $email = 'notes-user@example.com'): string
     {
         $this->postJson('/auth/signup', ['email' => $email, 'password' => 'secretpass']);
+        assert($this->client !== null);
         self::assertContains($this->client->getResponse()->getStatusCode(), [201, 409]);
 
         return $this->loginAs($email);
@@ -19,6 +20,7 @@ final class NoteEndpointsTest extends FunctionalTestCase
     public function testCreateListGetUpdateDelete(): void
     {
         $token = $this->authenticatedToken();
+        assert($this->client !== null);
 
         // create
         $this->postJson('/api/notes', ['title' => 'first', 'body' => 'hello world'], $token);
@@ -43,7 +45,7 @@ final class NoteEndpointsTest extends FunctionalTestCase
             'PATCH',
             '/api/notes/'.$id,
             server: ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer '.$token],
-            content: json_encode(['title' => 'updated', 'body' => 'still here'], JSON_THROW_ON_ERROR),
+            content: json_encode(['title' => 'updated', 'body' => 'still here'], \JSON_THROW_ON_ERROR),
         );
         self::assertResponseStatusCodeSame(204);
 
