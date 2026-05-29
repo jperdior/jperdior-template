@@ -41,3 +41,5 @@ export function apiClient(): ApiClient {
 
 export const ACCESS_TOKEN_COOKIE  = ACCESS_COOKIE;
 export const REFRESH_TOKEN_COOKIE = REFRESH_COOKIE;
+
+export type { ApiClient, ApiClientConfig, Note, CurrentUser, UserSummary } from './apiClient';

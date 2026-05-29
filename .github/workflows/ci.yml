@@ -168,6 +168,8 @@ jobs:
       - run: pnpm install --frozen-lockfile=false
       - name: Install Playwright browsers
         run: pnpm -C apps/web exec playwright install --with-deps chromium
+      - name: Patch /etc/hosts for Traefik .localhost routing
+        run: echo "127.0.0.1 api.localhost web.localhost admin.localhost" | sudo tee -a /etc/hosts
       - name: Boot the stack
         run: |
           cp .env.dist .env.local
@@ -175,7 +177,7 @@ jobs:
       - name: Wait for API
         run: |
           for i in {1..60}; do
-            if curl -sf http://localhost:8080/api/doc >/dev/null; then echo "API up"; exit 0; fi
+            if curl -sf http://api.localhost/api/doc >/dev/null; then echo "API up"; exit 0; fi
             sleep 2
           done
           echo "API did not become ready in 120s"

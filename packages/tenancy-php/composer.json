@@ -3,6 +3,9 @@
     "description": "Optional multi-tenancy add-on: TenantContext, TenantOwned marker, Doctrine SQLFilter, JWT-claim and subdomain reference resolvers, wired by TenancyBundle. Off by default; opt in per project.",
     "type": "symfony-bundle",
     "license": "MIT",
+    "repositories": [
+        { "type": "path", "url": "../shared-kernel-php" }
+    ],
     "require": {
         "php": ">=8.4",
         "jperdior/shared-kernel-php": "*",
