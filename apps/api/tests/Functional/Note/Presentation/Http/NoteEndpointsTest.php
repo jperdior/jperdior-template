@@ -19,8 +19,9 @@ final class NoteEndpointsTest extends FunctionalTestCase
 
     public function testCreateListGetUpdateDelete(): void
     {
-        $token = $this->authenticatedToken();
+        $token  = $this->authenticatedToken();
         assert($this->client !== null);
+        $client = $this->client;
 
         // create
         $this->postJson('/api/notes', ['title' => 'first', 'body' => 'hello world'], $token);
@@ -41,7 +42,7 @@ final class NoteEndpointsTest extends FunctionalTestCase
         self::assertSame('first', $note['title']);
 
         // update
-        $this->client->request(
+        $client->request(
             'PATCH',
             '/api/notes/'.$id,
             server: ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer '.$token],
@@ -50,7 +51,7 @@ final class NoteEndpointsTest extends FunctionalTestCase
         self::assertResponseStatusCodeSame(204);
 
         // delete
-        $this->client->request('DELETE', '/api/notes/'.$id, server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
+        $client->request('DELETE', '/api/notes/'.$id, server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
         self::assertResponseStatusCodeSame(204);
 
         // get after delete
