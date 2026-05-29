@@ -40,7 +40,7 @@ pnpm -C apps/web exec playwright test e2e/auth.spec.ts
    - Most behaviours need **both**: one PHPUnit test per controller action + one Playwright test per journey.
 
 3. **Generate the scaffold**:
-   - PHPUnit: place under `apps/api/code/tests/Functional/<Context>/<Controller>Test.php`. Extend `FunctionalTestCase`.
+   - PHPUnit: place under `apps/api/tests/Functional/<Context>/<Controller>Test.php`. Extend `FunctionalTestCase`.
    - Playwright: place under `apps/web/e2e/<area>/<flow>.spec.ts`. Import helpers from `apps/web/e2e/helpers/`.
 
 4. **Walk the flow** (Playwright only): with `make start` running, navigate the UI and confirm selectors (`getByRole` / `getByLabel` / `getByText`).
@@ -140,7 +140,7 @@ test.describe('Notes: create + see', () => {
 - `apiRequest(method, path, options)` — authenticated fetch
 - `getAuthToken(credentials)` — obtain a JWT via `/auth/login`
 
-For PHP, `apps/api/code/tests/Functional/FunctionalTestCase.php` exposes:
+For PHP, `apps/api/tests/Functional/FunctionalTestCase.php` exposes:
 - `loginAs(string $email, string $password): string` — returns the JWT
 - `withinTransaction(callable $fn)` — opt-in transactional wrapper
 

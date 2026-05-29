@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+
+cd /app/apps/api
+
+mkdir -p var/cache var/log
+
+# Install vendor if missing (first boot or after image rebuild).
+if [ ! -f vendor/autoload.php ]; then
+  composer install --no-interaction --no-progress
+fi
+
+# Generate JWT keypair on first boot.
+if [ ! -f config/jwt/private.pem ]; then
+  php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction || true
+fi
+
+php bin/console cache:warmup || true
+php bin/console doctrine:database:create --if-not-exists --no-interaction || true
+php bin/console doctrine:migrations:migrate --no-interaction || true
+
+exec php-fpm --nodaemonize

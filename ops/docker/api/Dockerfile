@@ -40,7 +40,12 @@ RUN cd apps/api \
     && composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
 
 # Copy source and finalize autoload.
-COPY apps/api/code ./apps/api/code
+COPY apps/api/bin ./apps/api/bin
+COPY apps/api/config ./apps/api/config
+COPY apps/api/migrations ./apps/api/migrations
+COPY apps/api/public ./apps/api/public
+COPY apps/api/src ./apps/api/src
+COPY apps/api/templates ./apps/api/templates
 RUN cd apps/api && composer dump-autoload --optimize --classmap-authoritative --no-dev
 
 # ---- Stage 3: Runtime ----
@@ -65,8 +70,8 @@ WORKDIR /app/apps/api
 COPY --from=builder /app /app
 
 # Symfony writes cache/log here.
-RUN mkdir -p code/var/cache code/var/log code/config/jwt \
-    && chown -R www-data:www-data code/var code/config/jwt
+RUN mkdir -p var/cache var/log config/jwt \
+    && chown -R www-data:www-data var config/jwt
 
 USER www-data
 

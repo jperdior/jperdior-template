@@ -58,16 +58,16 @@
             "phpstan/extension-installer": true
         },
         "sort-packages": true,
-        "vendor-dir": "code/vendor"
+        "vendor-dir": "vendor"
     },
     "autoload": {
         "psr-4": {
-            "App\\": "code/src/"
+            "App\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Tests\\": "code/tests/"
+            "App\\Tests\\": "tests/"
         }
     },
     "scripts": {

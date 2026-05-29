@@ -1,6 +1,6 @@
 # Multi-tenancy
 
-The core template is **single-tenant by design**. No entity in `apps/api/code/src/` carries a `tenant_id` column. The `User` aggregate is single-instance. Most projects don't need tenancy, so we don't pay the cost.
+The core template is **single-tenant by design**. No entity in `apps/api/src/` carries a `tenant_id` column. The `User` aggregate is single-instance. Most projects don't need tenancy, so we don't pay the cost.
 
 When a project does need it, it opts in by enabling `packages/tenancy-php`. The package is a Symfony bundle that provides:
 
@@ -17,7 +17,7 @@ Tenancy is a **cross-cutting concern** applied via a filter + a request-scoped c
 See `packages/tenancy-php/README.md` for the canonical 5-step procedure:
 
 1. Add `jperdior/tenancy-php` to `apps/api/composer.json` `require`.
-2. Register `TenancyBundle` in `apps/api/code/config/bundles.php`.
+2. Register `TenancyBundle` in `apps/api/config/bundles.php`.
 3. Mark relevant entities with `TenantOwned`, add a `tenant_id` column in the XML mapping, and ship a migration.
 4. Register the Doctrine SQL filter in `doctrine.yaml`.
 5. Configure a resolver (or implement `TenantResolverInterface` yourself).
@@ -34,4 +34,4 @@ When the template's `scaffold-bounded-context` skill creates a new context, it d
 
 ## CI guardrail
 
-`deptrac` enforces that no bounded context in `apps/api/code/src/` imports `Jperdior\Tenancy\*` directly — the dependency goes the other way (filter inspects entities by interface). The only place a project should reference tenancy types is in its own `Tenants/` context (if it has one) and its `doctrine.yaml`.
+`deptrac` enforces that no bounded context in `apps/api/src/` imports `Jperdior\Tenancy\*` directly — the dependency goes the other way (filter inspects entities by interface). The only place a project should reference tenancy types is in its own `Tenants/` context (if it has one) and its `doctrine.yaml`.

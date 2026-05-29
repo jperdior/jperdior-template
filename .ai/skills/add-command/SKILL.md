@@ -14,7 +14,7 @@ Add a Symfony Messenger command and handler to an existing bounded context.
 3. **Generate the files**:
 
 ```
-apps/api/code/src/<Context>/Application/Command/<Verb>/
+apps/api/src/<Context>/Application/Command/<Verb>/
 ├── <Verb>Command.php           ← final readonly, implements Shared\Domain\Bus\Command\Command
 └── <Verb>CommandHandler.php    ← implements Shared\Domain\Bus\Command\CommandHandler
 ```
@@ -22,7 +22,7 @@ apps/api/code/src/<Context>/Application/Command/<Verb>/
 4. **Wire dependencies**: inject domain repositories + clock + transaction interface from `shared-kernel-php`. NEVER inject Doctrine directly.
 5. **Validate inputs at value-object construction** inside the command class constructor.
 6. **Emit a domain event** if the command changes state. The aggregate records it via `$this->record(new ...)`; the handler drains via `pullDomainEvents()` and dispatches to the event bus.
-7. **Add a functional test** under `apps/api/code/tests/Functional/<Context>/Application/<Verb>CommandHandlerTest.php`.
+7. **Add a functional test** under `apps/api/tests/Functional/<Context>/Application/<Verb>CommandHandlerTest.php`.
 8. **Run `make test-api`** to confirm.
 
 ## Command Template

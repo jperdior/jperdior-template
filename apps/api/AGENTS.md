@@ -1,6 +1,6 @@
 # apps/api — Agents Guidelines
 
-Symfony 7.4 modular monolith. One app, many bounded contexts under `code/src/<Context>/`. Single image, two runtime processes: `api` (php-fpm) and `worker` (`messenger:consume async`).
+Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context>/`. Single image, two runtime processes: `api` (php-fpm) and `worker` (`messenger:consume async`).
 
 ## Always
 
@@ -52,8 +52,9 @@ make migrate-diff
 ## Structure
 
 ```
-code/
+apps/api/
 ├── bin/console
+├── bin/start                          ← dev container startup script
 ├── config/
 │   ├── bundles.php
 │   ├── routes.yaml
@@ -135,5 +136,5 @@ doctrine:
 2. Add the new context's mapping under `doctrine.yaml`.
 3. Add the repository alias under `services.yaml`.
 4. Run `make migrate-diff`, review SQL, commit.
-5. Write functional tests under `code/tests/Functional/<Context>/`.
+5. Write functional tests under `tests/Functional/<Context>/`.
 6. Update root `AGENTS.md` Task Router if the context introduces new task patterns.

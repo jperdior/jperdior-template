@@ -3,7 +3,7 @@
 ## Always
 
 - Prefer executable Playwright TypeScript tests under `apps/web/e2e/` and `apps/admin/e2e/`.
-- Prefer Symfony **functional tests** (PHPUnit + `WebTestCase`) for API behaviour, under `apps/api/code/tests/Functional/<Context>/`.
+- Prefer Symfony **functional tests** (PHPUnit + `WebTestCase`) for API behaviour, under `apps/api/tests/Functional/<Context>/`.
 - Reuse shared helpers from `apps/web/e2e/helpers/` (or `apps/admin/e2e/helpers/`).
 - Keep tests independent, data-independent, deterministic, and safe across retries.
 - Create required fixtures per test (prefer API setup over UI clicks). Always clean up created data in `finally` / teardown.
@@ -45,7 +45,7 @@ pnpm -C apps/web exec playwright test e2e/auth.spec.ts
 
 For API behaviour: pick the `WebTestCase` base + transaction rollback per test.
 
-- Location: `apps/api/code/tests/Functional/<Context>/<Endpoint>Test.php`
+- Location: `apps/api/tests/Functional/<Context>/<Endpoint>Test.php`
 - Pattern: one test class per controller action.
 - DB: real PostgreSQL (`test` env). Transactional rollback via `FunctionalTestCase`.
 - Auth: helper `loginAs($client, 'admin@example.com')` sets the `Authorization` header.

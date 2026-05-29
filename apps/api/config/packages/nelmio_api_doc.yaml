@@ -2,7 +2,7 @@ nelmio_api_doc:
     documentation:
         info:
             title: 'jperdior-template API'
-            description: 'API generated from controllers in apps/api/code/src/*/Presentation/Http.'
+            description: 'API generated from controllers in apps/api/src/*/Presentation/Http.'
             version: '0.1.0'
         components:
             securitySchemes:

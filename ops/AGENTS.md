@@ -18,7 +18,7 @@ Container builds (`docker/`), Kubernetes skeleton (`k8s/`), and CI shell scripts
 
 ## Never
 
-- **Never** commit JWT keys, `.env.local`, or any file under `apps/api/code/config/jwt/`.
+- **Never** commit JWT keys, `.env.local`, or any file under `apps/api/config/jwt/`.
 - **Never** add `--no-verify` style flags to CI scripts to mask failures.
 - **Never** run `php-cs-fixer fix` (writing) inside CI — only `--dry-run`. Fixes are local-only.
 - **Never** modify `nginx/api.conf` to expose `/ping` or `/status` outside the cluster — they're FPM status endpoints.

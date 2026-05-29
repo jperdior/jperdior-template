@@ -39,15 +39,15 @@ jobs:
       - name: Install (tenancy-php)
         run: cd packages/tenancy-php && composer install --no-interaction --no-progress --prefer-dist
       - name: PHPStan (apps/api)
-        run: cd apps/api && php code/vendor/bin/phpstan analyse -c code/phpstan.dist.neon --memory-limit=512M --no-progress
+        run: cd apps/api && vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M --no-progress
       - name: PHPStan (shared-kernel-php)
         run: cd packages/shared-kernel-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress
       - name: PHPStan (tenancy-php)
         run: cd packages/tenancy-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress
       - name: php-cs-fixer
-        run: cd apps/api && php code/vendor/bin/php-cs-fixer fix --dry-run --diff
+        run: cd apps/api && vendor/bin/php-cs-fixer fix --dry-run --diff
       - name: deptrac (cross-bounded-context guard)
-        run: cd apps/api && php code/vendor/bin/deptrac analyse --no-progress
+        run: cd apps/api && vendor/bin/deptrac analyse --no-progress
 
   php-tests-unit:
     name: PHP unit tests
@@ -70,7 +70,7 @@ jobs:
       - name: PHPUnit (tenancy-php)
         run: cd packages/tenancy-php && vendor/bin/phpunit
       - name: PHPUnit (apps/api Unit suite)
-        run: cd apps/api && php code/vendor/bin/phpunit --testsuite Unit -c code/phpunit.xml.dist
+        run: cd apps/api && vendor/bin/phpunit --testsuite Unit
 
   php-tests-functional:
     name: PHP functional tests (against Postgres)
@@ -112,14 +112,14 @@ jobs:
       - name: Install (apps/api)
         run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
       - name: Generate JWT keypair
-        run: cd apps/api/code && php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+        run: cd apps/api && php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
       - name: Create + migrate test DB
         run: |
-          cd apps/api/code
+          cd apps/api
           php bin/console doctrine:database:create --env=test --if-not-exists
           php bin/console doctrine:migrations:migrate --env=test --no-interaction
       - name: PHPUnit (Functional suite)
-        run: cd apps/api && php code/vendor/bin/phpunit --testsuite Functional -c code/phpunit.xml.dist
+        run: cd apps/api && vendor/bin/phpunit --testsuite Functional
 
   js-lint:
     name: JS typecheck + ESLint
@@ -171,7 +171,7 @@ jobs:
       - name: Boot the stack
         run: |
           cp .env.dist .env.local
-          make start
+          make up
       - name: Wait for API
         run: |
           for i in {1..60}; do
@@ -181,8 +181,6 @@ jobs:
           echo "API did not become ready in 120s"
           docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml logs --tail=200
           exit 1
-      - name: Migrate
-        run: make migrate
       - name: Playwright
         run: pnpm -C apps/web exec playwright test
       - name: Upload Playwright report

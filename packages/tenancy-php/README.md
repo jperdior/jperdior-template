@@ -2,7 +2,7 @@
 
 Optional multi-tenancy add-on for the jperdior-template Symfony API.
 
-The core template is **single-tenant**: no entity in `apps/api/code/src/` carries a `tenant_id` column. Projects that need multi-tenancy opt in by following the five steps below — no retrofitting required.
+The core template is **single-tenant**: no entity in `apps/api/src/` carries a `tenant_id` column. Projects that need multi-tenancy opt in by following the five steps below — no retrofitting required.
 
 ## What's in the box
 
@@ -34,7 +34,7 @@ The path repository is already declared in the template's `apps/api/composer.jso
 ### 2. Register the bundle
 
 ```php
-// apps/api/code/config/bundles.php
+// apps/api/config/bundles.php
 return [
     // ...
     Jperdior\Tenancy\Symfony\TenancyBundle::class => ['all' => true],
@@ -65,7 +65,7 @@ final class Note extends AggregateRoot implements TenantOwned
 ### 4. Register the Doctrine SQL filter
 
 ```yaml
-# apps/api/code/config/packages/doctrine.yaml
+# apps/api/config/packages/doctrine.yaml
 doctrine:
     orm:
         filters:
@@ -77,7 +77,7 @@ doctrine:
 ### 5. Choose a resolver
 
 ```yaml
-# apps/api/code/config/packages/tenancy.yaml
+# apps/api/config/packages/tenancy.yaml
 tenancy:
     resolver: jwt_claim       # or 'subdomain'
     jwt_claim:

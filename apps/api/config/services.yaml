@@ -24,8 +24,11 @@ services:
             - '../src/**/{Domain,Application}/**/*Command.php'
             - '../src/**/{Domain,Application}/**/*Query.php'
             - '../src/**/{Domain,Application}/**/*Event.php'
+            # Bus adapters have explicit $bus arguments defined in the shared services.yaml.
+            # Excluding them prevents App\ scan from re-registering with default autowiring.
+            - '../src/Shared/Infrastructure/Bus/'
 
-    # ---- Per-context repository aliases get appended below in their respective sections ----
+    # ---- Per-context repository aliases ----
 
     # User
     App\User\Domain\UserRepository:

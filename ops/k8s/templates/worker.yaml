@@ -19,7 +19,7 @@ spec:
         - name: worker
           image: {{ include "jperdior.image" (dict "Values" .Values "image" .Values.worker.image) }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
-          workingDir: /app/apps/api/code
+          workingDir: /app/apps/api
           command:
             - php
             - bin/console

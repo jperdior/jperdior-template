@@ -76,7 +76,7 @@ services:
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       JWT_PASSPHRASE: ${JWT_PASSPHRASE}
     command: ["php", "bin/console", "messenger:consume", "async", "-vv", "--time-limit=3600", "--memory-limit=256M"]
-    working_dir: /app/apps/api/code
+    working_dir: /app/apps/api
 
   nginx:
     image: nginx:1.27-alpine

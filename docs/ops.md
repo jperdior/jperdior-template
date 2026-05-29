@@ -20,7 +20,7 @@ ops/
 | `api`   | `php-fpm --nodaemonize` (behind nginx) | HTTP for every bounded context |
 | `worker`| `php bin/console messenger:consume async` | Drains the doctrine:// Messenger transport |
 
-This is a modular monolith. Adding a new bounded context means dropping a new `apps/api/code/src/<Context>/` folder — no new image, no new compose service, no new deployment.
+This is a modular monolith. Adding a new bounded context means dropping a new `apps/api/src/<Context>/` folder — no new image, no new compose service, no new deployment.
 
 `apps/web` and `apps/admin` are independent Next.js 15 standalone builds. They share UI primitives via the `@jperdior/ui-react` workspace package.
 
@@ -67,7 +67,7 @@ The full list lives in `.env.dist`. Highlights:
 |-----|----------------|-------|
 | `DATABASE_URL` | API + worker | `postgresql://app:app@postgres:5432/app` in compose |
 | `MESSENGER_TRANSPORT_DSN` | API + worker | `doctrine://default?auto_setup=1` — no broker required to boot |
-| `JWT_SECRET_KEY` / `JWT_PUBLIC_KEY` / `JWT_PASSPHRASE` | API + worker | `make jwt-keys` generates the pair in `apps/api/code/config/jwt/` |
+| `JWT_SECRET_KEY` / `JWT_PUBLIC_KEY` / `JWT_PASSPHRASE` | API + worker | `make jwt-keys` generates the pair in `apps/api/config/jwt/` |
 | `CORS_ALLOW_ORIGIN` | API | Regex allowing `localhost` / `127.0.0.1` in dev |
 | `NEXT_PUBLIC_API_URL` | web + admin | Browser-visible API URL — exposed at build time, baked into JS |
 | `INTERNAL_API_URL` | web + admin | Server-side fetch URL — `http://nginx:80` inside compose |

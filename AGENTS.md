@@ -27,7 +27,7 @@ Leverage the bounded-context system and follow strict naming and coding conventi
 - **Never** call command/query handlers directly from controllers — always go through the bus.
 - **Never** import another bounded context's `Domain/` or `Application/` — cross-context communication goes through the event bus or a public application service. (CI: `deptrac` enforces this.)
 - **Never** add Doctrine attributes to domain entities; ORM mapping is XML only.
-- **Never** add `tenant_id` columns to entities in `apps/api/code/src/` unless the `tenancy-php` package is enabled in that project.
+- **Never** add `tenant_id` columns to entities in `apps/api/src/` unless the `tenancy-php` package is enabled in that project.
 - **Never** edit generated files (`apps/api/openapi.json`, `packages/api-client-ts/src/types.gen.ts`) by hand.
 - **Never** commit credentials, raw tokens, or `.env.local`.
 
@@ -57,7 +57,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Adding a Doctrine migration | `.ai/skills/scaffold-doctrine-migration/SKILL.md` |
 | Adding a domain event subscriber | `apps/api/AGENTS.md` → Events |
 | **Auth** | |
-| User aggregate, JWT, refresh tokens, security.yaml | `apps/api/code/src/User/AGENTS.md` + `docs/auth.md` |
+| User aggregate, JWT, refresh tokens, security.yaml | `apps/api/src/User/AGENTS.md` + `docs/auth.md` |
 | Adding ROLE_* checks | `apps/api/AGENTS.md` → Security |
 | **Persistence** | |
 | New aggregate + repository + XML mapping | `apps/api/AGENTS.md` → Persistence |
@@ -102,7 +102,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 ```
 apps/
-  api/        Symfony 7.4, all bounded contexts under code/src/<Context>/
+  api/        Symfony 7.4, all bounded contexts under src/<Context>/
   web/        Next.js 15 public app
   admin/      Next.js 15 back-office
 packages/

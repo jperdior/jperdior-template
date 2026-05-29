@@ -54,19 +54,19 @@ jperdior-template/
 - **PHP-side bounded context layout** (every context, including User and Note): `Domain/`, `Application/`, `Infrastructure/`, `Presentation/` — copied verbatim from feverup-php's `code/src/Event/`.
 - **Three Messenger buses**: `command.bus`, `query.bus`, `event.bus`, auto-tagged via `_instanceof` on `CommandHandler`, `QueryHandler`, `DomainEventSubscriber` interfaces from `shared-kernel-php`.
 - **Doctrine mapping**: XML only (no attributes on entities). Naming strategy `underscore_number_aware`. Repository interfaces in `Domain/`, Doctrine impls in `Infrastructure/Persistence/`.
-- **Auth**: Symfony Security + `lexik/jwt-authentication-bundle` (access tokens) + `gesdinet/jwt-refresh-token-bundle` (refresh tokens, stored in DB). `User` aggregate lives in its own bounded context `apps/api/code/src/User/`. Passwords hashed via Symfony's `password_hasher` (argon2id). Refresh-token rotation enabled.
+- **Auth**: Symfony Security + `lexik/jwt-authentication-bundle` (access tokens) + `gesdinet/jwt-refresh-token-bundle` (refresh tokens, stored in DB). `User` aggregate lives in its own bounded context `apps/api/src/User/`. Passwords hashed via Symfony's `password_hasher` (argon2id). Refresh-token rotation enabled.
 - **Frontend auth**: HttpOnly cookie storage of refresh token; access token in memory; Next.js middleware refreshes on expiry. Login/signup/me endpoints exposed on the API.
 - **Default transport**: Symfony Messenger `doctrine://` transport (no RabbitMQ required to boot). Docs describe how to switch to AMQP if a project needs it. Redis is included only for cache.
-- **DB**: PostgreSQL 16 in compose. Doctrine 3 + DoctrineMigrationsBundle, migrations under `apps/api/code/migrations/`.
+- **DB**: PostgreSQL 16 in compose. Doctrine 3 + DoctrineMigrationsBundle, migrations under `apps/api/migrations/`.
 - **OpenAPI**: NelmioApiDocBundle generates `/api/doc.json`; CI regenerates `packages/api-client-ts` via `openapi-typescript` so frontend types stay in sync.
 - **Multi-tenancy strategy**: see "Multi-tenancy as an Optional Bounded Context" below.
 
 ### Multi-tenancy as an Optional Bounded Context
 
-**Core rule:** no entity in `apps/api/code/src/` has a `tenant_id` column by default. The User aggregate is single-instance. To opt in, a project follows these steps (documented in `docs/multitenancy.md`):
+**Core rule:** no entity in `apps/api/src/` has a `tenant_id` column by default. The User aggregate is single-instance. To opt in, a project follows these steps (documented in `docs/multitenancy.md`):
 
 1. Add `packages/tenancy-php` to `apps/api/composer.json` `require`.
-2. Register `TenancyBundle` in `apps/api/code/config/bundles.php`.
+2. Register `TenancyBundle` in `apps/api/config/bundles.php`.
 3. Mark relevant entities by implementing the `TenantOwned` interface and adding a `tenant_id` column via a project-specific migration.
 4. Enable the `TenantFilter` Doctrine SQLFilter (registered by the bundle, off by default).
 5. Configure tenant resolution strategy (JWT claim, subdomain, header) via bundle config.
@@ -117,18 +117,18 @@ Pure PHP package, no Symfony dep. Mirrors feverup-php's `code/src/Shared/`:
 
 ### Phase 3 — Symfony API skeleton (`apps/api`)
 
-Mirror feverup-php's structure: `apps/api/code/` is the Symfony project; `apps/api/composer.json` requires `packages/shared-kernel-php` via path repo.
+Mirror feverup-php's structure: `apps/api/` is the Symfony project; `apps/api/composer.json` requires `packages/shared-kernel-php` via path repo.
 
 Files modelled on feverup-php paths:
-- `apps/api/code/config/{services.yaml,packages/*.yaml,routes.yaml,bundles.php}` — Messenger 3 buses + `_instanceof` tags + Lexik JWT + Nelmio API Doc + CORS.
-- `apps/api/code/src/Shared/` — Symfony adapters for the buses (`MessengerCommandBus`, `MessengerQueryBus`, `MessengerEventBus` implementing kernel interfaces) + base `DoctrineRepository`.
-- `apps/api/code/composer.json` — PHP 8.4, Symfony 7.4 same bundles as feverup-php + Lexik JWT + Gesdinet Refresh + Nelmio CORS.
+- `apps/api/config/{services.yaml,packages/*.yaml,routes.yaml,bundles.php}` — Messenger 3 buses + `_instanceof` tags + Lexik JWT + Nelmio API Doc + CORS.
+- `apps/api/src/Shared/` — Symfony adapters for the buses (`MessengerCommandBus`, `MessengerQueryBus`, `MessengerEventBus` implementing kernel interfaces) + base `DoctrineRepository`.
+- `apps/api/composer.json` — PHP 8.4, Symfony 7.4 same bundles as feverup-php + Lexik JWT + Gesdinet Refresh + Nelmio CORS.
 - `phpstan.dist.neon` level 8, `.php-cs-fixer.dist.php` (Symfony ruleset).
 - `migrations/` empty, ready for first migration.
 
 ### Phase 4 — User bounded context (auth)
 
-`apps/api/code/src/User/`:
+`apps/api/src/User/`:
 - `Domain/`: `User` aggregate, `UserId`, `Email`, `HashedPassword` value objects, `UserRepository` interface, `UserAlreadyExists`/`InvalidCredentials` exceptions.
 - `Application/Command/{SignUp,RefreshToken,RevokeToken}/` — commands + handlers.
 - `Application/Query/{GetCurrentUser}/` — query + handler + response DTO.
@@ -140,7 +140,7 @@ Files modelled on feverup-php paths:
 
 ### Phase 5 — Notes hello-world bounded context
 
-`apps/api/code/src/Note/`:
+`apps/api/src/Note/`:
 - `Domain/`: `Note` aggregate (id, ownerId, title, body, timestamps), `NoteId`, `NoteTitle`, `NoteBody`, `NoteRepository`.
 - `Application/Command/{CreateNote,UpdateNote,DeleteNote}/`.
 - `Application/Query/{ListNotes,GetNote}/`.
@@ -234,9 +234,9 @@ If every check passes, the template is ready to use.
 ## Critical files / patterns to mirror or reuse
 
 From `feverup-php` (exact patterns to copy):
-- `code/src/Event/` four-layer DDD layout → `apps/api/code/src/<Context>/`
+- `code/src/Event/` four-layer DDD layout → `apps/api/src/<Context>/`
 - `code/src/Shared/Domain/Bus/` interfaces → `packages/shared-kernel-php/src/Domain/Bus/`
-- `code/src/Shared/Infrastructure/Doctrine/DoctrineRepository.php` → `apps/api/code/src/Shared/Infrastructure/Doctrine/DoctrineRepository.php`
+- `code/src/Shared/Infrastructure/Doctrine/DoctrineRepository.php` → `apps/api/src/Shared/Infrastructure/Doctrine/DoctrineRepository.php`
 - `code/config/services.yaml` `_instanceof` block + Messenger config
 - `Makefile` targets pattern
 - `ops/docker/` structure

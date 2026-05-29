@@ -14,14 +14,14 @@ Add a read-side query, handler, and response DTO.
 3. **Generate**:
 
 ```
-apps/api/code/src/<Context>/Application/Query/<Verb>/
+apps/api/src/<Context>/Application/Query/<Verb>/
 ├── <Verb>Query.php             ← final readonly, implements Shared\Domain\Bus\Query\Query
 ├── <Verb>QueryHandler.php      ← implements Shared\Domain\Bus\Query\QueryHandler
 └── <Verb>Response.php          ← final readonly DTO returned to the caller
 ```
 
 4. **Read directly from a Doctrine repository** (no domain aggregate hydration needed for queries — return DTOs).
-5. **Test under** `apps/api/code/tests/Functional/<Context>/Application/<Verb>QueryHandlerTest.php`.
+5. **Test under** `apps/api/tests/Functional/<Context>/Application/<Verb>QueryHandlerTest.php`.
 
 ## Templates
 

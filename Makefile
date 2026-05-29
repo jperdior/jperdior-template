@@ -3,7 +3,8 @@ UNAME := $(shell uname)
 PROJECT_NAME := jperdior
 API_CONTAINER := api
 WORKER_CONTAINER := worker
-DOCKER_COMPOSE := docker compose -p ${PROJECT_NAME} -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.dev.yml
+ENV_FILE := $(if $(wildcard .env.local),.env.local,.env.dist)
+DOCKER_COMPOSE := docker compose --env-file $(ENV_FILE) -p ${PROJECT_NAME} -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.dev.yml
 EXEC := exec -T
 
 .EXPORT_ALL_VARIABLES:
@@ -129,7 +130,7 @@ gen-api: ## Regenerate TS client from API OpenAPI spec
 
 # ----- JWT keys -----
 
-jwt-keys: ## Generate JWT key pair into apps/api/code/config/jwt/
+jwt-keys: ## Generate JWT key pair into apps/api/config/jwt/
 	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console lexik:jwt:generate-keypair --skip-if-exists
 
 # ----- Seeders -----

@@ -16,8 +16,8 @@ run() {
 
 run "PHPUnit (shared-kernel-php)" "cd packages/shared-kernel-php && vendor/bin/phpunit"
 run "PHPUnit (tenancy-php)"       "cd packages/tenancy-php && vendor/bin/phpunit"
-run "PHPUnit (apps/api: Unit)"    "cd apps/api && php code/vendor/bin/phpunit --testsuite Unit -c code/phpunit.xml.dist"
-run "PHPUnit (apps/api: Functional)" "cd apps/api && php code/vendor/bin/phpunit --testsuite Functional -c code/phpunit.xml.dist"
+run "PHPUnit (apps/api: Unit)"    "cd apps/api && vendor/bin/phpunit --testsuite Unit"
+run "PHPUnit (apps/api: Functional)" "cd apps/api && vendor/bin/phpunit --testsuite Functional"
 run "pnpm test (workspaces)"      "pnpm -r --filter './apps/*' --filter './packages/*' test"
 
 if (( ${#failures[@]} > 0 )); then

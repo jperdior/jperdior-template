@@ -17,14 +17,14 @@ Add a single HTTP endpoint backed by an existing Command or Query in a bounded c
 4. **Generate**:
 
 ```
-apps/api/code/src/<Context>/Presentation/Http/
+apps/api/src/<Context>/Presentation/Http/
 ├── <Verb><Aggregate>Controller.php
 └── Dto/<Verb><Aggregate>Request.php          ← if the route accepts a body
 ```
 
 5. **Add the Nelmio OpenAPI annotation** on the controller.
 6. **Run `make migrate-diff`** only if the route requires new schema.
-7. **Add a functional test** under `apps/api/code/tests/Functional/<Context>/Presentation/Http/<Verb><Aggregate>ControllerTest.php`.
+7. **Add a functional test** under `apps/api/tests/Functional/<Context>/Presentation/Http/<Verb><Aggregate>ControllerTest.php`.
 
 ## Controller Template (Command)
 

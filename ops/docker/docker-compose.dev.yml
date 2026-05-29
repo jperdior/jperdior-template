@@ -2,9 +2,9 @@ name: ${COMPOSE_PROJECT_NAME:-jperdior}
 
 # Local development overlays for docker-compose.base.yml. Adds:
 #   - Source mounts so edits are live.
-#   - Dev commands (composer install + php-fpm; pnpm dev for web/admin).
+#   - Dev commands (bin/start for api; pnpm dev for web/admin).
 #   - Exposed ports for direct DB/Redis access.
-#   - JWT key auto-generation on first start.
+#   - JWT key auto-generation on first start (handled by bin/start).
 #
 # Used via the Makefile:  make start  ->  docker compose -f base -f dev up -d
 #
@@ -29,23 +29,10 @@ services:
       - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
       - ../../packages/tenancy-php:/app/packages/tenancy-php
       - composer_cache:/var/cache/composer
-      - api_jwt:/app/apps/api/code/config/jwt
+      - api_jwt:/app/apps/api/config/jwt
     user: "0:0"
-    command:
-      - sh
-      - -c
-      - |
-        set -e
-        cd /app/apps/api
-        mkdir -p code/var/cache code/var/log
-        if [ ! -f code/vendor/autoload.php ] && [ ! -f code/vendor/composer/autoload_real.php ]; then
-          composer install --no-interaction
-        fi
-        if [ ! -f code/config/jwt/private.pem ]; then
-          (cd code && php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction) || true
-        fi
-        (cd code && php bin/console cache:warmup) || true
-        exec php-fpm --nodaemonize
+    working_dir: /app/apps/api
+    command: ["sh", "bin/start"]
 
   worker:
     environment:
@@ -56,24 +43,24 @@ services:
       - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
       - ../../packages/tenancy-php:/app/packages/tenancy-php
       - composer_cache:/var/cache/composer
-      - api_jwt:/app/apps/api/code/config/jwt
+      - api_jwt:/app/apps/api/config/jwt
     user: "0:0"
-    working_dir: /app/apps/api/code
+    working_dir: /app/apps/api
     command:
       - sh
       - -c
       - |
         set -e
-        mkdir -p /app/apps/api/code/var/cache /app/apps/api/code/var/log
-        # Wait for the api container to finish composer install and cache warmup.
-        while [ ! -f /app/apps/api/code/vendor/autoload.php ] && [ ! -f /app/apps/api/code/vendor/composer/autoload_real.php ]; do
+        mkdir -p var/cache var/log
+        # Wait for the api container to finish composer install.
+        while [ ! -f /app/apps/api/vendor/autoload.php ]; do
           sleep 1
         done
         exec php bin/console messenger:consume async -vv
 
   nginx:
     volumes:
-      - ../../apps/api/code/public:/app/apps/api/code/public:ro
+      - ../../apps/api/public:/app/apps/api/public:ro
 
   web:
     build: !reset

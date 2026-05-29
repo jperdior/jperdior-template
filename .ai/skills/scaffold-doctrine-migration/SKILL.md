@@ -14,7 +14,7 @@ Generate a migration matching the current entity / XML mapping state, then **rev
    ```sh
    make migrate-diff
    ```
-3. **Open the generated file** under `apps/api/code/migrations/Version{timestamp}.php`.
+3. **Open the generated file** under `apps/api/migrations/Version{timestamp}.php`.
 4. **Review every statement**:
    - Does each statement correspond to an intended change?
    - Are any unrelated tables / columns being altered? If yes, that's a sign of snapshot drift or another change in flight — investigate.

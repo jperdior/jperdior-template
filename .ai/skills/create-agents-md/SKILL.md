@@ -9,7 +9,7 @@ Scaffold a new `AGENTS.md` for a package, app, or bounded context. The output fo
 
 ## Workflow
 
-1. **Identify the target**. Is this an app (`apps/<name>`), a package (`packages/<name>`), a bounded context (`apps/api/code/src/<Context>`), or something else?
+1. **Identify the target**. Is this an app (`apps/<name>`), a package (`packages/<name>`), a bounded context (`apps/api/src/<Context>`), or something else?
 2. **Read the surroundings**: read the closest parent `AGENTS.md` (root, app-level) to understand inherited rules. Don't repeat them — link to them.
 3. **Catalogue what's there**: list the actual files / responsibilities of this area. Don't invent rules for code that doesn't exist.
 4. **Generate the file** with the section template below.

@@ -32,7 +32,7 @@ Institutional memory of mistakes worth not repeating. One entry per lesson. Writ
 
 ## L-004 — Tenancy is opt-in
 
-**Don't** add `tenant_id` columns to entities in `apps/api/code/src/`. The default template is single-tenant.
+**Don't** add `tenant_id` columns to entities in `apps/api/src/`. The default template is single-tenant.
 
 **Why**: open-mercato has 337 columns of `tenant_id`/`organization_id` and removing them is a 4-6-week refactor. Starting tenant-agnostic and adding tenancy via `packages/tenancy-php` (Doctrine SQLFilter + `TenantContext`) when a project actually needs it is the cheaper, cleaner default.
 

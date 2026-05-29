@@ -54,7 +54,7 @@ Makefile                    single entry point: make start | test | lint | shell
 
 ```sh
 # Drives the .ai/skills/scaffold-bounded-context skill via Claude / Cursor
-# Generates apps/api/code/src/<Context>/{Domain,Application,Infrastructure,Presentation}
+# Generates apps/api/src/<Context>/{Domain,Application,Infrastructure,Presentation}
 ```
 
 See [docs/adding-a-bounded-context.md](docs/adding-a-bounded-context.md).

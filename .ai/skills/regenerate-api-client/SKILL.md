@@ -38,7 +38,7 @@ Refresh `packages/api-client-ts/src/types.gen.ts` so the frontend types match th
 ## Rules
 
 - **`types.gen.ts` is generated** — never edit by hand. The `.gitignore` does NOT ignore it, because it's checked in for CI parity, but it's regenerated on every API change.
-- **CI fails if `types.gen.ts` is out of date.** A pre-commit hook (optional) runs the generator on commits that touch `apps/api/code/src/`.
+- **CI fails if `types.gen.ts` is out of date.** A pre-commit hook (optional) runs the generator on commits that touch `apps/api/src/`.
 - **Always run the generator from `make`** — it ensures the running API serves the dump (the static spec file isn't enough).
 
 ## Output

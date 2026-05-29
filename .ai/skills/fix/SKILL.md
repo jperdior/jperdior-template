@@ -17,7 +17,7 @@ Take a `root-cause` report and ship the minimal fix.
 
 1. **Confirm the reproduction** locally (run the failing test or trigger the bug path).
 2. **Write the regression test FIRST**:
-   - PHPUnit Functional under `apps/api/code/tests/Functional/<Context>/…RegressionTest.php` if API.
+   - PHPUnit Functional under `apps/api/tests/Functional/<Context>/…RegressionTest.php` if API.
    - Playwright spec under `apps/web/e2e/regression/…spec.ts` if UI.
    - The test MUST fail on the current code.
 3. **Implement the minimal fix**. No refactoring beyond what the fix requires.

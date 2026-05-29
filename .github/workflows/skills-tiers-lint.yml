@@ -1,0 +1,26 @@
+name: Skills tiers lint
+
+on:
+  pull_request:
+    paths:
+      - '.ai/skills/tiers.json'
+      - '.ai/skills/tiers.schema.json'
+  push:
+    branches: [main]
+    paths:
+      - '.ai/skills/tiers.json'
+      - '.ai/skills/tiers.schema.json'
+
+jobs:
+  validate:
+    name: Validate tiers.json against schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli
+      - name: Validate
+        run: ajv validate -s .ai/skills/tiers.schema.json -d .ai/skills/tiers.json

@@ -1,6 +1,6 @@
 ---
 name: scaffold-bounded-context
-description: Scaffold a new bounded context under apps/api/code/src/<Context>/ with Domain, Application, Infrastructure, Presentation layers. Mirrors the User/Note layout. Triggers on "new bounded context", "scaffold context", "add a context".
+description: Scaffold a new bounded context under apps/api/src/<Context>/ with Domain, Application, Infrastructure, Presentation layers. Mirrors the User/Note layout. Triggers on "new bounded context", "scaffold context", "add a context".
 ---
 
 # Scaffold Bounded Context
@@ -15,7 +15,7 @@ Generate the four-layer DDD skeleton for a new bounded context.
 4. **Generate the skeleton**:
 
 ```
-apps/api/code/src/<Context>/
+apps/api/src/<Context>/
 ├── Domain/
 │   ├── <Aggregate>.php                       ← extends Shared\Domain\Aggregate\AggregateRoot
 │   ├── <Aggregate>Id.php                     ← Uuid-backed value object
@@ -46,8 +46,8 @@ apps/api/code/src/<Context>/
    ```
 6. **Update `config/packages/doctrine.yaml`**: register the context's mapping namespace.
 7. **Generate the first migration**: `make migrate-diff`. Review the SQL.
-8. **Generate the AGENTS.md** at `apps/api/code/src/<Context>/AGENTS.md` using `/create-agents-md`.
-9. **Generate the first test**: `apps/api/code/tests/Functional/<Context>/<Aggregate>Test.php` (smoke test for the Create endpoint).
+8. **Generate the AGENTS.md** at `apps/api/src/<Context>/AGENTS.md` using `/create-agents-md`.
+9. **Generate the first test**: `apps/api/tests/Functional/<Context>/<Aggregate>Test.php` (smoke test for the Create endpoint).
 
 ## Rules
 
@@ -65,6 +65,6 @@ apps/api/code/src/<Context>/
    Files created: ~14
    Aggregate: <Aggregate>
    First migration: <timestamp> Version<…>.php
-   AGENTS.md: apps/api/code/src/<Context>/AGENTS.md
+   AGENTS.md: apps/api/src/<Context>/AGENTS.md
    Next: /add-command, /add-query, /add-route, or apply the migration with `make migrate`
 ```

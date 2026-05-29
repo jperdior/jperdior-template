@@ -68,7 +68,7 @@ For each:
 
 | Test ID | Type | Path | Asserts |
 |---------|------|------|---------|
-| TC-… | PHPUnit Functional | `apps/api/code/tests/Functional/…` | … |
+| TC-… | PHPUnit Functional | `apps/api/tests/Functional/…` | … |
 | TC-… | Playwright | `apps/web/e2e/…` | … |
 
 ## Backward Compatibility

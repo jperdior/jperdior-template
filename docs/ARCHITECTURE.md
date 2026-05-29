@@ -42,7 +42,7 @@
 
 ## Bounded Context Layout
 
-Every context under `apps/api/code/src/<Context>/` has the same four layers:
+Every context under `apps/api/src/<Context>/` has the same four layers:
 
 ```
 <Context>/
@@ -96,7 +96,7 @@ Symfony Messenger configures three buses:
 - **Stateless** firewall on `/api/*` and `/auth/*`.
 - **Refresh-token rotation**: each `/auth/refresh` issues a new refresh token and revokes the previous one in the same transaction. Reuse of a revoked token logs the user out everywhere and emits a security event.
 - **Passwords**: argon2id via Symfony's `password_hasher`.
-- **Users live in `apps/api/code/src/User/`** as a normal bounded context — they are not special-cased.
+- **Users live in `apps/api/src/User/`** as a normal bounded context — they are not special-cased.
 
 See `docs/auth.md` for the full flow.
 
@@ -118,7 +118,7 @@ See `docs/multitenancy.md`.
 
 - **PostgreSQL 16** in compose. Doctrine 3 with `underscore_number_aware` naming strategy.
 - **UUID v4 primary keys** by default; v5 from a business identifier when avoiding cross-source collisions (e.g. when ingesting from external systems).
-- **Migrations** under `apps/api/code/migrations/`. Generated via `make migrate-diff`, reviewed, applied via `make migrate`.
+- **Migrations** under `apps/api/migrations/`. Generated via `make migrate-diff`, reviewed, applied via `make migrate`.
 - **One aggregate root per write transaction.** Use the `TransactionInterface` from `shared-kernel-php` for multi-aggregate writes (rare).
 - **Read DTOs in queries**, not entities. Avoid lazy-loading surprises.
 

@@ -31,7 +31,7 @@ Independent check that a specific change is present in the working tree (and opt
 
 | Check | Result |
 |-------|--------|
-| File `apps/api/code/src/Note/Domain/Note.php` exists | YES / NO |
+| File `apps/api/src/Note/Domain/Note.php` exists | YES / NO |
 | `class Note` defined in that file | YES / NO |
 | Doctrine mapping `Note.orm.xml` exists | YES / NO |
 | Repository interface `NoteRepository` exists | YES / NO |

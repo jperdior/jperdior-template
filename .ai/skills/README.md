@@ -67,7 +67,7 @@ Skills also trigger automatically when a task matches the skill's `description`.
 | `fix-specs` | Normalise spec filenames to `{YYYY-MM-DD}-{slug}.md`. |
 | `skill-creator` | Scaffold a new skill folder + SKILL.md template. |
 | `create-agents-md` | Generate an AGENTS.md for a new package/app/context. |
-| `scaffold-bounded-context` | Generate `apps/api/code/src/<Context>/{Domain,Application,Infrastructure,Presentation}` skeleton. |
+| `scaffold-bounded-context` | Generate `apps/api/src/<Context>/{Domain,Application,Infrastructure,Presentation}` skeleton. |
 | `add-command` | Add a CQRS write command + handler + functional test scaffold. |
 | `add-query` | Add a CQRS query + handler + response DTO + functional test scaffold. |
 | `add-route` | Add an invokable controller + Request DTO + Response DTO + Nelmio annotation + functional test. |
