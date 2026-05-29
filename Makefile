@@ -40,6 +40,9 @@ logs: ## Tail container logs
 ps: ## Show container status
 	@${DOCKER_COMPOSE} ps
 
+traefik: ## Open Traefik dashboard in the browser
+	@open http://localhost:8080 2>/dev/null || xdg-open http://localhost:8080
+
 # ----- Shells -----
 
 api-shell: ## Open a shell inside the API container
