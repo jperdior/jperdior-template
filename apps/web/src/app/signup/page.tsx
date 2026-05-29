@@ -7,7 +7,7 @@ export default function SignUpPage() {
       <Card>
         <CardHeader>
           <CardTitle>Create account</CardTitle>
-          <CardDescription>You'll be signed in automatically.</CardDescription>
+          <CardDescription>You&apos;ll be signed in automatically.</CardDescription>
         </CardHeader>
         <CardContent>
           <SignUpForm />
