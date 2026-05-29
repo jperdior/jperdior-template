@@ -9,7 +9,7 @@ Shared React component primitives. Used by `apps/web` and `apps/admin`. Built on
 - Export from `src/index.ts`.
 - Use `cn()` for className composition (clsx + tailwind-merge).
 - For interactive components, mark them `'use client'` at the top of the file.
-- Use `React.forwardRef` and `displayName` on primitive components.
+- In React 19, pass `ref` as a plain prop (no `forwardRef`). Keep `.displayName` for DevTools.
 
 ## Never
 

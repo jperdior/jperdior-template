@@ -1,17 +1,39 @@
 name: ${COMPOSE_PROJECT_NAME:-jperdior}
 
 # Local development overlays for docker-compose.base.yml. Adds:
+#   - Traefik reverse proxy (replaces direct port exposure on nginx/web/admin).
 #   - Source mounts so edits are live.
 #   - Dev commands (bin/start for api; pnpm dev for web/admin).
 #   - Exposed ports for direct DB/Redis access.
 #   - JWT key auto-generation on first start (handled by bin/start).
 #
+# Routes (all on port 80 via Traefik):
+#   http://api.localhost     → nginx → php-fpm (Symfony)
+#   http://web.localhost     → Next.js web app
+#   http://admin.localhost   → Next.js admin app
+#   http://localhost:8080    → Traefik dashboard
+#
 # Used via the Makefile:  make start  ->  docker compose -f base -f dev up -d
 #
-# Note: uses Compose-spec !reset to neutralize the build: stanza inherited from
-# the base file for web/admin (Compose v2.24+ required).
+# Note: uses Compose-spec !reset to neutralize the build:/ports: stanzas inherited
+# from the base file (Compose v2.24+ required).
 
 services:
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--log.level=INFO"
+    ports:
+      - "${TRAEFIK_PORT:-80}:80"
+      - "${TRAEFIK_DASHBOARD_PORT:-8080}:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   postgres:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -27,7 +49,6 @@ services:
     volumes:
       - ../../apps/api:/app/apps/api
       - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
-      - ../../packages/tenancy-php:/app/packages/tenancy-php
       - composer_cache:/var/cache/composer
       - api_jwt:/app/apps/api/config/jwt
     user: "0:0"
@@ -41,7 +62,6 @@ services:
     volumes:
       - ../../apps/api:/app/apps/api
       - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
-      - ../../packages/tenancy-php:/app/packages/tenancy-php
       - composer_cache:/var/cache/composer
       - api_jwt:/app/apps/api/config/jwt
     user: "0:0"
@@ -59,16 +79,23 @@ services:
         exec php bin/console messenger:consume async -vv
 
   nginx:
+    ports: !reset []
     volumes:
       - ../../apps/api/public:/app/apps/api/public:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.services.api.loadbalancer.server.port=80"
 
   web:
     build: !reset
     image: node:22-alpine
+    ports: !reset []
     environment:
       NODE_ENV: development
       PORT: "3000"
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.localhost}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
     volumes:
       - ../..:/repo
@@ -85,14 +112,20 @@ services:
         corepack prepare pnpm@9.15.0 --activate
         pnpm install --filter "@jperdior/web..."
         exec pnpm -C apps/web dev
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`web.localhost`) || Host(`localhost`)"
+      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
 
   admin:
     build: !reset
     image: node:22-alpine
+    ports: !reset []
     environment:
       NODE_ENV: development
       PORT: "3001"
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.localhost}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
     volumes:
       - ../..:/repo
@@ -109,6 +142,11 @@ services:
         corepack prepare pnpm@9.15.0 --activate
         pnpm install --filter "@jperdior/admin..."
         exec pnpm -C apps/admin dev
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=Host(`admin.localhost`)"
+      - "traefik.http.routers.admin.entrypoints=web"
+      - "traefik.http.services.admin.loadbalancer.server.port=3001"
 
 volumes:
   composer_cache:

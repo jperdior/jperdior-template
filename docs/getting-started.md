@@ -11,11 +11,13 @@
 ```bash
 git clone <your-repo-url> my-project
 cd my-project
-cp .env.dist .env.local   # keep defaults for local dev
-make start                # builds images, starts stack, tails logs
+make init
 ```
 
-`make start` boots: **Postgres → Redis → API (php-fpm + nginx) → Worker → Web → Admin**.
+`make init` does everything in one shot:
+1. Copies `.env.dist` → `.env.local` (skipped if already exists)
+2. Adds `api.localhost`, `web.localhost`, `admin.localhost` to `/etc/hosts` (Linux only — macOS resolves `*.localhost` automatically)
+3. Builds images, starts the stack, tails logs
 
 On first boot the `api` container:
 1. Runs `composer install`
@@ -26,28 +28,35 @@ On first boot the `api` container:
 
 Wait for the log line `[OK] Cache for the "dev" environment...` before making requests.
 
+> **Note:** Edit `.env.local` to change `APP_SECRET`, `JWT_PASSPHRASE`, or database credentials before exposing the stack to a network.
+
+## Service URLs
+
+All traffic goes through Traefik on port 80:
+
+| URL | Description |
+|-----|-------------|
+| `http://api.localhost` | Symfony API (php-fpm via nginx) |
+| `http://api.localhost/api/doc` | OpenAPI / Swagger UI |
+| `http://web.localhost` | Public web app |
+| `http://admin.localhost` | Admin panel |
+| `http://localhost:8080` | Traefik dashboard (`make traefik`) |
+
 ## Verify it works
 
 ```bash
 # Sign up
-curl -X POST http://localhost:8080/auth/signup \
+curl -X POST http://api.localhost/auth/signup \
   -H 'Content-Type: application/json' \
   -d '{"email":"me@example.com","password":"secret123"}'
 # → {"id":"<uuid>"}
 
 # Log in
-curl -X POST http://localhost:8080/auth/login \
+curl -X POST http://api.localhost/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"me@example.com","password":"secret123"}'
 # → {"token":"<jwt>","refresh_token":"<token>"}
 ```
-
-Open the browser:
-| URL | Description |
-|-----|-------------|
-| `http://localhost:3000` | Public web app (signup → notes) |
-| `http://localhost:3001` | Admin panel |
-| `http://localhost:8080/api/doc` | OpenAPI docs |
 
 ## Daily workflow
 
@@ -55,6 +64,7 @@ Open the browser:
 make start        # start stack
 make stop         # stop stack
 make logs         # tail all logs
+make traefik      # open Traefik dashboard
 make api-shell    # shell inside api container
 make migrate      # run pending migrations
 make lint         # PHPStan + cs-fixer + deptrac + tsc + eslint
@@ -63,7 +73,7 @@ make test         # phpunit + pnpm test
 
 ## Adding a bounded context
 
-See `docs/adding-a-bounded-context.md` or run the `/scaffold-bounded-context` skill.
+See `docs/adding-a-bounded-context.md` or say "scaffold a new bounded context" to the agent.
 
 ## Promoting a user to admin
 

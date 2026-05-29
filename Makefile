@@ -19,6 +19,13 @@ else
 		$(MAKEFILE_LIST) | grep -v '@awk' | sort
 endif
 
+# ----- Init (first-time setup) -----
+
+init: ## Bootstrap a fresh clone: copy .env.local, patch /etc/hosts, start stack
+	@[ -f .env.local ] || cp .env.dist .env.local
+	@sh ops/scripts/init-hosts.sh
+	@${MAKE} start
+
 # ----- Lifecycle -----
 
 start: build up logs ## Build, start, and tail logs
@@ -39,6 +46,9 @@ logs: ## Tail container logs
 
 ps: ## Show container status
 	@${DOCKER_COMPOSE} ps
+
+traefik: ## Open Traefik dashboard in the browser
+	@open http://localhost:8080 2>/dev/null || xdg-open http://localhost:8080
 
 # ----- Shells -----
 

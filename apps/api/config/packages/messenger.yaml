@@ -8,7 +8,10 @@ framework:
                     - doctrine_close_connection
             messenger.bus.command: ~
             messenger.bus.query: ~
-            messenger.bus.event: ~
+            messenger.bus.event:
+                default_middleware:
+                    enabled: true
+                    allow_no_handlers: true
 
         failure_transport: failed
 

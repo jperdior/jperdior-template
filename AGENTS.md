@@ -70,6 +70,9 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Calling the API from the frontend | `packages/api-client-ts/AGENTS.md` |
 | Regenerating the TS API client | `.ai/skills/regenerate-api-client/SKILL.md` |
 | Shared component in `ui-react` | `packages/ui-react/AGENTS.md` |
+| **Workflow** | |
+| First-time local setup (hosts, .env.local, stack boot) | `.ai/skills/init/SKILL.md` |
+| Starting any new feature (creates worktree + branch from main) | `.ai/skills/new-feature/SKILL.md` |
 | **Specs & PR Automation** | |
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
 | Pre-implementation audit | `.ai/skills/pre-implement-spec/SKILL.md` |
@@ -79,6 +82,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Testing** | |
 | Functional / integration tests | `apps/api/AGENTS.md` → Testing + `.ai/qa/AGENTS.md` |
 | Playwright end-to-end | `.ai/skills/integration-tests/SKILL.md` |
+| Run PHP quality locally (PHPStan / cs-fixer / deptrac) | `.ai/skills/lint-php/SKILL.md` |
+| Run JS quality locally (tsc / ESLint) | `.ai/skills/lint-js/SKILL.md` |
 | **Ops** | |
 | Docker, compose, K8s | `docs/ops.md` + `ops/AGENTS.md` |
 | CI / GitHub Actions | `.github/workflows/` + `docs/ops.md` |
