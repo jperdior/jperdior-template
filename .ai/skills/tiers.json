@@ -21,7 +21,8 @@
         "scaffold-doctrine-migration",
         "scaffold-nextjs-page",
         "scaffold-shadcn-form",
-        "regenerate-api-client"
+        "regenerate-api-client",
+        "new-feature"
       ]
     },
     "automation": {

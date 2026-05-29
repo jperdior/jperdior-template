@@ -70,6 +70,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Calling the API from the frontend | `packages/api-client-ts/AGENTS.md` |
 | Regenerating the TS API client | `.ai/skills/regenerate-api-client/SKILL.md` |
 | Shared component in `ui-react` | `packages/ui-react/AGENTS.md` |
+| **Workflow** | |
+| Starting any new feature (creates worktree + branch from main) | `.ai/skills/new-feature/SKILL.md` |
 | **Specs & PR Automation** | |
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
 | Pre-implementation audit | `.ai/skills/pre-implement-spec/SKILL.md` |
