@@ -37,12 +37,14 @@ services:
       - |
         set -e
         cd /app/apps/api
+        mkdir -p code/var/cache code/var/log
         if [ ! -f code/vendor/autoload.php ] && [ ! -f code/vendor/composer/autoload_real.php ]; then
           composer install --no-interaction
         fi
         if [ ! -f code/config/jwt/private.pem ]; then
           (cd code && php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction) || true
         fi
+        (cd code && php bin/console cache:warmup) || true
         exec php-fpm --nodaemonize
 
   worker:
@@ -62,7 +64,8 @@ services:
       - -c
       - |
         set -e
-        # Wait for the api container to finish composer install.
+        mkdir -p /app/apps/api/code/var/cache /app/apps/api/code/var/log
+        # Wait for the api container to finish composer install and cache warmup.
         while [ ! -f /app/apps/api/code/vendor/autoload.php ] && [ ! -f /app/apps/api/code/vendor/composer/autoload_real.php ]; do
           sleep 1
         done

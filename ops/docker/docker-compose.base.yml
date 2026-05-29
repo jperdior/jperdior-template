@@ -45,6 +45,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:-doctrine://default?auto_setup=1}
       MESSENGER_FAILED_TRANSPORT_DSN: ${MESSENGER_FAILED_TRANSPORT_DSN:-doctrine://default?queue_name=failed&auto_setup=1}
+      LOCK_DSN: ${LOCK_DSN:-redis://redis:6379}
       CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}

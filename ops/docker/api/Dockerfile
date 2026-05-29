@@ -46,17 +46,12 @@ RUN cd apps/api && composer dump-autoload --optimize --classmap-authoritative --
 # ---- Stage 3: Runtime ----
 FROM php:8.4-fpm-alpine AS runtime
 
-# Runtime-only deps (no compilers).
-RUN apk add --no-cache \
-        icu libpq libzip bash \
-    && docker-php-ext-install -j$(nproc) \
-        intl \
-        opcache \
-        pdo_pgsql \
-        bcmath \
-        zip \
-    && pecl install redis apcu \
-    && docker-php-ext-enable redis apcu
+# Runtime-only shared libraries (no compilers, no -dev headers).
+RUN apk add --no-cache icu-libs libpq libzip bash
+
+# Copy compiled PHP extension .so files and their ini configs from the builder.
+COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 
 # Production php.ini (overridable via volume in dev).
 COPY ops/docker/api/php.ini /usr/local/etc/php/conf.d/zz-app.ini

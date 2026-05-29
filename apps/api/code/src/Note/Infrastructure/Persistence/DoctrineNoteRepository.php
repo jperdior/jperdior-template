@@ -17,9 +17,9 @@ final class DoctrineNoteRepository extends DoctrineRepository implements NoteRep
         $this->persist($note);
     }
 
-    public function remove(Note $note): void
+    public function remove(object $entity): void
     {
-        parent::remove($note);
+        parent::remove($entity);
     }
 
     public function findById(NoteId $id): ?Note
