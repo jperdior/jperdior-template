@@ -43,8 +43,6 @@ services:
       APP_SECRET: ${APP_SECRET}
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:-doctrine://default?auto_setup=1}
-      MESSENGER_FAILED_TRANSPORT_DSN: ${MESSENGER_FAILED_TRANSPORT_DSN:-doctrine://default?queue_name=failed&auto_setup=1}
       LOCK_DSN: ${LOCK_DSN:-redis://redis:6379}
       CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
@@ -55,23 +53,34 @@ services:
     expose:
       - "9000"
 
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    restart: unless-stopped
+    profiles: [async]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   worker:
     build:
       context: ../..
       dockerfile: ops/docker/api/Dockerfile
     restart: unless-stopped
+    profiles: [async]
     depends_on:
       postgres: { condition: service_healthy }
-      redis:    { condition: service_healthy }
-      api:      { condition: service_started }
+      rabbitmq: { condition: service_healthy }
     environment:
       APP_ENV: ${APP_ENV:-prod}
       APP_DEBUG: ${APP_DEBUG:-0}
       APP_SECRET: ${APP_SECRET}
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:-doctrine://default?auto_setup=1}
-      MESSENGER_FAILED_TRANSPORT_DSN: ${MESSENGER_FAILED_TRANSPORT_DSN:-doctrine://default?queue_name=failed&auto_setup=1}
+      LOCK_DSN: ${LOCK_DSN:-redis://redis:6379}
+      MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:-amqp://guest:guest@rabbitmq:5672/%2f/messages}
+      MESSENGER_FAILED_TRANSPORT_DSN: ${MESSENGER_FAILED_TRANSPORT_DSN:-amqp://guest:guest@rabbitmq:5672/%2f/messages_failed}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       JWT_PASSPHRASE: ${JWT_PASSPHRASE}

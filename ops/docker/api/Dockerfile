@@ -13,17 +13,17 @@ FROM php:8.4-fpm-alpine AS builder
 # Install build deps + runtime extensions.
 RUN apk add --no-cache --virtual .build-deps \
         autoconf gcc g++ make pkgconfig linux-headers \
-        icu-dev libpq-dev oniguruma-dev libzip-dev \
+        icu-dev libpq-dev oniguruma-dev libzip-dev rabbitmq-c-dev \
     && apk add --no-cache \
-        icu libpq libzip git bash \
+        icu libpq libzip git bash rabbitmq-c \
     && docker-php-ext-install -j$(nproc) \
         intl \
         opcache \
         pdo_pgsql \
         bcmath \
         zip \
-    && pecl install redis apcu \
-    && docker-php-ext-enable redis apcu \
+    && pecl install redis apcu amqp \
+    && docker-php-ext-enable redis apcu amqp \
     && apk del .build-deps
 
 COPY --from=composer /usr/bin/composer /usr/bin/composer
@@ -33,7 +33,6 @@ WORKDIR /app
 # Copy minimum needed to install vendor deps (cached layer).
 COPY apps/api/composer.json apps/api/composer.lock* apps/api/symfony.lock* ./apps/api/
 COPY packages/shared-kernel-php ./packages/shared-kernel-php
-COPY packages/tenancy-php ./packages/tenancy-php
 
 # Install vendor without scripts/auto-scripts (cache:clear needs the source).
 RUN cd apps/api \
@@ -52,7 +51,7 @@ RUN cd apps/api && composer dump-autoload --optimize --classmap-authoritative --
 FROM php:8.4-fpm-alpine AS runtime
 
 # Runtime-only shared libraries (no compilers, no -dev headers).
-RUN apk add --no-cache icu-libs libpq libzip bash
+RUN apk add --no-cache icu-libs libpq libzip bash rabbitmq-c
 
 # Copy compiled PHP extension .so files and their ini configs from the builder.
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/

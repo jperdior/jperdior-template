@@ -55,7 +55,14 @@ services:
     working_dir: /app/apps/api
     command: ["sh", "bin/start"]
 
+  rabbitmq:
+    profiles: [async]
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+
   worker:
+    profiles: [async]
     environment:
       APP_ENV: dev
       APP_DEBUG: "1"
@@ -72,7 +79,6 @@ services:
       - |
         set -e
         mkdir -p var/cache var/log
-        # Wait for the api container to finish composer install.
         while [ ! -f /app/apps/api/vendor/autoload.php ]; do
           sleep 1
         done

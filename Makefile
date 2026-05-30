@@ -5,6 +5,7 @@ API_CONTAINER := api
 WORKER_CONTAINER := worker
 ENV_FILE := $(if $(wildcard .env.local),.env.local,.env.dist)
 DOCKER_COMPOSE := docker compose --env-file $(ENV_FILE) -p ${PROJECT_NAME} -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.dev.yml
+DOCKER_COMPOSE_ASYNC := $(DOCKER_COMPOSE) --profile async
 EXEC := exec -T
 
 .EXPORT_ALL_VARIABLES:
@@ -41,6 +42,10 @@ stop: ## Stop and remove containers
 
 restart: stop start ## Restart the stack
 
+start-async: ## Start full stack + RabbitMQ + worker (set MESSENGER_TRANSPORT_DSN in .env.local first)
+	@${DOCKER_COMPOSE_ASYNC} up -d
+	@${DOCKER_COMPOSE_ASYNC} logs -f --tail=100
+
 logs: ## Tail container logs
 	@${DOCKER_COMPOSE} logs -f --tail=100
 
@@ -55,8 +60,8 @@ traefik: ## Open Traefik dashboard in the browser
 api-shell: ## Open a shell inside the API container
 	@${DOCKER_COMPOSE} exec ${API_CONTAINER} sh
 
-worker-shell: ## Open a shell inside the worker container
-	@${DOCKER_COMPOSE} exec ${WORKER_CONTAINER} sh
+worker-shell: ## Open a shell inside the worker container (requires make start-async)
+	@${DOCKER_COMPOSE_ASYNC} exec ${WORKER_CONTAINER} sh
 
 db-shell: ## Open a psql shell
 	@${DOCKER_COMPOSE} exec postgres psql -U $${POSTGRES_USER:-app} $${POSTGRES_DB:-app}

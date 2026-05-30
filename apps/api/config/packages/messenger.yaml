@@ -1,11 +1,7 @@
 framework:
     messenger:
-        default_bus: messenger.bus.default
+        default_bus: messenger.bus.command
         buses:
-            messenger.bus.default:
-                middleware:
-                    - doctrine_ping_connection
-                    - doctrine_close_connection
             messenger.bus.command: ~
             messenger.bus.query: ~
             messenger.bus.event:
@@ -13,18 +9,24 @@ framework:
                     enabled: true
                     allow_no_handlers: true
 
-        failure_transport: failed
-
-        transports:
-            async:
-                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
-                retry_strategy:
-                    max_retries: 3
-                    delay: 1000
-                    multiplier: 2
-                    max_delay: 30000
-            failed: '%env(MESSENGER_FAILED_TRANSPORT_DSN)%'
-
-        # Async routing per command goes here as contexts grow:
+        # All buses run synchronously by default (no worker required).
+        #
+        # To enable async processing with RabbitMQ:
+        #  1. Set MESSENGER_TRANSPORT_DSN in .env.local (see .env.dist for the example value).
+        #  2. Run `make start-async` to start the rabbitmq broker and the worker container.
+        #  3. Route the commands/events you want processed asynchronously in the routing block.
+        #
+        # transports:
+        #     async:
+        #         dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+        #         retry_strategy:
+        #             max_retries: 3
+        #             delay: 1000
+        #             multiplier: 2
+        #             max_delay: 30000
+        #     failed:
+        #         dsn: '%env(MESSENGER_FAILED_TRANSPORT_DSN)%'
+        # failure_transport: failed
+        #
         # routing:
         #     App\<Context>\Application\Command\<Verb>\<Verb>Command: async
