@@ -151,7 +151,7 @@ build-web: ## Build web + admin for production (runs inside web/admin containers
 
 gen-api: ## Regenerate TS client from API OpenAPI spec
 	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console nelmio:apidoc:dump --format=json > apps/api/openapi.json
-	@pnpm -C packages/api-client-ts gen
+	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER} pnpm -C packages/api-client-ts gen
 
 # ----- JWT keys -----
 

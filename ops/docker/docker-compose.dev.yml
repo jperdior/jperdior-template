@@ -117,7 +117,7 @@ services:
         set -e
         corepack enable
         corepack prepare pnpm@11.5.0 --activate
-        pnpm install --filter "@jperdior/web..."
+        pnpm install --filter "@jperdior/web..." --filter "./packages/*"
         exec pnpm -C apps/web dev
     labels:
       - "traefik.enable=true"
