@@ -8,6 +8,7 @@ ADMIN_CONTAINER := admin
 ENV_FILE := $(if $(wildcard .env.local),.env.local,.env.dist)
 DOCKER_COMPOSE := docker compose --env-file $(ENV_FILE) -p ${PROJECT_NAME} -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.dev.yml
 DOCKER_COMPOSE_ASYNC := $(DOCKER_COMPOSE) --profile async
+DOCKER_COMPOSE_E2E   := $(DOCKER_COMPOSE) --profile e2e
 EXEC := exec -T
 
 .EXPORT_ALL_VARIABLES:
@@ -113,8 +114,8 @@ test-web: ## Run JS unit tests (web + admin containers)
 	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web test
 	@${DOCKER_COMPOSE} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin test
 
-test-e2e: ## Run Playwright integration tests
-	@pnpm -C apps/web exec playwright test
+test-e2e: ## Run Playwright e2e tests inside a container (requires make start)
+	@${DOCKER_COMPOSE_E2E} run --rm playwright
 
 # ----- Lint / static analysis -----
 

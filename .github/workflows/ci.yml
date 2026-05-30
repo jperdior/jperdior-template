@@ -175,7 +175,18 @@ jobs:
           echo "API did not become ready in 120s"
           docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml logs --tail=200
           exit 1
+      - name: Wait for web
+        run: |
+          for i in {1..60}; do
+            if curl -sf http://web.localhost >/dev/null; then echo "Web up"; exit 0; fi
+            sleep 2
+          done
+          echo "Web did not become ready in 120s"
+          docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml logs --tail=200
+          exit 1
       - name: Playwright
+        env:
+          PLAYWRIGHT_BASE_URL: http://web.localhost
         run: pnpm -C apps/web exec playwright test
       - name: Upload Playwright report
         if: always()
