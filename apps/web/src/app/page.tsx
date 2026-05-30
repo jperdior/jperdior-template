@@ -7,7 +7,7 @@ export default function HomePage() {
       <Card>
         <CardHeader>
           <CardTitle>jperdior-template</CardTitle>
-          <CardDescription>Spec-driven Symfony + Next.js + JWT auth. Hello-world: Notes.</CardDescription>
+          <CardDescription>Spec-driven Symfony + Next.js + JWT auth. Add your own bounded contexts on top.</CardDescription>
         </CardHeader>
         <CardContent className="flex gap-3">
           <Button asChild>

@@ -7,15 +7,6 @@ export interface ApiClientConfig {
   onUnauthorized?: () => void;
 }
 
-export interface Note {
-  id: string;
-  ownerId: string;
-  title: string;
-  body: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface CurrentUser {
   id: string;
   email: string;
@@ -41,14 +32,8 @@ export interface ApiClient {
   login(req: { email: string; password: string }): Promise<LoginResponse>;
   refresh(refreshToken: string): Promise<LoginResponse>;
   me(): Promise<CurrentUser>;
-  listNotes(params?: { limit?: number; offset?: number }): Promise<{ total: number; notes: Note[] }>;
-  getNote(id: string): Promise<Note>;
-  createNote(req: { title: string; body: string }): Promise<{ id: string }>;
-  updateNote(id: string, req: { title: string; body: string }): Promise<void>;
-  deleteNote(id: string): Promise<void>;
   // Admin (ROLE_ADMIN)
   listAllUsers(params?: { limit?: number; offset?: number }): Promise<{ total: number; users: UserSummary[] }>;
-  listAllNotes(params?: { limit?: number; offset?: number }): Promise<{ total: number; notes: Note[] }>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -109,12 +94,6 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     login:   (req) => request('POST', '/auth/login',  { body: req, auth: false }),
     refresh: (refreshToken) => request('POST', '/auth/refresh', { body: { refresh_token: refreshToken }, auth: false }),
     me:      ()    => request('GET',  '/api/me'),
-    listNotes: (params) => request('GET', '/api/notes', { query: { limit: params?.limit, offset: params?.offset } }),
-    getNote:   (id) => request('GET',    `/api/notes/${encodeURIComponent(id)}`),
-    createNote:(req) => request('POST',  '/api/notes', { body: req }),
-    updateNote:(id, req) => request('PATCH', `/api/notes/${encodeURIComponent(id)}`, { body: req }),
-    deleteNote:(id) => request('DELETE', `/api/notes/${encodeURIComponent(id)}`),
     listAllUsers: (params) => request('GET', '/api/admin/users', { query: { limit: params?.limit, offset: params?.offset } }),
-    listAllNotes: (params) => request('GET', '/api/admin/notes', { query: { limit: params?.limit, offset: params?.offset } }),
   };
 }

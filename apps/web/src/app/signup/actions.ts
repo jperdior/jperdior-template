@@ -32,5 +32,5 @@ export async function signUpAction(_prev: SignUpState, formData: FormData): Prom
     return { error: 'Could not create account.' };
   }
 
-  redirect('/notes');
+  redirect('/dashboard');
 }
