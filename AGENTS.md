@@ -9,7 +9,7 @@ Leverage the bounded-context system and follow strict naming and coding conventi
 - Check the **Task Router** below before research or coding; a single task may match multiple rows.
 - Check `.ai/specs/` for existing specs before modifying an established context.
 - Enter plan mode for non-trivial tasks with 3+ steps or architectural decisions.
-- For new contexts, mirror the **reference contexts** (`User`, `Note`) for layout and conventions.
+- For new contexts, mirror the **reference context** (`User`) for layout and conventions.
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use the closest package/app `AGENTS.md` for local architecture, imports, and validation commands.
@@ -19,7 +19,7 @@ Leverage the bounded-context system and follow strict naming and coding conventi
 
 - Ask before reducing scope, changing architecture, changing public contracts, adding production dependencies, or touching multiple bounded contexts in a way not covered by an existing spec.
 - Ask before applying database migrations locally with `make migrate`; PRs should include migration files.
-- Ask before adding multi-tenancy to a context (it stays out of core unless explicitly opted in — see `docs/multitenancy.md`).
+- Ask before adding any cross-cutting concern (caching, auditing, soft deletes) to a context that doesn't already use it.
 
 ## Never
 
@@ -27,7 +27,7 @@ Leverage the bounded-context system and follow strict naming and coding conventi
 - **Never** call command/query handlers directly from controllers — always go through the bus.
 - **Never** import another bounded context's `Domain/` or `Application/` — cross-context communication goes through the event bus or a public application service. (CI: `deptrac` enforces this.)
 - **Never** add Doctrine attributes to domain entities; ORM mapping is XML only.
-- **Never** add `tenant_id` columns to entities in `apps/api/src/` unless the `tenancy-php` package is enabled in that project.
+- **Never** add `tenant_id` columns to entities in `apps/api/src/`. This template is single-tenant by design. For multi-tenancy, fork the template.
 - **Never** edit generated files (`apps/api/openapi.json`, `packages/api-client-ts/src/types.gen.ts`) by hand.
 - **Never** commit credentials, raw tokens, or `.env.local`.
 
@@ -62,8 +62,6 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Persistence** | |
 | New aggregate + repository + XML mapping | `apps/api/AGENTS.md` → Persistence |
 | Encrypted columns, soft deletes, JSON fields | `apps/api/AGENTS.md` → Persistence |
-| **Multi-tenancy (optional)** | |
-| Opting a project into multi-tenancy | `docs/multitenancy.md` + `packages/tenancy-php/AGENTS.md` |
 | **Frontend** | |
 | New page in `apps/web` or `apps/admin` | `apps/web/AGENTS.md` (or `apps/admin/AGENTS.md`) + `.ai/skills/scaffold-nextjs-page/SKILL.md` |
 | Form with validation | `.ai/skills/scaffold-shadcn-form/SKILL.md` + `packages/ui-react/AGENTS.md` |
@@ -93,7 +91,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Simplicity First.** Make every change as simple as possible.
 - **No Laziness.** Find root causes. No temporary fixes.
 - **Minimal Impact.** Changes should only touch what's necessary.
-- **Boundaries are sacred.** A `User\Domain\` import inside `Note\` is a regression, not a refactor.
+- **Boundaries are sacred.** A `User\Domain\` import inside `Orders\` is a regression, not a refactor.
 
 ## Workflow Orchestration
 
@@ -112,7 +110,6 @@ apps/
   admin/      Next.js 15 back-office
 packages/
   shared-kernel-php/   Pure-PHP DDD primitives (AggregateRoot, Bus interfaces, ValueObjects)
-  tenancy-php/         Optional multi-tenancy (TenantContext + Doctrine SQLFilter)
   ui-react/            Shared shadcn/ui components
   api-client-ts/       Generated TS client + fetch wrapper (refresh-token aware)
 ops/
@@ -120,7 +117,7 @@ ops/
   k8s/        Helm chart skeleton
   ci/         Shared CI scripts
 .ai/          Specs, skills, qa, lessons, ds-rules — the AI harness
-docs/         ARCHITECTURE, getting-started, multitenancy, auth, ops, ai-workflow
+docs/         ARCHITECTURE, getting-started, auth, adding-a-bounded-context, ops, ai-workflow
 ```
 
 ## Conventions (project-wide)
