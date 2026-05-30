@@ -12,6 +12,107 @@ nelmio_api_doc:
                     bearerFormat: JWT
         security:
             - bearerAuth: []
+        paths:
+            /auth/login:
+                post:
+                    summary: Obtain a JWT access token
+                    description: Authenticates with email and password. Returns a short-lived JWT and a single-use refresh token.
+                    operationId: auth_login
+                    tags:
+                        - Auth
+                    security: []
+                    requestBody:
+                        required: true
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    required:
+                                        - email
+                                        - password
+                                    properties:
+                                        email:
+                                            type: string
+                                            format: email
+                                            example: user@example.com
+                                        password:
+                                            type: string
+                                            format: password
+                                            example: 'P@ssw0rd!'
+                    responses:
+                        '200':
+                            description: Authentication successful
+                            content:
+                                application/json:
+                                    schema:
+                                        type: object
+                                        properties:
+                                            token:
+                                                type: string
+                                                description: JWT access token (use as Bearer in Authorization header)
+                                            refresh_token:
+                                                type: string
+                                                description: Single-use refresh token
+                        '401':
+                            description: Invalid credentials
+                            content:
+                                application/json:
+                                    schema:
+                                        type: object
+                                        properties:
+                                            code:
+                                                type: integer
+                                                example: 401
+                                            message:
+                                                type: string
+                                                example: Invalid credentials.
+            /auth/refresh:
+                post:
+                    summary: Refresh a JWT access token
+                    description: Exchanges a valid single-use refresh token for a new JWT and a new refresh token.
+                    operationId: auth_refresh
+                    tags:
+                        - Auth
+                    security: []
+                    requestBody:
+                        required: true
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    required:
+                                        - refresh_token
+                                    properties:
+                                        refresh_token:
+                                            type: string
+                                            example: 'abc123...'
+                    responses:
+                        '200':
+                            description: Token refreshed successfully
+                            content:
+                                application/json:
+                                    schema:
+                                        type: object
+                                        properties:
+                                            token:
+                                                type: string
+                                                description: New JWT access token
+                                            refresh_token:
+                                                type: string
+                                                description: New single-use refresh token
+                        '401':
+                            description: Refresh token invalid or expired
+                            content:
+                                application/json:
+                                    schema:
+                                        type: object
+                                        properties:
+                                            code:
+                                                type: integer
+                                                example: 401
+                                            message:
+                                                type: string
+                                                example: JWT Refresh Token Not Found.
     areas:
         default:
             path_patterns:
