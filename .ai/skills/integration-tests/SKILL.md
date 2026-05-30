@@ -22,9 +22,9 @@ To filter PHPUnit:
 make test-api ARG="--filter SignUpControllerTest"
 ```
 
-To run a single Playwright spec:
+To run a single Playwright spec, exec into the running web container:
 ```sh
-pnpm -C apps/web exec playwright test e2e/auth.spec.ts
+docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml exec web pnpm -C apps/web exec playwright test e2e/auth.spec.ts
 ```
 
 ### Creating new tests
@@ -56,40 +56,32 @@ pnpm -C apps/web exec playwright test e2e/auth.spec.ts
 
 declare(strict_types=1);
 
-namespace App\Tests\Functional\Note\Presentation\Http;
+namespace App\Tests\Functional\User\Presentation\Http;
 
 use App\Tests\Functional\FunctionalTestCase;
 
-final class CreateNoteControllerTest extends FunctionalTestCase
+final class GetMeControllerTest extends FunctionalTestCase
 {
-    public function testItCreatesANoteForTheAuthenticatedUser(): void
+    public function testItReturnsTheAuthenticatedUser(): void
     {
         $client = static::createClient();
         $token  = $this->loginAs('user@example.com', 'secret');
 
         $client->request(
-            'POST',
-            '/api/notes',
-            server: [
-                'CONTENT_TYPE'        => 'application/json',
-                'HTTP_AUTHORIZATION'  => 'Bearer ' . $token,
-            ],
-            content: json_encode([
-                'title' => 'first note',
-                'body'  => 'hello',
-            ]),
+            'GET',
+            '/api/me',
+            server: ['HTTP_AUTHORIZATION' => 'Bearer ' . $token],
         );
 
-        self::assertResponseStatusCodeSame(201);
+        self::assertResponseStatusCodeSame(200);
         $payload = json_decode($client->getResponse()->getContent(), true);
-        self::assertArrayHasKey('id', $payload);
-        self::assertSame('first note', $payload['title']);
+        self::assertSame('user@example.com', $payload['email']);
     }
 
     public function testItReturns401WhenUnauthenticated(): void
     {
         $client = static::createClient();
-        $client->request('POST', '/api/notes', content: '{}');
+        $client->request('GET', '/api/me');
 
         self::assertResponseStatusCodeSame(401);
     }
@@ -102,20 +94,18 @@ final class CreateNoteControllerTest extends FunctionalTestCase
 import { test, expect } from '@playwright/test';
 import { signUp } from './helpers/auth';
 
-// Source: .ai/specs/2026-06-12-add-notes.md
+// Source: .ai/specs/2026-06-12-<feature>.md
 
-test.describe('Notes: create + see', () => {
-  test('a signed-up user can create and see their note', async ({ page }) => {
+test.describe('<Feature>: <journey name>', () => {
+  test('a signed-up user can <do the thing>', async ({ page }) => {
     const { email } = await signUp(page);
 
-    await page.goto('/notes');
-    await page.getByRole('button', { name: 'New note' }).click();
-    await page.getByLabel('Title').fill('Hello world');
-    await page.getByLabel('Body').fill('My first note');
+    await page.goto('/<route>');
+    await page.getByRole('button', { name: '<action>' }).click();
+    await page.getByLabel('<field>').fill('<value>');
     await page.getByRole('button', { name: 'Save' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Hello world' })).toBeVisible();
-    await expect(page.getByText('My first note')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '<expected>' })).toBeVisible();
   });
 });
 ```
@@ -132,13 +122,9 @@ test.describe('Notes: create + see', () => {
 ## Helpers
 
 `apps/web/e2e/helpers/auth.ts` exposes:
-- `signUp(page)` — creates a unique user via the API and returns `{ email, password, token }`
-- `signIn(page, { email, password })` — performs UI login
-- `signInAsAdmin(page)` — convenience for admin journeys
+- `signUp(page, options?)` — signs up a unique user via the UI and returns `{ email, password }`. Lands on `/dashboard` after signup.
 
-`apps/web/e2e/helpers/api.ts` exposes:
-- `apiRequest(method, path, options)` — authenticated fetch
-- `getAuthToken(credentials)` — obtain a JWT via `/auth/login`
+Add more helpers to `apps/web/e2e/helpers/` as journeys grow (e.g. `signIn`, `signInAsAdmin`).
 
 For PHP, `apps/api/tests/Functional/FunctionalTestCase.php` exposes:
 - `loginAs(string $email, string $password): string` — returns the JWT

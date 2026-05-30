@@ -43,11 +43,7 @@ src/
 │   ├── signup/{page,SignUpForm,actions}.tsx
 │   └── (app)/                       ← authenticated route group
 │       ├── layout.tsx               ← guards via cookies; shows nav + sign-out
-│       └── notes/
-│           ├── page.tsx             ← list
-│           ├── actions.ts           ← create/update/delete server actions
-│           ├── new/{page,NewNoteForm}.tsx
-│           └── [id]/{page,EditNoteForm}.tsx
+│       └── dashboard/page.tsx       ← post-login landing
 ├── lib/auth.ts                      ← persistTokens / clearTokens / isAuthenticated
 └── middleware.ts                    ← redirect to /login when no cookies
 e2e/
