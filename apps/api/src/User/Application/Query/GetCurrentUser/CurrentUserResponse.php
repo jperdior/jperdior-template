@@ -16,6 +16,7 @@ final readonly class CurrentUserResponse implements QueryResponse
         public string $email,
         public array $roles,
         public string $createdAt,
+        public bool $mustResetPassword,
     ) {
     }
 }

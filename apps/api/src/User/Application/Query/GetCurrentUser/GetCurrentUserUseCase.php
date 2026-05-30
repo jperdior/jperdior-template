@@ -29,6 +29,7 @@ final class GetCurrentUserUseCase
             email: $user->email()->value,
             roles: $user->roleStrings(),
             createdAt: $user->createdAt()->format(DateTimeInterface::ATOM),
+            mustResetPassword: $user->mustResetPassword(),
         );
     }
 }

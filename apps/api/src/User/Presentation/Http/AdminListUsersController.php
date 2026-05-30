@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/api/admin/users', methods: ['GET'])]
+#[Route('/api/admin/users', name: 'api_admin_list_users', methods: ['GET'])]
 #[IsGranted('ROLE_ADMIN')]
 final class AdminListUsersController
 {
@@ -34,6 +34,8 @@ final class AdminListUsersController
                 new OA\Property(property: 'email', type: 'string', format: 'email'),
                 new OA\Property(property: 'roles', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
+                new OA\Property(property: 'mustResetPassword', type: 'boolean'),
+                new OA\Property(property: 'deletedAt', type: 'string', format: 'date-time', nullable: true),
             ])),
         ]),
     )]
@@ -53,6 +55,8 @@ final class AdminListUsersController
                 'email' => $u->email,
                 'roles' => $u->roles,
                 'createdAt' => $u->createdAt,
+                'mustResetPassword' => $u->mustResetPassword,
+                'deletedAt' => $u->deletedAt,
             ], $response->users),
         ]);
     }

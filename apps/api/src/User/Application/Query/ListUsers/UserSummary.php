@@ -14,6 +14,8 @@ final readonly class UserSummary
         public string $email,
         public array $roles,
         public string $createdAt,
+        public bool $mustResetPassword,
+        public ?string $deletedAt,
     ) {
     }
 }
