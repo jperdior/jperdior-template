@@ -1,8 +1,10 @@
 PWD := $(shell pwd)
 UNAME := $(shell uname)
 PROJECT_NAME := jperdior
-API_CONTAINER := api
+API_CONTAINER   := api
 WORKER_CONTAINER := worker
+WEB_CONTAINER   := web
+ADMIN_CONTAINER := admin
 ENV_FILE := $(if $(wildcard .env.local),.env.local,.env.dist)
 DOCKER_COMPOSE := docker compose --env-file $(ENV_FILE) -p ${PROJECT_NAME} -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.dev.yml
 DOCKER_COMPOSE_ASYNC := $(DOCKER_COMPOSE) --profile async
@@ -107,8 +109,9 @@ test-unit: ## Run PHP unit tests only
 test-functional: ## Run PHP functional tests only
 	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit --testsuite Functional ${ARG}
 
-test-web: ## Run JS unit tests (web + admin)
-	@pnpm -r --filter "./apps/web..." --filter "./apps/admin..." test
+test-web: ## Run JS unit tests (web + admin containers)
+	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web test
+	@${DOCKER_COMPOSE} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin test
 
 test-e2e: ## Run Playwright integration tests
 	@pnpm -C apps/web exec playwright test
@@ -128,17 +131,20 @@ lint-api: ## PHPStan + php-cs-fixer dry-run + deptrac (apps/api)
 lint-fix: ## Fix PHP code style
 	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/php-cs-fixer fix
 
-lint-web: ## Typecheck + ESLint on JS workspaces
-	@pnpm -r --filter "./apps/web..." --filter "./apps/admin..." typecheck
-	@pnpm -r --filter "./apps/web..." --filter "./apps/admin..." lint
+lint-web: ## Typecheck + ESLint on JS workspaces (runs inside web/admin containers)
+	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER}   pnpm -r --filter './apps/web' --filter './packages/*' typecheck
+	@${DOCKER_COMPOSE} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin typecheck
+	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web lint
+	@${DOCKER_COMPOSE} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin lint
 
 # ----- Build -----
 
 build-api: ## Build the API for production
 	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} composer install --no-dev --optimize-autoloader
 
-build-web: ## Build web + admin for production
-	@pnpm -r --filter "./apps/web..." --filter "./apps/admin..." build
+build-web: ## Build web + admin for production (runs inside web/admin containers)
+	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web build
+	@${DOCKER_COMPOSE} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin build
 
 # ----- OpenAPI / TS client -----
 
