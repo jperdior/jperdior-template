@@ -1,5 +1,6 @@
 imports:
     - { resource: '../src/Shared/Infrastructure/Symfony/Resources/config/services.yaml' }
+    - { resource: '../src/User/Infrastructure/Symfony/Resources/config/services.yaml' }
 
 services:
     _defaults:
@@ -28,8 +29,3 @@ services:
             # Excluding them prevents App\ scan from re-registering with default autowiring.
             - '../src/Shared/Infrastructure/Bus/'
 
-    # ---- Per-context repository aliases ----
-
-    # User
-    App\User\Domain\UserRepository:
-        alias: App\User\Infrastructure\Persistence\DoctrineUserRepository

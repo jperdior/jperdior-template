@@ -1,0 +1,3 @@
+services:
+    App\User\Domain\UserRepository:
+        alias: App\User\Infrastructure\Persistence\DoctrineUserRepository
