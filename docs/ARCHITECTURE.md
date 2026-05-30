@@ -32,17 +32,10 @@
               ┌────────────┼─────────────┐
               ▼            ▼             ▼
         PostgreSQL 16   Redis 7      Messenger
-        (Doctrine 3)   (cache)   (Doctrine transport)
-                                       │
-                                       ▼
-                              ┌────────────────┐
-                              │ worker (PHP)   │  same image as `api`,
-                              │ messenger:     │  different command
-                              │ consume async  │
-                              └────────────────┘
+        (Doctrine 3)   (cache)    (sync — in-process)
 ```
 
-One API image, two runtime processes. New bounded contexts drop a folder under `apps/api/src/<Context>/` — no new infra, no new image, no new database.
+One image, one process by default. New bounded contexts drop a folder under `apps/api/src/<Context>/` — no new infra, no new image, no new database. When you need async processing, add a transport in `messenger.yaml` and route specific commands to it — see the commented block in that file.
 
 ---
 
@@ -221,7 +214,7 @@ Both `apps/web` and `apps/admin` are Next.js 15 App Router applications:
 
 ## Ops
 
-- **Two processes, one image**: `api` (nginx + php-fpm) and `worker` (`messenger:consume async`).
+- **One process**: `api` (nginx + php-fpm). No worker container — Messenger buses run synchronously.
 - **Docker Compose** is the primary dev and deployment path. A Helm chart skeleton is included under `ops/k8s/` for Kubernetes.
 - **CI** runs on every PR: `make lint` → `make test` → `make build-web` → (optional) `make test-e2e`.
 

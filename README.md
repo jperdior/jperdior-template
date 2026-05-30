@@ -1,6 +1,6 @@
 # jperdior-template
 
-A production-ready monorepo template for building SaaS and B2B platforms. PHP 8.4 + Symfony 7.4 API with strict DDD + Hexagonal + CQRS, Next.js 15 frontends, and a full AI engineering harness.
+An opinionated monorepo starter for SaaS and B2B platforms. PHP 8.4 + Symfony 7.4 API with strict DDD + Hexagonal + CQRS, Next.js 15 frontends, and a full AI engineering harness.
 
 The AI harness (specs, skills, code-review gates, PR automation) is ported from [open-mercato](https://github.com/open-mercato/open-mercato). The backend architecture reflects my own preferences for PHP DDD + CQRS that I've developed over years of building and maintaining production services: bounded contexts with four strict layers, XML-only Doctrine mapping, three Messenger buses, value-object-first domain models, and explicit separation between the Messenger handler (framework glue) and the use case (framework-free logic).
 
@@ -14,7 +14,7 @@ The AI harness (specs, skills, code-review gates, PR automation) is ported from 
 | Architecture | DDD + Hexagonal + CQRS, modular monolith |
 | Auth | Lexik JWT + Gesdinet refresh-token rotation (single-use) |
 | Persistence | PostgreSQL 16, Doctrine 3 (XML mapping, no ORM attributes on entities) |
-| Queue | Symfony Messenger, Doctrine transport — no external broker required |
+| Queue | Symfony Messenger, sync by default — RabbitMQ (AMQP) ready via `--profile async` |
 | Cache / Locks | Redis 7 |
 | Public frontend | Next.js 15 App Router, TypeScript strict, Tailwind, shadcn/ui |
 | Admin panel | Next.js 15 App Router, same stack, gated to `ROLE_ADMIN` |

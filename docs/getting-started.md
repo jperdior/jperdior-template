@@ -116,7 +116,8 @@ make test
 ## Daily workflow
 
 ```bash
-make start          # build images + start stack + tail logs
+make start          # build images + start stack (sync Messenger, no broker)
+make start-async    # same + RabbitMQ + worker (set MESSENGER_TRANSPORT_DSN first)
 make stop           # stop and remove containers
 make logs           # tail all container logs (Ctrl-C to exit)
 make api-shell      # bash shell inside the api container
