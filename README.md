@@ -1,6 +1,6 @@
 # jperdior-template
 
-An opinionated monorepo starter for SaaS and B2B platforms. PHP 8.4 + Symfony 7.4 API with strict DDD + Hexagonal + CQRS, Next.js 15 frontends, and a full AI engineering harness.
+An opinionated multipurpose monorepo starter. PHP 8.4 + Symfony 7.4 API with strict DDD + Hexagonal + CQRS, Next.js 15 frontends, and a full AI engineering harness. Ships with a single `User` bounded context (sign-up, JWT auth, role management) — everything else you build on top.
 
 The AI harness (specs, skills, code-review gates, PR automation) is ported from [open-mercato](https://github.com/open-mercato/open-mercato). The backend architecture reflects my own preferences for PHP DDD + CQRS that I've developed over years of building and maintaining production services: bounded contexts with four strict layers, XML-only Doctrine mapping, three Messenger buses, value-object-first domain models, and explicit separation between the Messenger handler (framework glue) and the use case (framework-free logic).
 
