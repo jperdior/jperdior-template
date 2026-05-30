@@ -14,6 +14,7 @@ Leverage the bounded-context system and follow strict naming and coding conventi
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use the closest package/app `AGENTS.md` for local architecture, imports, and validation commands.
 - Re-generate the TS API client (`make gen-api`) after any backend OpenAPI-affecting change.
+- For any feature implementation, create a new worktree and branch from main using `.ai/skills/new-feature/SKILL.md` before writing any code.
 
 ## Ask First
 
