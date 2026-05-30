@@ -1,15 +1,31 @@
 # Ops
 
-How the template runs locally and how to ship it. The default stack is Docker Compose; the Helm chart in `ops/k8s/` is a starting point for projects that outgrow Compose.
+How the template runs locally and how to ship it. The default deployment path is Docker Compose. The Helm chart skeleton under `ops/k8s/` is a starting point for projects that outgrow single-host Compose.
+
+---
 
 ## Layout
 
 ```
 ops/
-├── docker/          per-service Dockerfiles + nginx config + base/dev compose
-├── k8s/             skeleton Helm chart (Deployments, Services, Ingress)
-└── ci/scripts/      install/lint/test/build invoked by .github/workflows
+├── docker/
+│   ├── Dockerfile.api           PHP 8.4 + FPM + nginx in one image
+│   ├── Dockerfile.web           Node 22 + Next.js standalone build
+│   ├── nginx/api.conf           Nginx config: php-fpm upstream, /api/doc, CORS
+│   ├── docker-compose.base.yml  Production-shaped base
+│   └── docker-compose.dev.yml   Dev overlay: source mounts, pnpm dev, exposed ports
+├── k8s/
+│   ├── Chart.yaml
+│   ├── values.yaml              Defaults; override per environment
+│   └── templates/               Deployments, Services, ConfigMaps, Ingress
+└── ci/scripts/
+    ├── install.sh               composer install + pnpm install for all workspaces
+    ├── lint.sh                  PHPStan + cs-fixer + deptrac + tsc + ESLint
+    ├── test.sh                  PHPUnit + pnpm test
+    └── build.sh                 Production Composer + Next.js standalone builds
 ```
+
+---
 
 ## Runtime model
 
@@ -17,98 +33,181 @@ ops/
 
 | Service | Command | Purpose |
 |---------|---------|---------|
-| `api`   | `php-fpm --nodaemonize` (behind nginx) | HTTP for every bounded context |
-| `worker`| `php bin/console messenger:consume async` | Drains the doctrine:// Messenger transport |
+| `api` | `php-fpm --nodaemonize` (behind nginx) | HTTP for every bounded context |
+| `worker` | `php bin/console messenger:consume async` | Drains the `doctrine://` Messenger transport |
 
-This is a modular monolith. Adding a new bounded context means dropping a new `apps/api/src/<Context>/` folder — no new image, no new compose service, no new deployment.
+This is a modular monolith. Adding a new bounded context means dropping a new folder under `apps/api/src/<Context>/` — no new image, no new compose service, no new database, no new deployment.
 
-`apps/web` and `apps/admin` are independent Next.js 15 standalone builds. They share UI primitives via the `@jperdior/ui-react` workspace package.
+The `worker` shares the same image and codebase as `api`. The only difference is the entry command. If you need to scale them independently (high write volume, slow background jobs) you can give `worker` its own replica count or resource limits in k8s — without splitting the code.
 
-## `make start` — local dev
+`apps/web` and `apps/admin` are independent Next.js 15 standalone builds. They share UI primitives via the `@jperdior/ui-react` workspace package and hit the API via the generated `@jperdior/api-client-ts` client.
+
+---
+
+## Local dev with `make start`
 
 ```bash
 cp .env.dist .env.local
+# edit .env.local as needed
 make start
 ```
 
-This composes `ops/docker/docker-compose.base.yml` with `ops/docker/docker-compose.dev.yml` and brings up:
+This merges `docker-compose.base.yml` with `docker-compose.dev.yml` and starts:
 
-- `postgres:16-alpine` on 5432
-- `redis:7-alpine` on 6379
-- `api` (php-fpm) with source mounted at `/app/apps/api`
-- `worker` (same image, different command)
-- `nginx` exposing `${API_PORT:-8080}` and proxying to `api:9000`
-- `web` (`node:22-alpine`) running `pnpm dev` on `${WEB_PORT:-3000}`
-- `admin` (`node:22-alpine`) running `pnpm dev` on `${ADMIN_PORT:-3001}`
+| Container | Image | Notes |
+|-----------|-------|-------|
+| `postgres` | `postgres:16-alpine` | Exposed on `5432` (dev only) |
+| `redis` | `redis:7-alpine` | Exposed on `6379` (dev only) |
+| `api` | Local Dockerfile.api build | Source mounted at `/app/apps/api` |
+| `worker` | Same image as `api` | Different command: `messenger:consume async` |
+| `nginx` | `nginx:1.27-alpine` | Routes `api.localhost` → `api:9000` |
+| `web` | `node:22-alpine` | `pnpm dev` with source mount |
+| `admin` | `node:22-alpine` | `pnpm dev` with source mount |
+| `traefik` | `traefik:v3` | Routes `*.localhost` domains |
 
-The `api` container auto-runs `composer install` and `lexik:jwt:generate-keypair --skip-if-exists` on first boot. JWT keys persist in the `api_jwt` named volume; clear it with `make clean` to regenerate.
+The `api` container runs `bin/start` on boot:
+1. `composer install` (skipped in prod: `--no-dev --optimize-autoloader`)
+2. `lexik:jwt:generate-keypair --skip-if-exists`
+3. `doctrine:database:create --if-not-exists`
+4. `doctrine:migrations:migrate --no-interaction`
+5. `cache:warmup`
+6. `php-fpm`
 
-### Common follow-ups after `make start`
+JWT keys persist in the `api_jwt` named volume. Clear with `make clean` to regenerate.
 
-```bash
-make migrate              # apply Doctrine migrations against the dev DB
-make setup-test-db        # create + migrate the test DB
-make gen-api              # regenerate packages/api-client-ts/src/types.gen.ts from OpenAPI
-make seed-admin EMAIL=…   # grant ROLE_ADMIN to an existing user
-```
+---
 
 ## Compose file layering
 
-- `docker-compose.base.yml` is **production-shaped**: builds happen, no source mounts, no exposed DB/Redis ports, ports closed except via nginx.
-- `docker-compose.dev.yml` overlays dev-only behavior. Uses Compose-spec `!reset` (v2.24+) to neutralize the production `build:` for the JS apps so they run as plain `node:22-alpine` with `pnpm dev` and a mounted repo.
+`docker-compose.base.yml` is **production-shaped**:
+- Images are built from Dockerfiles; no source mounts.
+- DB and Redis ports are not exposed.
+- No `pnpm dev` — Next.js runs from the standalone build.
 
-This lets the same compose layout serve both `make start` (dev) and a future `docker-compose.prod.yml` overlay without duplicating service definitions.
+`docker-compose.dev.yml` overlays dev-only behavior using Compose spec `!reset` (v2.24+):
+- Overrides `api` and `worker` to mount the source.
+- Replaces `web`/`admin` `build:` with plain `node:22-alpine` + `pnpm dev`.
+- Exposes `postgres:5432` and `redis:6379` to the host for tools like TablePlus.
+
+This pattern means the same service definitions serve both local dev and production without duplication. A `docker-compose.prod.yml` overlay just sets `APP_ENV=prod`, pins image tags, and adds secrets mounting.
+
+---
 
 ## Environment variables
 
-The full list lives in `.env.dist`. Highlights:
+Full reference in `.env.dist`. Highlights for operators:
 
-| Var | Where it's used | Notes |
-|-----|----------------|-------|
-| `DATABASE_URL` | API + worker | `postgresql://app:app@postgres:5432/app` in compose |
-| `MESSENGER_TRANSPORT_DSN` | API + worker | `doctrine://default?auto_setup=1` — no broker required to boot |
-| `JWT_SECRET_KEY` / `JWT_PUBLIC_KEY` / `JWT_PASSPHRASE` | API + worker | `make jwt-keys` generates the pair in `apps/api/config/jwt/` |
-| `CORS_ALLOW_ORIGIN` | API | Regex allowing `localhost` / `127.0.0.1` in dev |
-| `NEXT_PUBLIC_API_URL` | web + admin | Browser-visible API URL — exposed at build time, baked into JS |
-| `INTERNAL_API_URL` | web + admin | Server-side fetch URL — `http://nginx:80` inside compose |
+| Variable | Default | Change for production |
+|----------|---------|----------------------|
+| `APP_ENV` | `dev` | `prod` |
+| `APP_SECRET` | `changeme` | **Yes** — `openssl rand -hex 32` |
+| `APP_DEBUG` | `1` | `0` |
+| `DATABASE_URL` | `postgresql://app:app@postgres:5432/app` | Real credentials |
+| `JWT_PASSPHRASE` | `changeme` | **Yes** — strong passphrase |
+| `JWT_TTL` | `3600` | Tune per risk appetite |
+| `JWT_REFRESH_TTL` | `2592000` | 30 days default |
+| `MESSENGER_TRANSPORT_DSN` | `doctrine://default?auto_setup=1` | Swap for Redis/AMQP at scale |
+| `CORS_ALLOW_ORIGIN` | `^https?://.*\.localhost` | Your production domain regex |
+| `NEXT_PUBLIC_API_URL` | `http://api.localhost` | Your production API URL |
+| `INTERNAL_API_URL` | `http://nginx:80` | Internal hostname inside Compose/k8s |
 
-## Production: Compose
+---
 
-The base compose file is production-ready. Add a `docker-compose.prod.yml` overlay that:
+## Production on a single host (Compose)
 
-- Sets `APP_ENV=prod`, `APP_DEBUG=0`, `NODE_ENV=production`.
-- Pins image tags rather than building locally.
-- Mounts JWT keys + DB password from Docker secrets or an external `.env` file.
-- Adds a TLS-terminating reverse proxy (Traefik, Caddy) in front of nginx if not delegated to a CDN.
+Add a `docker-compose.prod.yml`:
 
-## When to graduate to Kubernetes
+```yaml
+# docker-compose.prod.yml
+services:
+  api:
+    image: registry.example.com/my-project/api:${VERSION}
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: '0'
+    secrets: [jwt_private, jwt_public, db_password]
 
-Compose handles a single-host deployment comfortably. Move to the Helm chart when any of these become true:
+  worker:
+    image: registry.example.com/my-project/api:${VERSION}
+    environment:
+      APP_ENV: prod
+    command: php bin/console messenger:consume async --time-limit=3600
 
-- You need rolling deployments with zero downtime.
-- You need to scale `worker` independently of `api` past one host.
-- You need pod-level autoscaling.
-- Your platform team mandates k8s.
+  web:
+    image: registry.example.com/my-project/web:${VERSION}
 
-The chart in `ops/k8s/` is a **skeleton**:
+  admin:
+    image: registry.example.com/my-project/admin:${VERSION}
+```
 
-- `api` runs as a pod with two containers (php-fpm + nginx sidecar). Nginx config is loaded from a ConfigMap that references `ops/docker/nginx/api.conf`.
-- `worker` is a separate Deployment using the same image.
-- `web` and `admin` are independent Deployments.
-- Sensitive values (DATABASE_URL, JWT_PASSPHRASE) come from pre-existing Kubernetes Secrets — names are listed under `secrets:` in `values.yaml`. The chart does NOT create them.
-- Ingress is off by default; turn it on per `values.<env>.yaml`.
+Run with:
 
 ```bash
-helm install jperdior ops/k8s -f my-values.yaml
+docker compose -f ops/docker/docker-compose.base.yml \
+               -f docker-compose.prod.yml up -d
 ```
+
+Add Traefik or Caddy in front for TLS termination. The `INTERNAL_API_URL` should point to `http://nginx:80` (same Compose network).
+
+---
+
+## When to move to Kubernetes
+
+Compose handles a single-host deployment comfortably for most early-stage projects. Move to the Helm chart when:
+
+- **Rolling deployments** — you need zero-downtime updates with readiness gates.
+- **Independent scaling** — `worker` needs more replicas than `api` (high async workload).
+- **Multi-node** — the workload exceeds one host.
+- **Platform mandate** — your organization requires k8s.
+
+The `ops/k8s/` chart is a skeleton, not a production-hardened chart. You will need to:
+- Set `secrets:` references in `values.yaml` for DATABASE_URL, JWT keys, etc.
+- Configure `Ingress` rules for your cluster's ingress controller.
+- Add `PodDisruptionBudgets` and `HorizontalPodAutoscalers` for production resilience.
+- Wire `PersistentVolumeClaims` for the JWT keys volume (or use Kubernetes Secrets directly).
+
+```bash
+helm install my-project ops/k8s -f my-values.yaml
+helm upgrade my-project ops/k8s -f my-values.yaml --atomic
+```
+
+---
 
 ## CI
 
-`.github/workflows/` (Phase 11) invokes the scripts in `ops/ci/scripts/`:
+`.github/workflows/` calls the scripts in `ops/ci/scripts/`:
 
-- `install.sh` — composer for every PHP workspace + pnpm install
-- `lint.sh` — PHPStan + cs-fixer + deptrac on PHP; tsc + eslint on JS
-- `test.sh` — PHPUnit (unit + functional) + pnpm test
-- `build.sh` — production Composer + Next.js standalone builds
+| Script | What it runs |
+|--------|-------------|
+| `install.sh` | `composer install` for every PHP workspace + `pnpm install` |
+| `lint.sh` | PHPStan (level 8) + php-cs-fixer + deptrac + tsc + ESLint |
+| `test.sh` | PHPUnit (unit + functional) + `pnpm test` |
+| `build.sh` | Production `composer install --no-dev` + Next.js `pnpm build` |
 
-The Playwright suite is not part of `test.sh`; it runs against an ephemeral compose stack in its own CI job (also Phase 11).
+The Playwright e2e suite is not part of `test.sh`. It runs in its own CI job against an ephemeral Compose stack — see `.ai/skills/integration-tests/SKILL.md`.
+
+Every PR must pass lint + test before merge. The `make lint` and `make test` targets replicate these checks locally so you never push a red build.
+
+---
+
+## Useful Makefile targets
+
+```bash
+make start              # build + start stack + tail logs
+make stop               # stop and remove containers
+make logs               # tail all container logs
+make api-shell          # bash inside the api container
+make clean              # stop + remove volumes (including JWT keys)
+make migrate            # apply pending Doctrine migrations
+make migrate-diff       # generate migration from entity changes
+make setup-test-db      # create + migrate the test DB
+make test               # phpunit + pnpm test
+make test-api           # phpunit only
+make lint               # phpstan + cs-fixer + deptrac + tsc + eslint
+make lint-api           # PHP lint only
+make build-web          # production Next.js build (both apps)
+make gen-api            # regenerate packages/api-client-ts from OpenAPI spec
+make seed-admin EMAIL=x # promote a user to ROLE_ADMIN
+make db-reset           # drop + recreate + migrate (DANGEROUS — local only)
+make jwt-keys           # regenerate JWT keypair
+```

@@ -24,19 +24,19 @@ Institutional memory of mistakes worth not repeating. One entry per lesson. Writ
 
 **Don't** import another bounded context's `Domain/` or `Application/` classes. Communication between contexts goes through the **event bus** (publish domain events, subscribe in the other context) or a **public Application service** exposed for cross-context use.
 
-**Why**: enforced by `deptrac` in CI. The whole point of bounded contexts is replaceability. A single `use App\User\Domain\User;` inside `Note\` collapses that boundary.
+**Why**: enforced by `deptrac` in CI. The whole point of bounded contexts is replaceability. A single `use App\User\Domain\User;` inside `Orders\` collapses that boundary.
 
 **How to apply**: if you need data from another context, either subscribe to its events and project a local read-model, or call its public bus.
 
 ---
 
-## L-004 — Tenancy is opt-in
+## L-004 — Single-tenant by design
 
-**Don't** add `tenant_id` columns to entities in `apps/api/src/`. The default template is single-tenant.
+**Don't** add `tenant_id` columns to entities. The template is single-tenant. All entities in `apps/api/src/` are single-tenant by default.
 
-**Why**: open-mercato has 337 columns of `tenant_id`/`organization_id` and removing them is a 4-6-week refactor. Starting tenant-agnostic and adding tenancy via `packages/tenancy-php` (Doctrine SQLFilter + `TenantContext`) when a project actually needs it is the cheaper, cleaner default.
+**Why**: multi-tenancy is a significant cross-cutting concern that varies per project. Adding it speculatively creates complexity that most projects never need. If your project requires multi-tenancy, fork the template and add your own implementation — a Doctrine `SQLFilter` + request-scoped `TenantContext` is the standard approach, but the scope and details should be an explicit decision, not a default.
 
-**How to apply**: if a project needs tenancy, follow `docs/multitenancy.md` (5-step opt-in). Never sprinkle `tenant_id` ad-hoc.
+**How to apply**: if you see `tenant_id` anywhere in a generated entity, remove it.
 
 ---
 
@@ -46,4 +46,24 @@ Institutional memory of mistakes worth not repeating. One entry per lesson. Writ
 
 **Why**: a leaked refresh token without rotation is a permanent backdoor. With rotation, the attacker and the legitimate user can't both keep using the same chain — whoever rotates last invalidates the other, and the mismatch is detectable.
 
-**How to apply**: `User\Application\Command\RefreshToken\Handler` enforces this. If you bypass it, write a regression test first.
+**How to apply**: Gesdinet enforces this with `single_use: true` in `config/packages/gesdinet_jwt_refresh_token.yaml`. Never disable that flag.
+
+---
+
+## L-006 — Custom DBAL types for value objects (PHP 8.4)
+
+**Don't** map domain entity properties typed as value objects without a custom DBAL type. PHP 8.4 lazy-ghost objects enforce typed property assignment strictly — if a property is typed `UserId` and Doctrine hydrates a raw string into it, you get a `TypeError`.
+
+**Why**: PHP 8.4 changed how Doctrine hydrates entities. The fix is a custom `Type` class that converts between the DB primitive and the value object at the persistence boundary. One type per value object. Register in `doctrine.yaml`, reference in the XML mapping.
+
+**How to apply**: every value-object-typed property on a domain entity needs a corresponding DBAL type. See `src/User/Infrastructure/Doctrine/Type/` for the pattern.
+
+---
+
+## L-007 — Repository alias in context-owned services.yaml
+
+**Don't** put a context's repository alias in the global `config/services.yaml`. Each context owns its DI wiring in `src/<Context>/Infrastructure/Symfony/Resources/config/services.yaml`.
+
+**Why**: the global `services.yaml` imports context-specific files — it doesn't define context internals. This keeps context wiring encapsulated and makes it easy to see what each context wires up.
+
+**How to apply**: when adding a new context, create `src/<Context>/Infrastructure/Symfony/Resources/config/services.yaml` with the alias, then add an `imports:` entry in `config/services.yaml`.
