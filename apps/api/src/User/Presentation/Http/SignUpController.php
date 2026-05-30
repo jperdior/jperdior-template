@@ -13,7 +13,7 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Uid\Uuid;
 
-#[Route('/auth/signup', methods: ['POST'])]
+#[Route('/auth/signup', name: 'api_user_signup', methods: ['POST'])]
 final class SignUpController
 {
     public function __construct(private readonly CommandBus $commandBus)

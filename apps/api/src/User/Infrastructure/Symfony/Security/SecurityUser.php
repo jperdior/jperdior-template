@@ -52,7 +52,7 @@ final class SecurityUser implements UserInterface, PasswordAuthenticatedUserInte
     /** @return non-empty-string */
     public function getUserIdentifier(): string
     {
-        assert('' !== $this->email);
+        \assert('' !== $this->email);
 
         return $this->email;
     }

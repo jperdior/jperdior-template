@@ -4,6 +4,9 @@ controllers:
         namespace: App
     type: attribute
 
+user_infrastructure:
+    resource: '../src/User/Infrastructure/Symfony/Resources/config/routes.yaml'
+
 nelmio_api_doc:
     resource: '@NelmioApiDocBundle/config/routing/swaggerui.xml'
     prefix: /api/doc

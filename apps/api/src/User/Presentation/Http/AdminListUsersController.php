@@ -22,7 +22,7 @@ final class AdminListUsersController
     }
 
     #[OA\Tag(name: 'Admin')]
-    #[OA\Parameter(name: 'limit',  in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 50))]
+    #[OA\Parameter(name: 'limit', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 50))]
     #[OA\Parameter(name: 'offset', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 0, default: 0))]
     #[OA\Response(
         response: 200,
@@ -30,9 +30,9 @@ final class AdminListUsersController
         content: new OA\JsonContent(properties: [
             new OA\Property(property: 'total', type: 'integer'),
             new OA\Property(property: 'users', type: 'array', items: new OA\Items(properties: [
-                new OA\Property(property: 'id',        type: 'string', format: 'uuid'),
-                new OA\Property(property: 'email',     type: 'string', format: 'email'),
-                new OA\Property(property: 'roles',     type: 'array',  items: new OA\Items(type: 'string')),
+                new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+                new OA\Property(property: 'email', type: 'string', format: 'email'),
+                new OA\Property(property: 'roles', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
             ])),
         ]),
@@ -48,10 +48,10 @@ final class AdminListUsersController
 
         return new JsonResponse([
             'total' => $response->total,
-            'users' => array_map(fn ($u) => [
-                'id'        => $u->id,
-                'email'     => $u->email,
-                'roles'     => $u->roles,
+            'users' => array_map(static fn ($u) => [
+                'id' => $u->id,
+                'email' => $u->email,
+                'roles' => $u->roles,
                 'createdAt' => $u->createdAt,
             ], $response->users),
         ]);

@@ -46,8 +46,8 @@ final class UserRegistered extends DomainEvent
     public function toPrimitives(): array
     {
         return [
-            'email'        => $this->email,
-            'roles'        => $this->roles,
+            'email' => $this->email,
+            'roles' => $this->roles,
             'registeredAt' => $this->registeredAt,
         ];
     }

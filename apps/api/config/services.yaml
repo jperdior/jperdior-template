@@ -33,7 +33,3 @@ services:
     # User
     App\User\Domain\UserRepository:
         alias: App\User\Infrastructure\Persistence\DoctrineUserRepository
-
-    # Note
-    App\Note\Domain\NoteRepository:
-        alias: App\Note\Infrastructure\Persistence\DoctrineNoteRepository

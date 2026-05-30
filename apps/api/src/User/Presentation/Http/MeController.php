@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[Route('/api/me', methods: ['GET'])]
+#[Route('/api/me', name: 'api_user_me', methods: ['GET'])]
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 final class MeController
 {
@@ -42,9 +42,9 @@ final class MeController
         $response = $this->queryBus->ask(new GetCurrentUserQuery($identifier));
 
         return new JsonResponse([
-            'id'        => $response->id,
-            'email'     => $response->email,
-            'roles'     => $response->roles,
+            'id' => $response->id,
+            'email' => $response->email,
+            'roles' => $response->roles,
             'createdAt' => $response->createdAt,
         ]);
     }

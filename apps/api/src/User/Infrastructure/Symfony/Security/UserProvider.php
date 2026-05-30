@@ -6,6 +6,7 @@ namespace App\User\Infrastructure\Symfony\Security;
 
 use App\User\Domain\Email;
 use App\User\Domain\UserRepository;
+use InvalidArgumentException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
@@ -21,12 +22,12 @@ final readonly class UserProvider implements UserProviderInterface
     {
         try {
             $email = new Email($identifier);
-        } catch (\InvalidArgumentException) {
+        } catch (InvalidArgumentException) {
             throw new UserNotFoundException();
         }
 
         $user = $this->users->findByEmail($email);
-        if ($user === null) {
+        if (null === $user) {
             throw new UserNotFoundException();
         }
 
@@ -36,7 +37,7 @@ final readonly class UserProvider implements UserProviderInterface
     public function refreshUser(UserInterface $user): UserInterface
     {
         if (!$user instanceof SecurityUser) {
-            throw new \InvalidArgumentException(sprintf('Cannot refresh user of class %s.', $user::class));
+            throw new InvalidArgumentException(\sprintf('Cannot refresh user of class %s.', $user::class));
         }
 
         return $this->loadUserByIdentifier($user->getUserIdentifier());
@@ -44,6 +45,6 @@ final readonly class UserProvider implements UserProviderInterface
 
     public function supportsClass(string $class): bool
     {
-        return $class === SecurityUser::class || is_subclass_of($class, SecurityUser::class);
+        return SecurityUser::class === $class || is_subclass_of($class, SecurityUser::class);
     }
 }

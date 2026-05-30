@@ -32,7 +32,9 @@ abstract class DoctrineRepository
 
     /**
      * @template T of object
+     *
      * @param class-string<T> $entityClass
+     *
      * @return EntityRepository<T>
      */
     protected function repository(string $entityClass): EntityRepository

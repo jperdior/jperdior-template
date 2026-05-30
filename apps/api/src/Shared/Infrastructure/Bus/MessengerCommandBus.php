@@ -21,7 +21,7 @@ final readonly class MessengerCommandBus implements CommandBus
             $this->bus->dispatch($command);
         } catch (HandlerFailedException $e) {
             $previous = $e->getPrevious();
-            if ($previous !== null) {
+            if (null !== $previous) {
                 throw $previous;
             }
             throw $e;

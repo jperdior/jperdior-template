@@ -28,11 +28,11 @@ final class PromoteAdminCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io    = new SymfonyStyle($input, $output);
+        $io = new SymfonyStyle($input, $output);
         $email = (string) $input->getArgument('email');
 
         $this->commandBus->dispatch(new PromoteToAdminCommand($email));
-        $io->success(sprintf('%s is now an admin.', $email));
+        $io->success(\sprintf('%s is now an admin.', $email));
 
         return Command::SUCCESS;
     }

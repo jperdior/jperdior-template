@@ -5,19 +5,24 @@ declare(strict_types=1);
 namespace App\User\Domain;
 
 use App\User\Domain\Event\UserRegistered;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Jperdior\SharedKernel\Domain\Aggregate\AggregateRoot;
 
 final class User extends AggregateRoot
 {
     /**
-     * @param list<Role> $roles
+     * Backing fields are primitive types so Doctrine can hydrate them directly.
+     * Getters wrap them in value objects.
+     *
+     * @param list<string> $roles Role values e.g. ['ROLE_USER']
      */
     private function __construct(
         private readonly UserId $id,
         private Email $email,
         private HashedPassword $password,
         private array $roles,
-        private readonly \DateTimeImmutable $createdAt,
+        private readonly DateTimeImmutable $createdAt,
     ) {
     }
 
@@ -29,14 +34,15 @@ final class User extends AggregateRoot
         Email $email,
         HashedPassword $password,
         array $roles,
-        \DateTimeImmutable $createdAt,
+        DateTimeImmutable $createdAt,
     ): self {
-        $user = new self($id, $email, $password, $roles ?: [Role::USER], $createdAt);
+        $roleStrings = array_map(static fn (Role $r) => $r->value, $roles ?: [Role::USER]);
+        $user = new self($id, $email, $password, $roleStrings, $createdAt);
         $user->record(new UserRegistered(
             $id->value,
             $email->value,
-            array_map(fn (Role $r) => $r->value, $user->roles),
-            $createdAt->format(\DateTimeInterface::ATOM),
+            $user->roles,
+            $createdAt->format(DateTimeInterface::ATOM),
         ));
 
         return $user;
@@ -52,9 +58,9 @@ final class User extends AggregateRoot
         Email $email,
         HashedPassword $password,
         array $roles,
-        \DateTimeImmutable $createdAt,
+        DateTimeImmutable $createdAt,
     ): self {
-        return new self($id, $email, $password, $roles, $createdAt);
+        return new self($id, $email, $password, array_map(static fn (Role $r) => $r->value, $roles), $createdAt);
     }
 
     public function id(): UserId
@@ -75,24 +81,24 @@ final class User extends AggregateRoot
     /** @return list<Role> */
     public function roles(): array
     {
-        return $this->roles;
+        return array_map(static fn (string $r) => Role::from($r), $this->roles);
     }
 
     /** @return list<string> */
     public function roleStrings(): array
     {
-        return array_map(static fn (Role $r) => $r->value, $this->roles);
+        return $this->roles;
     }
 
-    public function createdAt(): \DateTimeImmutable
+    public function createdAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
     public function promoteToAdmin(): void
     {
-        if (!in_array(Role::ADMIN, $this->roles, true)) {
-            $this->roles[] = Role::ADMIN;
+        if (!\in_array(Role::ADMIN->value, $this->roles, true)) {
+            $this->roles[] = Role::ADMIN->value;
         }
     }
 

@@ -23,14 +23,14 @@ final readonly class MessengerQueryBus implements QueryBus
             $envelope = $this->bus->dispatch($query);
         } catch (HandlerFailedException $e) {
             $previous = $e->getPrevious();
-            if ($previous !== null) {
+            if (null !== $previous) {
                 throw $previous;
             }
             throw $e;
         }
 
         $stamp = $envelope->last(HandledStamp::class);
-        if ($stamp === null) {
+        if (null === $stamp) {
             return null;
         }
 

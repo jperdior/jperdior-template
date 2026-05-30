@@ -2,6 +2,10 @@ doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
         profiling_collect_backtrace: '%kernel.debug%'
+        types:
+            user_id:        App\User\Infrastructure\Persistence\Doctrine\Type\UserIdType
+            user_email:     App\User\Infrastructure\Persistence\Doctrine\Type\EmailType
+            hashed_password: App\User\Infrastructure\Persistence\Doctrine\Type\HashedPasswordType
     orm:
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true
@@ -16,14 +20,8 @@ doctrine:
                 dir: '%kernel.project_dir%/src/User/Infrastructure/Persistence/Doctrine/Mapping'
                 prefix: 'App\User\Domain'
                 alias: User
-            Note:
-                type: xml
-                is_bundle: false
-                dir: '%kernel.project_dir%/src/Note/Infrastructure/Persistence/Doctrine/Mapping'
-                prefix: 'App\Note\Domain'
-                alias: Note
             GesdinetJWTRefreshTokenBundle:
-                type: attribute
+                type: xml
                 is_bundle: true
                 alias: RefreshTokenBundle
 
