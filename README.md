@@ -7,13 +7,11 @@
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jperdior/jperdior-template/pulls)
 
-**Start shipping features on day one — in a professional environment.**
+My personal project template. Clone it, rename it, start writing features.
 
-Most projects accumulate their architecture gradually, retrofitting conventions, tooling, and guardrails as the codebase grows. This template inverts that: you get a production-grade architectural foundation from the very first commit, so the first thing you write is a feature, not a scaffolding.
+It comes with my preferred stack (PHP 8.4 + Symfony 7.4, DDD + Hexagonal + CQRS, Next.js 15 frontends) and a `User` bounded context already in place — sign-up, JWT auth, role management. The architecture conventions and CI are set up from the start, so you're not doing that per project.
 
-The stack is opinionated by design: PHP 8.4 + Symfony 7.4 API following strict DDD + Hexagonal + CQRS, Next.js 15 frontends, and a full AI engineering harness. It ships with a single `User` bounded context (sign-up, JWT auth, role management) — everything else you build on top, following the same patterns enforced by CI from the start.
-
-The AI harness (specs, skills, code-review gates, PR automation) means an AI agent understands the architecture and can implement features, review code, and open PRs without drifting from the conventions — because the conventions are codified, not tribal knowledge.
+The `.ai/` harness is the other main thing: specs, skills, and review gates that give an AI agent enough context to contribute meaningfully without going off-rails.
 
 ---
 
