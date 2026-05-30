@@ -61,8 +61,10 @@ final class User extends AggregateRoot
         HashedPassword $password,
         array $roles,
         DateTimeImmutable $createdAt,
+        bool $mustResetPassword = false,
+        ?DateTimeImmutable $deletedAt = null,
     ): self {
-        return new self($id, $email, $password, array_map(static fn (Role $r) => $r->value, $roles), $createdAt);
+        return new self($id, $email, $password, array_map(static fn (Role $r) => $r->value, $roles), $createdAt, $mustResetPassword, $deletedAt);
     }
 
     public function id(): UserId
@@ -142,6 +144,9 @@ final class User extends AggregateRoot
 
     public function softDelete(DateTimeImmutable $at): void
     {
+        if ($this->deletedAt !== null) {
+            return;
+        }
         $this->deletedAt = $at;
     }
 
