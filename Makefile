@@ -115,9 +115,12 @@ test-e2e: ## Run Playwright integration tests
 
 # ----- Lint / static analysis -----
 
-lint: lint-api lint-web ## Lint everything
+lint: lint-shared-kernel lint-api lint-web ## Lint everything
 
-lint-api: ## PHPStan + php-cs-fixer dry-run + deptrac
+lint-shared-kernel: ## PHPStan for packages/shared-kernel-php (runs inside API container)
+	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/phpstan analyse -c /app/packages/shared-kernel-php/phpstan.dist.neon --no-progress --memory-limit=512M
+
+lint-api: ## PHPStan + php-cs-fixer dry-run + deptrac (apps/api)
 	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M ${ARG}
 	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/php-cs-fixer fix --dry-run --diff
 	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/deptrac analyse --no-progress

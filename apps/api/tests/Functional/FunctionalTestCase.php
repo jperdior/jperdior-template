@@ -9,6 +9,7 @@ use App\Tests\Functional\Support\Page\UserPage;
 use App\User\Domain\PasswordHasherInterface;
 use App\User\Domain\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -62,7 +63,7 @@ abstract class FunctionalTestCase extends WebTestCase
         $this->postJson('/auth/login', ['email' => $email, 'password' => $password]);
         $payload = $this->jsonResponse();
 
-        return $payload['token'] ?? throw new \RuntimeException('Login did not return a token.');
+        return $payload['token'] ?? throw new RuntimeException('Login did not return a token.');
     }
 
     protected function userPage(): UserPage

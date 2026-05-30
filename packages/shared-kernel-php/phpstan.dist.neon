@@ -5,3 +5,5 @@ parameters:
         - tests
     parallel:
         maximumNumberOfProcesses: 4
+    ignoreErrors:
+        - '#Unsafe usage of new static\(\)#'
