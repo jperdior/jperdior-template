@@ -23,6 +23,8 @@ final class User extends AggregateRoot
         private HashedPassword $password,
         private array $roles,
         private readonly DateTimeImmutable $createdAt,
+        private bool $mustResetPassword = false,
+        private ?DateTimeImmutable $deletedAt = null,
     ) {
     }
 
@@ -95,6 +97,21 @@ final class User extends AggregateRoot
         return $this->createdAt;
     }
 
+    public function mustResetPassword(): bool
+    {
+        return $this->mustResetPassword;
+    }
+
+    public function deletedAt(): ?DateTimeImmutable
+    {
+        return $this->deletedAt;
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->deletedAt !== null;
+    }
+
     public function promoteToAdmin(): void
     {
         if (!\in_array(Role::ADMIN->value, $this->roles, true)) {
@@ -102,8 +119,34 @@ final class User extends AggregateRoot
         }
     }
 
+    public function demoteFromAdmin(): void
+    {
+        $this->roles = array_values(array_filter($this->roles, fn (string $r) => $r !== Role::ADMIN->value));
+    }
+
+    public function forcePasswordReset(): void
+    {
+        $this->mustResetPassword = true;
+    }
+
+    public function clearPasswordReset(): void
+    {
+        $this->mustResetPassword = false;
+    }
+
     public function changePassword(HashedPassword $newPassword): void
     {
         $this->password = $newPassword;
+        $this->mustResetPassword = false;
+    }
+
+    public function softDelete(DateTimeImmutable $at): void
+    {
+        $this->deletedAt = $at;
+    }
+
+    public function restore(): void
+    {
+        $this->deletedAt = null;
     }
 }
