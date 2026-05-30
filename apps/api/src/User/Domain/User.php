@@ -137,7 +137,7 @@ final class User extends AggregateRoot
     public function changePassword(HashedPassword $newPassword): void
     {
         $this->password = $newPassword;
-        $this->mustResetPassword = false;
+        $this->clearPasswordReset();
     }
 
     public function softDelete(DateTimeImmutable $at): void
