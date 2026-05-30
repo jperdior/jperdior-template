@@ -37,7 +37,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </Link>
             <nav className="flex items-center gap-4 text-sm text-muted-foreground">
               <Link href="/users" className="hover:text-foreground">Users</Link>
-              <Link href="/notes" className="hover:text-foreground">Notes</Link>
             </nav>
           </div>
           <form action={signOut}>

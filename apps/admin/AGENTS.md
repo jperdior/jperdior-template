@@ -1,6 +1,6 @@
 # apps/admin — Agents Guidelines
 
-Next.js 16 admin back-office. Same stack as `apps/web` (App Router, RSC by default) but **gated to `ROLE_ADMIN`**. Lists every user and every note across users.
+Next.js 16 admin back-office. Same stack as `apps/web` (App Router, RSC by default) but **gated to `ROLE_ADMIN`**. Lists every user across the system.
 
 ## Always
 
@@ -39,8 +39,7 @@ src/
 │   ├── login/{page,LoginForm,actions}.tsx
 │   └── (admin)/                     ← gated route group
 │       ├── layout.tsx               ← isAuthenticated() + me().roles.includes('ROLE_ADMIN')
-│       ├── users/page.tsx           ← /api/admin/users
-│       └── notes/page.tsx           ← /api/admin/notes
+│       └── users/page.tsx           ← /api/admin/users
 ├── lib/auth.ts                      ← persistTokens / clearTokens / isAuthenticated
 └── middleware.ts                    ← redirect to /login when no cookies
 ```
