@@ -57,6 +57,9 @@ start-async: ## Start full stack + RabbitMQ + worker (set MESSENGER_TRANSPORT_DS
 logs: ## Tail container logs
 	@${DOCKER_COMPOSE} logs -f --tail=100
 
+logs-ci: ## Dump container logs without following (for CI failure output)
+	@${DOCKER_COMPOSE} logs --tail=300
+
 ps: ## Show container status
 	@${DOCKER_COMPOSE} ps
 

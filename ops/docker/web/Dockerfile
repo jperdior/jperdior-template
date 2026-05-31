@@ -19,7 +19,7 @@ COPY apps/admin/package.json ./apps/admin/
 COPY packages/ui-react/package.json ./packages/ui-react/
 COPY packages/api-client-ts/package.json ./packages/api-client-ts/
 
-RUN pnpm install --filter "@jperdior/web..."
+RUN pnpm install --filter "./apps/web..."
 
 # ---- Stage 2: build ----
 FROM node:${NODE_VERSION} AS builder

@@ -173,7 +173,7 @@ jobs:
             sleep 2
           done
           echo "API did not become ready in 120s"
-          docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml logs --tail=200
+          make logs-ci
           exit 1
       - name: Wait for web
         run: |
@@ -182,7 +182,7 @@ jobs:
             sleep 2
           done
           echo "Web did not become ready in 120s"
-          docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml logs --tail=200
+          make logs-ci
           exit 1
       - name: Playwright
         env:
@@ -197,7 +197,7 @@ jobs:
           retention-days: 7
       - name: Compose logs on failure
         if: failure()
-        run: docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml logs --tail=300
+        run: make logs-ci
       - name: Stop the stack
         if: always()
         run: make stop
