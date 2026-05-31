@@ -7,7 +7,7 @@
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jperdior/jperdior-template/pulls)
 
-My personal project template. Clone it, rename it, start writing features.
+My personal project template inspired by https://github.com/open-mercato/open-mercato and with my personal preferences in DDD architecture.
 
 It comes with my preferred stack (PHP 8.4 + Symfony 7.4, DDD + Hexagonal + CQRS, Next.js 15 frontends) and a `User` bounded context already in place — sign-up, JWT auth, role management. The architecture conventions and CI are set up from the start, so you're not doing that per project.
 
@@ -15,29 +15,47 @@ The `.ai/` harness is the other main thing: specs, skills, and review gates that
 
 ---
 
-## What's already built
+## What's included
 
-Most projects need user accounts. This template ships with a fully working `User` bounded context so you don't start from scratch:
+### User bounded context
 
-| Feature | What's included |
-|---------|----------------|
-| Sign-up | `POST /auth/signup` — creates a user, returns UUID |
-| Login | `POST /auth/login` — returns JWT access token + refresh token |
-| Token refresh | `POST /auth/refresh` — rotates the refresh token |
-| Current user | `GET /api/me` — returns id, email, roles, mustResetPassword flag |
-| Role management | `ROLE_USER` (default) and `ROLE_ADMIN`; promote via `make seed-admin` |
-| Admin user list | `GET /api/admin/users` — paginated, includes soft-deleted users |
-| Admin create user | `POST /api/admin/users` — creates user with forced password-reset flag |
-| Admin user detail | `GET /api/admin/users/{id}` |
-| Admin role update | `PATCH /api/admin/users/{id}/roles` |
-| Admin force reset | `POST /api/admin/users/{id}/force-password-reset` |
-| Soft delete / restore | `DELETE /api/admin/users/{id}` and `POST /api/admin/users/{id}/restore` |
-| Password reset gate | Web app redirects to `/reset-password` when flag is set |
-| Admin panel | Next.js admin at `admin.localhost` — user list with actions, detail page, create dialog |
-| JWT keypair | Auto-generated on first boot; configurable TTL and passphrase |
-| Cookie auth | Httponly cookies with refresh-token rotation on the frontend |
+Most projects need user accounts. Rather than building that from scratch every time, this template ships a complete `User` context you can use as-is or extend:
 
-The `User` context is also the **reference implementation**: every naming convention, layer structure, and pattern used in the codebase is demonstrated here. When adding a new bounded context, mirror it.
+- **Auth** — sign-up, login, JWT access token + refresh token rotation, httponly cookie strategy on the frontend
+- **Roles** — `ROLE_USER` (default) and `ROLE_ADMIN`; promote via `make seed-admin`
+- **Admin user management** — full CRUD in the admin panel: create, list (paginated, includes soft-deleted), detail, role update, soft delete, restore, force password reset
+- **Password reset gate** — web app redirects to `/reset-password` when the flag is set; clears on next login
+- **Admin panel** — Next.js admin at `admin.localhost` with a user list, action menus, and a detail page
+
+The `User` context is also the **reference implementation**: every layer, naming convention, and pattern in the codebase is demonstrated here. When you add a new bounded context, mirror it.
+
+→ See [docs/auth.md](docs/auth.md) for the JWT flow, refresh rotation, and cookie strategy.
+
+### AI skills
+
+The template ships a set of slash commands for Claude Code (and Codex) that already know the conventions of this codebase. After setup, type `/` in Claude Code to see the full list.
+
+- `/customize-project` — rename all template placeholders and add your project description to `AGENTS.md` — run once after cloning
+- `/spec-writing` — brainstorm and write a feature spec before any code is written
+- `/new-feature` — create an isolated git worktree + branch from main
+- `/scaffold-bounded-context` — generate the full 4-layer DDD skeleton for a new context
+- `/add-command`, `/add-query`, `/add-route` — add CQRS commands, queries, and HTTP endpoints
+- `/scaffold-nextjs-page`, `/scaffold-shadcn-form` — scaffold frontend pages and forms
+- `/implement-spec` — implement an approved spec (calls scaffolding skills internally)
+
+→ See [docs/ai-workflow.md](docs/ai-workflow.md) for the full spec-first development workflow.
+
+### Development workflow
+
+The recommended flow for any non-trivial feature:
+
+1. `/new-feature` — create a worktree + branch
+2. `/spec-writing` — design the feature, produce a spec doc in `.ai/specs/`
+3. `/implement-spec` — implement from the approved spec
+4. `make lint && make test` — mandatory pre-PR gate
+5. Open PR — CI runs PHPStan, cs-fixer, deptrac, tsc, ESLint, PHPUnit, and JS tests
+
+→ See [AGENTS.md](AGENTS.md) for the full task router and AI conventions.
 
 ---
 
@@ -58,49 +76,34 @@ The `User` context is also the **reference implementation**: every naming conven
 
 ---
 
+## Architecture
+
+The API follows **DDD + Hexagonal Architecture + CQRS** organised as a modular monolith. Every feature lives in a bounded context under `apps/api/src/<Context>/`, with four strict layers:
+
+- **Domain** — pure PHP: aggregates, value objects, repository interfaces, domain events. No framework code allowed here.
+- **Application** — use cases as Commands and Queries dispatched through a bus. Handlers are framework-agnostic.
+- **Infrastructure** — Doctrine repositories (XML ORM mappings only, never annotations), external adapters.
+- **Presentation** — Symfony controllers and request DTOs. Thin: validate input, dispatch to bus, return response.
+
+Cross-context communication goes through the event bus only — direct imports between contexts are forbidden. [`deptrac`](https://github.com/qossmic/deptrac) enforces this in CI.
+
+**Why this structure?** CQRS keeps reads and writes separate so they can evolve independently. Hexagonal keeps the domain free of framework coupling so it's testable in isolation. The modular monolith gives the clarity of bounded contexts without the operational overhead of microservices — and it's straightforward to extract a service later if you need to.
+
+→ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full rationale, layer rules, and the three buses (command, query, event).
+
+---
+
 ## Quickstart
+
+See **[docs/getting-started.md](docs/getting-started.md)** for the full walkthrough — prerequisites, first boot, secrets, service URLs, and daily commands.
 
 ```sh
 git clone <this repo> my-new-project
 cd my-new-project
-sudo make init   # sudo needed to patch /etc/hosts
-make start       # build images and start the stack (2–5 min first time)
+sudo make init   # patches /etc/hosts, installs AI skills
 ```
 
-Once the stack is up, **personalize the project** (rename placeholders, add your project description to `AGENTS.md`) by saying **"customize my project"** or running `/customize-project` in Claude Code.
-
-Then:
-
-| URL | Service |
-|-----|---------|
-| `http://api.localhost/api/doc` | Swagger UI |
-| `http://web.localhost` | Next.js public app |
-| `http://admin.localhost` | Next.js admin panel |
-| `http://localhost:8080` | Traefik dashboard |
-
-Create the first admin account:
-
-```sh
-make seed-admin EMAIL=you@example.com
-```
-
-See [docs/getting-started.md](docs/getting-started.md) for the full walkthrough.
-
----
-
-## Common commands
-
-| Command | What it does |
-|---------|-------------|
-| `make start` | Build images, start stack, tail logs |
-| `make stop` | Stop containers |
-| `make lint` | PHPStan + cs-fixer + deptrac + tsc + eslint (all in containers) |
-| `make test` | PHPUnit (unit + functional) + JS tests (all in containers) |
-| `make migrate-diff` | Generate a Doctrine migration from entity changes |
-| `make gen-api` | Regenerate the TypeScript API client from OpenAPI spec |
-| `make seed-admin EMAIL=x` | Promote a user to `ROLE_ADMIN` |
-
-Run `make help` for the full list.
+Then say **"customize my project"** in Claude Code to rename the template placeholders and add your project description to `AGENTS.md`.
 
 ---
 
@@ -108,10 +111,10 @@ Run `make help` for the full list.
 
 | Guide | What's in it |
 |-------|-------------|
-| [docs/getting-started.md](docs/getting-started.md) | From clone to first endpoint |
+| [docs/getting-started.md](docs/getting-started.md) | From clone to first endpoint — prerequisites, boot, secrets, daily commands |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | DDD + Hexagonal + CQRS rationale, the four layers, the three buses |
 | [docs/auth.md](docs/auth.md) | JWT flow, refresh rotation, frontend cookie strategy |
-| [docs/adding-a-bounded-context.md](docs/adding-a-bounded-context.md) | Step-by-step guide for new contexts |
+| [docs/adding-a-bounded-context.md](docs/adding-a-bounded-context.md) | Step-by-step guide for adding a new context |
 | [docs/ai-workflow.md](docs/ai-workflow.md) | Spec-first AI-driven development with the `.ai/` harness |
 | [docs/ops.md](docs/ops.md) | Docker setup, environment variables, CI pipeline |
 | [AGENTS.md](AGENTS.md) | Task router — the first file an AI agent reads before any coding |

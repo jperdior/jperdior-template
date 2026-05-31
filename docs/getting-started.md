@@ -168,6 +168,8 @@ sh scripts/install-skills.sh --with automation  # default + automation tier
 sh scripts/install-skills.sh --list             # show all tiers and skills
 ```
 
+> **After installing skills, restart Claude Code or Cursor** so the agent picks up the new slash commands. Skills are loaded at session start — a running session won't see newly installed ones.
+
 ---
 
 ## Adding your first bounded context
