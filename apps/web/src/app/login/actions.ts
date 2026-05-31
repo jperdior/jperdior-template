@@ -17,17 +17,32 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   const parsed = schema.safeParse({
     email:    formData.get('email'),
     password: formData.get('password'),
-    next:     formData.get('next') ?? '/notes',
+    next:     formData.get('next') ?? '/dashboard',
   });
   if (!parsed.success) return { error: 'Invalid email or password.' };
 
   const client = createApiClient({ baseUrl: process.env.INTERNAL_API_URL ?? 'http://api:8080' });
+
+  let token: string;
+  let refresh_token: string;
   try {
-    const { token, refresh_token } = await client.login({ email: parsed.data.email, password: parsed.data.password });
-    await persistTokens(token, refresh_token);
+    ({ token, refresh_token } = await client.login({ email: parsed.data.email, password: parsed.data.password }));
   } catch {
     return { error: 'Invalid credentials.' };
   }
 
-  redirect(parsed.data.next || '/notes');
+  await persistTokens(token, refresh_token);
+
+  const authedClient = createApiClient({
+    baseUrl: process.env.INTERNAL_API_URL ?? 'http://api:8080',
+    getAccessToken: () => token,
+  });
+  try {
+    const me = await authedClient.me();
+    if (me.mustResetPassword) redirect('/reset-password');
+  } catch {
+    // If me() fails, proceed to normal redirect — don't block login
+  }
+
+  redirect(parsed.data.next || '/dashboard');
 }
