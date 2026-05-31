@@ -32,7 +32,10 @@ init: ## Bootstrap a fresh clone: copy .env.local, patch /etc/hosts, start stack
 
 # ----- Lifecycle -----
 
-start: build up logs ## Build, start, and tail logs
+start: _ensure-volume-mountpoints build up logs ## Build, start, and tail logs
+
+_ensure-volume-mountpoints: ## Pre-create Docker named-volume mount points as the host user
+	@mkdir -p node_modules apps/web/.next apps/admin/.next apps/api/config/jwt
 
 build: ## Build all container images
 	@${DOCKER_COMPOSE} build
