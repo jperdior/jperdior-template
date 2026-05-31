@@ -1,28 +1,40 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import {
   Button,
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
   Input, Label, Spinner,
 } from '@jperdior/ui-react';
-import { createUser, type ActionState } from '@/app/(admin)/users/actions';
+import { createUser } from '@/app/(admin)/users/actions';
 
 export function CreateUserDialog() {
   const [open, setOpen] = useState(false);
-  const [state, formAction, isPending] = useActionState<ActionState, FormData>(createUser, {});
+  const [error, setError] = useState<string | undefined>();
+  const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
-    if (state.success) setOpen(false);
-  }, [state.success]);
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) {
+      formRef.current?.reset();
+      setError(undefined);
+    }
+  }
 
-  useEffect(() => {
-    if (!open) formRef.current?.reset();
-  }, [open]);
+  function handleSubmit(formData: FormData) {
+    startTransition(async () => {
+      const result = await createUser({}, formData);
+      if (result.success) {
+        handleOpenChange(false);
+      } else {
+        setError(result.error);
+      }
+    });
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm">New User</Button>
       </DialogTrigger>
@@ -30,7 +42,7 @@ export function CreateUserDialog() {
         <DialogHeader>
           <DialogTitle>Create User</DialogTitle>
         </DialogHeader>
-        <form ref={formRef} action={formAction} className="grid gap-4">
+        <form ref={formRef} action={handleSubmit} className="grid gap-4">
           <div className="space-y-2">
             <Label htmlFor="create-email">Email</Label>
             <Input id="create-email" name="email" type="email" required autoFocus />
@@ -39,9 +51,9 @@ export function CreateUserDialog() {
             <Label htmlFor="create-password">Password</Label>
             <Input id="create-password" name="password" type="password" minLength={8} required />
           </div>
-          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={isPending}>
+            <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)} disabled={isPending}>
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>

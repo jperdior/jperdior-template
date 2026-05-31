@@ -34,15 +34,42 @@ Leverage the bounded-context system and follow strict naming and coding conventi
 
 ## Validation Commands
 
+All `make` targets run inside Docker containers — **never** invoke `php`, `pnpm`, `tsc`, or `eslint` directly on the host.
+
 Choose the smallest relevant set for the change:
 
 ```bash
-make lint          # phpstan + cs-fixer + deptrac + tsc + eslint
-make test          # phpunit (unit + functional) + pnpm test
+make lint          # phpstan + cs-fixer + deptrac + tsc + eslint (all inside containers)
+make test          # phpunit (unit + functional) + pnpm test (all inside containers)
 make test-e2e      # Playwright (requires `make start` first)
 make build-web     # production Next.js build (web + admin)
 make migrate-diff  # generates a Doctrine migration diff
 ```
+
+### Worktree container workflow
+
+Docker containers mount the **main branch** code by default. When working in a git worktree,
+restart the stack from the worktree so containers pick up your changes before linting or testing:
+
+```bash
+# 1. Stop containers (run from anywhere — stops all containers)
+make stop
+
+# 2. Start containers from the worktree (containers now mount the worktree's code)
+cd /path/to/worktree && make start
+```
+
+Then run `make lint && make test` normally.
+
+### Pre-PR gate (mandatory)
+
+Before offering to create a PR or push a branch, **always** run and confirm both pass:
+
+```bash
+make lint && make test
+```
+
+Do not offer a PR if either command fails. Fix all errors first.
 
 ## Task Router — Where to Find Detailed Guidance
 
