@@ -18,6 +18,11 @@ Ask the following questions **one at a time** (do not ask all at once):
 
 After collecting the four answers, **show a summary** of every file that will change and what will be replaced. Ask for confirmation before applying.
 
+Before applying any edits, **create a branch**:
+```sh
+git checkout -b chore/customize-project-<name>
+```
+
 ## Changes applied on confirmation
 
 | File | What changes |
@@ -46,10 +51,13 @@ After applying all edits, **prepend** this block to `AGENTS.md` (after the `# Ag
 ---
 ```
 
-Finally, **commit** all changes:
+Finally, **commit and push**, then **open a PR**:
 ```sh
 git add -A
 git commit -m "chore: customize project for <name>"
+git push -u origin chore/customize-project-<name>
+gh pr create --title "chore: customize project for <name>" \
+  --body "Renames template placeholders and adds project context to AGENTS.md."
 ```
 
 ## Output
@@ -59,7 +67,7 @@ Done. Renamed jperdior-template → <name> across all package files.
 
 Added project context to AGENTS.md — every AI session will now know what you're building.
 
-Committed as: chore: customize project for <name>
+PR opened: <PR URL>
 
 Next steps:
   make start                      — start the stack if not already running

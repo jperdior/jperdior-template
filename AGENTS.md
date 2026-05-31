@@ -46,7 +46,7 @@ Do **not** start any new work until the user has acknowledged the merged state.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use the closest package/app `AGENTS.md` for local architecture, imports, and validation commands.
 - Re-generate the TS API client (`make gen-api`) after any backend OpenAPI-affecting change.
-- For any feature implementation, create a new worktree and branch from main using `.ai/skills/new-feature/SKILL.md` before writing any code.
+- For **every change** — features, bug fixes, doc edits, skill updates, config tweaks, anything — create a new worktree and branch from main using `.ai/skills/new-feature/SKILL.md` before touching any file. No change, however trivial, is ever committed directly to main. Every branch must land via a PR.
 
 ## Ask First
 
