@@ -1,6 +1,6 @@
 # AI Workflow
 
-The `.ai/` directory is the AI engineering harness, ported from [open-mercato](https://github.com/open-mercato/open-mercato). It defines a spec-first, skill-driven development workflow designed for use with Claude Code or Cursor.
+The `.ai/` directory is the AI engineering harness, ported from [open-mercato](https://github.com/open-mercato/open-mercato). It defines a spec-first, skill-driven development workflow designed for use with Claude Code, Cursor or any other agent of preference.
 
 The goal: an AI agent that behaves like a staff engineer who knows the codebase conventions, not a generic code generator that needs correcting on every PR.
 
