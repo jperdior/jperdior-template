@@ -17,3 +17,4 @@ export { PageHeader } from './layout/PageHeader';
 export { PageBody } from './layout/PageBody';
 export { DataTable } from './data/DataTable';
 export type { Column } from './data/DataTable';
+export { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './primitives/Dialog';
