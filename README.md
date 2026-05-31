@@ -37,10 +37,11 @@ The `.ai/` harness is the other main thing: specs, skills, and review gates that
 ```sh
 git clone <this repo> my-new-project
 cd my-new-project
-make init
+sudo make init   # sudo needed to patch /etc/hosts
+make start       # build images and start the stack (2–5 min first time)
 ```
 
-After ~30 seconds:
+Once the stack is up:
 
 | URL | Service |
 |-----|---------|
