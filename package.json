@@ -12,7 +12,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "install-skills": "node scripts/install-skills.mjs"
+    "install-skills": "sh scripts/install-skills.sh"
   },
   "devDependencies": {
     "turbo": "^2.3.0"

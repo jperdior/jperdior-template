@@ -38,4 +38,9 @@ Thumbs.db
 
 # --- Claude / AI runs ---
 .claude/settings.local.json
+.claude/worktrees/
 .ai/runs/
+
+# --- Local tooling (created by superpowers / worktree harnesses) ---
+.clone/
+.superpowers/

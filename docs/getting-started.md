@@ -31,11 +31,12 @@ sudo make init
 
 > `sudo` is required because `make init` patches `/etc/hosts`. The script is idempotent — if the entries are already present it skips them and does not prompt again.
 
-`make init` does three things in order:
+`make init` does four things in order:
 
 1. Copies `.env.dist` → `.env.local` (skipped if it already exists)
 2. Patches `/etc/hosts` for Traefik `*.localhost` routing (adds `127.0.0.1 api.localhost web.localhost admin.localhost`; on macOS `*.localhost` resolves automatically but the script still runs and exits immediately)
-3. Runs `make start` — builds images, starts the stack, and tails logs
+3. Installs AI skills as Claude Code slash commands into `.claude/skills/` (requires Python 3, pre-installed on macOS and most Linux distros)
+4. Runs `make start` — builds images, starts the stack, and tails logs
 
 First boot takes **2–5 minutes**: Docker pulls base images, builds, runs `composer install`, generates the JWT keypair, creates the Postgres DB, and runs Doctrine migrations. Subsequent starts are seconds.
 
@@ -135,6 +136,31 @@ make seed-admin EMAIL=x  # promote a user to ROLE_ADMIN
 ```
 
 Run `make help` for the full list.
+
+---
+
+## AI skills (slash commands)
+
+After `make init`, the `.ai/skills/` directory is symlinked into `.claude/skills/`, registering each skill as a Claude Code slash command. Type `/` in Claude Code to see the full list. Common ones:
+
+| Command | What it does |
+|---------|-------------|
+| `/scaffold-bounded-context` | Scaffolds the 4 DDD layers for a new context |
+| `/add-command` | Adds a CQRS command + handler |
+| `/add-query` | Adds a CQRS query + handler |
+| `/add-route` | Adds an HTTP controller + route |
+| `/scaffold-nextjs-page` | Scaffolds a Next.js page |
+| `/new-feature` | Creates a worktree + branch for a new feature |
+| `/spec-writing` | Starts a spec-first design session |
+
+To install skills for a different agent (Cursor, Codex) or to add optional tiers:
+
+```bash
+sh scripts/install-skills.sh                    # interactive — prompts for agent
+sh scripts/install-skills.sh --target cursor    # Cursor → .cursor/rules/
+sh scripts/install-skills.sh --with automation  # default + automation tier
+sh scripts/install-skills.sh --list             # show all tiers and skills
+```
 
 ---
 

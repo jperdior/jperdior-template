@@ -25,9 +25,10 @@ endif
 
 # ----- Init (first-time setup) -----
 
-init: ## Bootstrap a fresh clone: copy .env.local, patch /etc/hosts, start stack
+init: ## Bootstrap a fresh clone: copy .env.local, patch /etc/hosts, start stack, install skills
 	@[ -f .env.local ] || cp .env.dist .env.local
 	@sh ops/scripts/init-hosts.sh
+	@sh scripts/install-skills.sh --target claude
 	@${MAKE} start
 
 # ----- Lifecycle -----
