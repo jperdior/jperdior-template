@@ -101,7 +101,6 @@ See **[docs/getting-started.md](docs/getting-started.md)** for the full walkthro
 git clone <this repo> my-new-project
 cd my-new-project
 sudo make init   # patches /etc/hosts, installs AI skills
-make start       # builds images and starts the stack (2–5 min first time)
 ```
 
 Then say **"customize my project"** in Claude Code to rename the template placeholders and add your project description to `AGENTS.md`.
