@@ -1,6 +1,6 @@
 # Getting Started
 
-From zero to a running stack in under 30 minutes.
+Clone, run one command, and have a working stack in under 5 minutes.
 
 ## Prerequisites
 
@@ -8,50 +8,54 @@ From zero to a running stack in under 30 minutes.
 |------|----------------|-------|
 | Docker | 24+ | Docker Desktop 4.27+ includes this |
 | Docker Compose | v2.24+ | Bundled with Docker Desktop; check with `docker compose version` |
-| Node.js | 22 | For running JS tools outside Docker |
-| pnpm | 9 | `corepack enable && corepack prepare pnpm@latest --activate` |
-| PHP + Composer | 8.4 / 2 | Only needed to run tools locally, not to boot the stack |
+| make | any | Pre-installed on macOS and most Linux distros |
 
-> **macOS users**: `*.localhost` domains resolve automatically. No `/etc/hosts` edits needed.  
-> **Linux users**: `make init` patches `/etc/hosts` for you.
+Everything else (PHP, Composer, Node.js, pnpm) runs inside containers. No local language runtimes needed.
 
 ---
 
-## 1. Clone and configure
+## 1. Clone
 
 ```bash
 git clone <your-repo-url> my-project
 cd my-project
-cp .env.dist .env.local
 ```
-
-`.env.local` contains all secrets and service URLs. The defaults work for local dev with Docker. Before exposing the stack to any network, change at minimum:
-
-- `APP_SECRET` — generate with `openssl rand -hex 32`
-- `JWT_PASSPHRASE` — any strong passphrase; the keypair is generated from this
-- `POSTGRES_PASSWORD` / `DATABASE_URL` — change from the default `app`/`app`
 
 ---
 
-## 2. Start the stack
+## 2. Bootstrap
 
 ```bash
-make start
+make init
 ```
 
-This runs `docker compose` with the base + dev overlay. First boot takes ~60–90 seconds. The `api` container:
+`make init` does three things in order:
 
-1. Runs `composer install`
-2. Generates the JWT keypair at `apps/api/config/jwt/` (skipped if already present)
-3. Creates the Postgres database and runs all Doctrine migrations
-4. Warms the Symfony cache in `dev` mode
-5. Starts `php-fpm`
+1. Copies `.env.dist` → `.env.local` (skipped if it already exists)
+2. Patches `/etc/hosts` for Traefik `*.localhost` routing (no-op on macOS — it resolves automatically; adds `127.0.0.1 api.localhost web.localhost admin.localhost` on Linux)
+3. Runs `make start` — builds images, starts the stack, and tails logs
 
-Wait for the log line that contains `[OK] Cache for the "dev" environment` before making requests. You can tail logs with `make logs` in another terminal.
+First boot takes **2–5 minutes**: Docker pulls base images, builds, runs `composer install`, generates the JWT keypair, creates the Postgres DB, and runs Doctrine migrations. Subsequent starts are seconds.
+
+Wait for the log line `[OK] Cache for the "dev" environment` before making requests. Hit `Ctrl-C` to detach from logs; the stack stays running.
 
 ---
 
-## 3. Verify the stack
+## 3. Review secrets
+
+`.env.local` is gitignored and ships with development defaults. Before exposing the stack to any network, change at minimum:
+
+| Variable | Action |
+|----------|--------|
+| `APP_SECRET` | `openssl rand -hex 32` |
+| `JWT_PASSPHRASE` | any strong passphrase; the keypair is generated from this |
+| `POSTGRES_PASSWORD` / `DATABASE_URL` | change from the default `app`/`app` |
+
+For pure local development the defaults are fine.
+
+---
+
+## 4. Verify the stack
 
 ```bash
 # Sign up a user
@@ -73,56 +77,53 @@ curl -s http://api.localhost/api/me \
 # → {"id":"<uuid>","email":"me@example.com","roles":["ROLE_USER"]}
 ```
 
-The Swagger UI is at `http://api.localhost/api/doc` — all endpoints documented with Nelmio OpenAPI attributes.
+The Swagger UI is at `http://api.localhost/api/doc`.
 
 ---
 
-## 4. Service URLs
+## 5. Service URLs
 
 | URL | Service |
 |-----|---------|
 | `http://api.localhost` | Symfony API (nginx → php-fpm) |
 | `http://api.localhost/api/doc` | Swagger UI |
-| `http://web.localhost` | Next.js public app (`pnpm dev`) |
-| `http://admin.localhost` | Next.js admin panel (`pnpm dev`) |
+| `http://web.localhost` | Next.js public app |
+| `http://admin.localhost` | Next.js admin panel |
 | `http://localhost:8080` | Traefik dashboard |
 
 ---
 
-## 5. Create the first admin
+## 6. Create the first admin
 
 ```bash
-# Register via the API, then promote:
+# Sign up via the API (or the web app), then promote:
 make seed-admin EMAIL=me@example.com
 ```
 
-The `seed-admin` target runs `app:user:promote-admin` inside the `api` container. The user must already exist (created via signup). After promotion, the `/api/admin/users` endpoint is accessible.
+`seed-admin` runs `app:user:promote-admin` inside the `api` container. The user must exist first. After promotion, `http://admin.localhost` is accessible with those credentials.
 
 ---
 
-## 6. Set up the test database
-
-The functional test suite runs in a separate database with transaction rollback isolation (no data bleeds between tests):
+## 7. Set up the test database
 
 ```bash
 make setup-test-db
 make test
 ```
 
-`make test` runs PHPUnit (unit + functional) inside the `api` container plus `pnpm test` for the JS workspace.
+`make test` runs PHPUnit (unit + functional) and the JS test suite — all inside containers. No local runtime needed.
 
 ---
 
 ## Daily workflow
 
 ```bash
-make start          # build images + start stack (sync Messenger, no broker)
-make start-async    # same + RabbitMQ + worker (set MESSENGER_TRANSPORT_DSN first)
+make start          # build images + start stack
 make stop           # stop and remove containers
 make logs           # tail all container logs (Ctrl-C to exit)
 make api-shell      # bash shell inside the api container
-make lint           # PHPStan + cs-fixer + deptrac + tsc + eslint
-make test           # phpunit + pnpm test
+make lint           # PHPStan + cs-fixer + deptrac + tsc + eslint (all in containers)
+make test           # phpunit + pnpm test (all in containers)
 make test-api       # phpunit only (faster)
 make migrate        # apply pending Doctrine migrations
 make migrate-diff   # generate a migration from entity changes
@@ -160,7 +161,7 @@ After any backend change that affects the OpenAPI spec:
 make gen-api
 ```
 
-This hits the running API's `/api/doc.json` endpoint and regenerates `packages/api-client-ts/src/types.gen.ts`. Commit the result. Never edit the generated file by hand.
+This hits the running API's `/api/doc.json` and regenerates `packages/api-client-ts/src/types.gen.ts`. Commit the result. Never edit the generated file by hand.
 
 ---
 
@@ -193,4 +194,4 @@ The full list is in `.env.dist`. Key variables:
 3. **Change `package.json` names** in `apps/web`, `apps/admin`, `packages/*`.
 4. **Set real secrets** — `APP_SECRET`, `JWT_PASSPHRASE`, Postgres credentials — in `.env.local` and in your deployment environment.
 5. **Add your first bounded context** beyond `User`. The AI harness will scaffold it.
-6. **Remove example content** — the `User` context is the reference; keep it. Any `Hello` or placeholder routes are yours to delete.
+6. **Remove example content** — the `User` context is the reference; keep it. Any placeholder routes are yours to delete.
