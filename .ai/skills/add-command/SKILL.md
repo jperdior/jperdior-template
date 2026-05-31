@@ -89,6 +89,7 @@ final readonly class <Verb>CommandHandler implements CommandHandler
 - **`final readonly`** on the command class.
 - **No Doctrine in handlers** — only domain interfaces.
 - **One aggregate per transaction**. If your command needs to touch two aggregates, split into two commands and chain via events.
+- **Cross-context ID references**: if the command carries the ID of an entity from another bounded context (e.g. `userId`), define a local value object for it in `<Context>\Domain\ValueObject\` with a context-appropriate name (e.g. `OwnerId`, not `UserId`). Extend `UuidValueObject` from the shared kernel. Never import the other context's ID type — that couples the domain layers.
 - **Idempotency**: design for retries. The same command applied twice MUST produce the same outcome (or fail cleanly).
 - **Auto-tagging**: `_instanceof: App\Shared\Domain\Bus\Command\CommandHandler` in `config/services.yaml` wires this to the `command.bus` Messenger transport. Never tag manually.
 

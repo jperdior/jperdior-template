@@ -53,6 +53,7 @@ apps/api/src/<Context>/
 
 - **One aggregate root per context** by default. Multiple aggregates require justification.
 - **No cross-context imports** in the skeleton. If the context needs data from `User`, design the access via domain events or a public application service.
+- **Cross-context ID references**: if the new context stores a reference to another context's aggregate (e.g. the user who owns a resource), define a *local* value object with a context-appropriate name — never import the other context's ID type. Example: `Order\Domain\ValueObject\OwnerId` (not `User\Domain\ValueObject\UserId`). Extend the shared-kernel base: `final readonly class OwnerId extends UuidValueObject {}`. It is the same UUID — it is a different concept in this context's language.
 - **No Doctrine attributes** on the domain entity. XML only.
 - **Value objects validated in their constructor** (`InvalidArgumentException` on bad input).
 - **Repository interface in `Domain/`**, never in `Infrastructure/`.

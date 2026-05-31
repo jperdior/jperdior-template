@@ -262,6 +262,19 @@ Use `FunctionalTestCase` as the base. Tests run in transactional rollback — no
 
 **Never** import another context's `Domain/` or `Application/` namespaces. `deptrac` enforces this in CI — a cross-context import fails the build.
 
+### Cross-context ID references
+
+If your context stores a reference to an entity that lives in another context (e.g. the user who owns a resource), define a **local value object** with a name that fits *this* context's ubiquitous language:
+
+```php
+// Order\Domain\ValueObject\OwnerId.php
+final readonly class OwnerId extends UuidValueObject {}
+```
+
+Do **not** import `User\Domain\ValueObject\UserId`. The two value objects hold the same UUID — they are different concepts in different languages. `OwnerId` belongs to Order; Order does not need to know about the User context to be valid.
+
+### Event-based communication
+
 Communication between contexts is via domain events on the event bus:
 
 ```php
