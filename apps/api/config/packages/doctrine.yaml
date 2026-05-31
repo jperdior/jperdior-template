@@ -2,6 +2,10 @@ doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
         profiling_collect_backtrace: '%kernel.debug%'
+        # refresh_tokens is managed by GesdinetJWTRefreshTokenBundle via a mapped-superclass,
+        # which Doctrine's schema tool ignores — excluding it prevents spurious DROP statements
+        # in migrate-diff output.
+        schema_filter: '~^(?!refresh_tokens)~'
         types:
             user_id:        App\User\Infrastructure\Persistence\Doctrine\Type\UserIdType
             user_email:     App\User\Infrastructure\Persistence\Doctrine\Type\EmailType
