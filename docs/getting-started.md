@@ -112,14 +112,13 @@ make seed-admin EMAIL=me@example.com
 
 ---
 
-## 7. Set up the test database
+## 7. Run the tests
 
 ```bash
-make setup-test-db
 make test
 ```
 
-`make test` runs PHPUnit (unit + functional) and the JS test suite — all inside containers. No local runtime needed.
+`make test` runs PHPUnit (unit + functional) and the JS test suite — all inside containers. No local runtime needed. The test database is created and migrated automatically on the first run via `tests/bootstrap.php`.
 
 ---
 
