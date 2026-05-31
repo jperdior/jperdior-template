@@ -103,7 +103,7 @@ cd my-new-project
 sudo make init   # patches /etc/hosts, installs AI skills
 ```
 
-Then say **"customize my project"** in Claude Code to rename the template placeholders and add your project description to `AGENTS.md`.
+**Before starting the stack**, say **"customize my project"** in Claude Code (or run `/customize-project`) to rename template placeholders and add your project description to `AGENTS.md`.
 
 ---
 
