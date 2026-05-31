@@ -7,7 +7,7 @@
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jperdior/jperdior-template/pulls)
 
-My personal project template. Clone it, rename it, start writing features.
+My personal project template inspired by https://github.com/open-mercato/open-mercato and with my personal preferences in DDD architecture.
 
 It comes with my preferred stack (PHP 8.4 + Symfony 7.4, DDD + Hexagonal + CQRS, Next.js 15 frontends) and a `User` bounded context already in place — sign-up, JWT auth, role management. The architecture conventions and CI are set up from the start, so you're not doing that per project.
 
