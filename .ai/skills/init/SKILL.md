@@ -1,11 +1,13 @@
 ---
 name: init
-description: Bootstrap a fresh clone of the project for local development. Checks prerequisites, copies .env.dist, patches /etc/hosts, and starts the stack. Triggers on "init", "bootstrap", "set up locally", "first time setup", "getting started", "how do I run this".
+description: Bootstrap a fresh clone of the project for local development. Checks prerequisites, copies .env.dist, and starts the stack. Triggers on "init", "bootstrap", "set up locally", "first time setup", "getting started", "how do I run this".
 ---
 
 # Init
 
 One-shot local dev bootstrap for a fresh clone. Idempotent — safe to run again if something failed midway.
+
+> **Note:** This skill is the AI-guided alternative to `make init`. It cannot patch `/etc/hosts` because that requires `sudo`. If you are on Linux and need `.localhost` routing, run `sudo make init` from the terminal first — it handles hosts patching and then instructs you to run `make start`.
 
 ## Workflow
 
@@ -21,26 +23,19 @@ One-shot local dev bootstrap for a fresh clone. Idempotent — safe to run again
    echo "Review .env.local and adjust APP_SECRET / JWT_PASSPHRASE / DB credentials before production use."
    ```
 
-3. **Patch `/etc/hosts`** for Traefik `.localhost` routing:
-   ```sh
-   sh ops/scripts/init-hosts.sh
-   ```
-   On macOS 12+ this is a no-op (mDNSResponder resolves `*.localhost` automatically).
-   On Linux it adds: `127.0.0.1 api.localhost web.localhost admin.localhost`.
-
-4. **Start the stack**:
+3. **Start the stack**:
    ```sh
    make start
    ```
    The first boot takes 2–5 minutes (image build + `composer install` + migrations).
 
-5. **Verify**:
+4. **Verify**:
    ```sh
    curl -s http://api.localhost/api/doc | grep -q openapi \
      && echo "API OK" || echo "API not ready yet — check make logs"
    ```
 
-6. **Report** the service URLs and next steps.
+5. **Report** the service URLs and next steps.
 
 ## Output
 
@@ -48,7 +43,7 @@ One-shot local dev bootstrap for a fresh clone. Idempotent — safe to run again
 ✅ Stack is up.
 
 Service URLs:
-  Web app   →  http://web.localhost   (or http://localhost)
+  Web app   →  http://web.localhost
   Admin     →  http://admin.localhost
   API       →  http://api.localhost
   API docs  →  http://api.localhost/api/doc
@@ -58,7 +53,9 @@ Next steps:
   make logs          — tail all container logs
   make api-shell     — shell inside the API container
   make seed-admin EMAIL=you@example.com  — promote a user to admin
-  /scaffold-bounded-context              — add a new bounded context
+
+  When you're ready to personalize the project name and docs, say
+  "customize my project" or run /customize-project.
 ```
 
 ## Rules
@@ -66,4 +63,4 @@ Next steps:
 - Never overwrite an existing `.env.local` — only copy if missing.
 - Always print the service URLs at the end, even if the user ran init before.
 - If `make start` fails, tail `make logs` for 10 seconds and surface the first ERROR line.
-- If `/etc/hosts` already has the entries, skip silently.
+- Do not attempt to patch `/etc/hosts` — that requires sudo and must be done via `make init`.

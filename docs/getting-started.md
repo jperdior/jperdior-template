@@ -150,13 +150,14 @@ After `make init`, the `.ai/skills/` directory is symlinked into `.claude/skills
 
 | Command | What it does |
 |---------|-------------|
+| `/customize-project` | Renames template placeholders and adds project context to AGENTS.md — run once after cloning |
+| `/spec-writing` | Designs a feature spec-first (recommended entry point for any non-trivial feature) |
+| `/new-feature` | Creates a worktree + branch for a new feature |
 | `/scaffold-bounded-context` | Scaffolds the 4 DDD layers for a new context |
 | `/add-command` | Adds a CQRS command + handler |
 | `/add-query` | Adds a CQRS query + handler |
 | `/add-route` | Adds an HTTP controller + route |
 | `/scaffold-nextjs-page` | Scaffolds a Next.js page |
-| `/new-feature` | Creates a worktree + branch for a new feature |
-| `/spec-writing` | Starts a spec-first design session |
 
 To install skills for a different agent (Cursor, Codex) or to add optional tiers:
 
@@ -174,12 +175,12 @@ sh scripts/install-skills.sh --list             # show all tiers and skills
 The template ships with `User` as the reference context. To add a new one:
 
 ```bash
-# Option A — use the AI skill (recommended)
-/scaffold-bounded-context
+# Recommended — design first, then implement
+/spec-writing        # brainstorm + write the spec
+/implement-spec      # implement from the approved spec (runs scaffolding internally)
 
-# Option B — manual
-mkdir -p apps/api/src/Orders/{Domain,Application,Infrastructure,Presentation}
-# Then follow docs/adding-a-bounded-context.md
+# Quick path — if the design is already clear
+/scaffold-bounded-context
 ```
 
 See [adding-a-bounded-context.md](adding-a-bounded-context.md) for the full walkthrough.

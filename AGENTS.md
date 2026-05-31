@@ -129,6 +129,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Regenerating the TS API client | `.ai/skills/regenerate-api-client/SKILL.md` |
 | Shared component in `ui-react` | `packages/ui-react/AGENTS.md` |
 | **Workflow** | |
+| First-time project customization (rename placeholders, add project context) | `.ai/skills/customize-project/SKILL.md` |
 | First-time local setup (hosts, .env.local, stack boot) | `.ai/skills/init/SKILL.md` |
 | Starting any new feature (creates worktree + branch from main) | `.ai/skills/new-feature/SKILL.md` |
 | **Specs & PR Automation** | |
@@ -154,6 +155,11 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Boundaries are sacred.** A `User\Domain\` import inside `Orders\` is a regression, not a refactor.
 
 ## Workflow Orchestration
+
+**Recommended AI-first path for any non-trivial feature:**
+`/spec-writing` (design + spec doc) → `/implement-spec` (code, calls scaffolding skills internally) → PR
+
+Use `/scaffold-bounded-context`, `/add-command`, `/add-route` **directly** only for small, already-specified additions where a full spec would be overhead.
 
 1. **Spec-first** for non-trivial tasks (3+ steps or architectural decisions). Check `.ai/specs/` first. Skip for small fixes.
 2. **Subagent strategy**: use subagents for research / parallel analysis. One task per subagent. Keeps main context clean.

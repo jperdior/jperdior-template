@@ -41,7 +41,9 @@ sudo make init   # sudo needed to patch /etc/hosts
 make start       # build images and start the stack (2–5 min first time)
 ```
 
-Once the stack is up:
+Once the stack is up, **personalize the project** (rename placeholders, add your project description to `AGENTS.md`) by saying **"customize my project"** or running `/customize-project` in Claude Code.
+
+Then:
 
 | URL | Service |
 |-----|---------|

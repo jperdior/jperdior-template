@@ -23,7 +23,8 @@
         "scaffold-shadcn-form",
         "regenerate-api-client",
         "new-feature",
-        "init"
+        "init",
+        "customize-project"
       ]
     },
     "automation": {
