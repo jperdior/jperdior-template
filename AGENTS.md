@@ -4,6 +4,38 @@ This is a **spec-driven, AI-engineered monorepo template**. PHP 8.4 + Symfony 7.
 
 Leverage the bounded-context system and follow strict naming and coding conventions to keep the system consistent and safe to extend.
 
+## Session start — worktree awareness check
+
+At the very start of every conversation, run this check silently:
+
+```bash
+# Are we inside a linked worktree?
+GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
+GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
+BRANCH=$(git branch --show-current)
+```
+
+If `GIT_DIR != GIT_COMMON` (we are in a worktree) **and** the branch is not `main`:
+
+```bash
+git fetch origin --quiet
+AHEAD=$(git log origin/main..HEAD --oneline 2>/dev/null | wc -l | tr -d ' ')
+```
+
+If `AHEAD == 0` the branch has been fully merged into `origin/main`. **Immediately tell the user:**
+
+> "This conversation is linked to worktree `<path>` on branch `<branch>`, which has already been merged into main. Do you want to switch back to main and clean up the worktree?"
+
+Wait for the user to confirm before doing anything. If they say yes:
+1. Run `make stop` (stops containers that may be running from the worktree)
+2. Exit the worktree (`ExitWorktree` tool if available, otherwise `cd` to main repo root)
+3. Run `sudo rm -rf <worktree-path>` (Docker may have created root-owned files inside)
+4. Run `git worktree prune` from the main repo
+5. Delete the local branch: `git branch -d <branch>`
+6. Run `make start` to restart containers from main
+
+Do **not** start any new work until the user has acknowledged the merged state.
+
 ## Always
 
 - Check the **Task Router** below before research or coding; a single task may match multiple rows.
