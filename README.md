@@ -15,6 +15,32 @@ The `.ai/` harness is the other main thing: specs, skills, and review gates that
 
 ---
 
+## What's already built
+
+Most projects need user accounts. This template ships with a fully working `User` bounded context so you don't start from scratch:
+
+| Feature | What's included |
+|---------|----------------|
+| Sign-up | `POST /auth/signup` — creates a user, returns UUID |
+| Login | `POST /auth/login` — returns JWT access token + refresh token |
+| Token refresh | `POST /auth/refresh` — rotates the refresh token |
+| Current user | `GET /api/me` — returns id, email, roles, mustResetPassword flag |
+| Role management | `ROLE_USER` (default) and `ROLE_ADMIN`; promote via `make seed-admin` |
+| Admin user list | `GET /api/admin/users` — paginated, includes soft-deleted users |
+| Admin create user | `POST /api/admin/users` — creates user with forced password-reset flag |
+| Admin user detail | `GET /api/admin/users/{id}` |
+| Admin role update | `PATCH /api/admin/users/{id}/roles` |
+| Admin force reset | `POST /api/admin/users/{id}/force-password-reset` |
+| Soft delete / restore | `DELETE /api/admin/users/{id}` and `POST /api/admin/users/{id}/restore` |
+| Password reset gate | Web app redirects to `/reset-password` when flag is set |
+| Admin panel | Next.js admin at `admin.localhost` — user list with actions, detail page, create dialog |
+| JWT keypair | Auto-generated on first boot; configurable TTL and passphrase |
+| Cookie auth | Httponly cookies with refresh-token rotation on the frontend |
+
+The `User` context is also the **reference implementation**: every naming convention, layer structure, and pattern used in the codebase is demonstrated here. When adding a new bounded context, mirror it.
+
+---
+
 ## Stack
 
 | Layer | Technology |
