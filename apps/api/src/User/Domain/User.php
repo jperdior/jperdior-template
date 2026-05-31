@@ -111,7 +111,7 @@ final class User extends AggregateRoot
 
     public function isDeleted(): bool
     {
-        return $this->deletedAt !== null;
+        return null !== $this->deletedAt;
     }
 
     public function promoteToAdmin(): void
@@ -123,7 +123,7 @@ final class User extends AggregateRoot
 
     public function demoteFromAdmin(): void
     {
-        $this->roles = array_values(array_filter($this->roles, fn (string $r) => $r !== Role::ADMIN->value));
+        $this->roles = array_values(array_filter($this->roles, static fn (string $r) => $r !== Role::ADMIN->value));
     }
 
     public function forcePasswordReset(): void
@@ -144,7 +144,7 @@ final class User extends AggregateRoot
 
     public function softDelete(DateTimeImmutable $at): void
     {
-        if ($this->deletedAt !== null) {
+        if (null !== $this->deletedAt) {
             return;
         }
         $this->deletedAt = $at;
