@@ -10,33 +10,61 @@ Execute an approved spec under `.ai/specs/{date}-{slug}.md`. Implement phase by 
 ## Prerequisites
 
 - The spec passed `/pre-implement-spec` with verdict = ready.
-- `make start` boots cleanly on the current branch.
-- A feature branch exists (`feat/<slug>`).
+- The spec has a **PR Plan** table (see spec template). If it is missing, add one before proceeding.
+- `make start` boots cleanly on the current branch (the feature base branch from `/new-feature`).
 
 If any precondition fails, stop and inform the user.
 
 ## Workflow
 
-1. **Pick the phase**. If the user said "implement spec", start at Phase 0. If they said "implement Phase 2", jump to Phase 2 and verify Phase 0/1 are already merged.
-2. **Read the spec phase**. Identify deliverable, files to touch, tests to add.
-3. **Delegate research** to subagents when phases span multiple unfamiliar files. Use Explore subagents to map call sites before editing.
-4. **Plan the diff** in your head (or in the TaskList). List the files you'll touch.
-5. **Implement**:
+The unit of work is a **PR**, not a phase. Each PR is a branch stacked on the previous one.
+Phases within the same PR are implemented sequentially on that branch before it is pushed.
+
+### For each PR in the spec's PR Plan:
+
+1. **Create the branch** from the current HEAD (feature base for PR 1, previous PR's branch for PR 2+):
+   ```sh
+   git checkout -b <branch>   # e.g. feat/billing-domain
+   ```
+
+2. **Read every phase** assigned to this PR. Identify all deliverables, files to touch, tests to add.
+
+3. **Delegate research** to Explore subagents when phases span multiple unfamiliar files.
+
+4. **Implement all phases for this PR**:
    - PHP: follow the bounded-context layout. Use `/scaffold-bounded-context` for new contexts, `/add-command`, `/add-query`, `/add-route` for additions.
    - Frontend: follow the route shape under `apps/web/src/app/` or `apps/admin/src/app/`. Use `/scaffold-nextjs-page`, `/scaffold-shadcn-form`.
-   - Migrations: run `make migrate-diff` to generate; review the SQL; commit it.
+   - Migrations: run `make migrate-diff`; review the SQL; commit it.
    - Tests: PHPUnit Functional next to the controller; Playwright e2e under `apps/web/e2e/` or `apps/admin/e2e/`.
-6. **Verification gate (after every phase)**:
+
+5. **Verification gate**:
    ```sh
    make lint
    make test
    make test-e2e   # only if UI changed
    ```
-   Every command MUST exit 0 before moving on.
-7. **Code review gate**: invoke `/code-review` on the diff. Resolve every Critical and High finding before committing.
-8. **Commit**: one commit per phase. Message format: `feat({context}): {phase title} (spec: {file})`. Reference the spec file path.
-9. **Update the spec changelog**: append `| {YYYY-MM-DD} | Phase N implemented. |`.
-10. **Repeat** for the next phase until the spec is complete.
+   Every command MUST exit 0. Fix before continuing.
+
+6. **Code review gate**: invoke `/code-review` on the diff. Resolve every Critical and High finding.
+
+7. **Commit** — one commit per phase within the PR. Format: `feat({context}): {phase title} (spec: {file})`.
+
+8. **Push and open the PR**:
+   ```sh
+   git push -u origin <branch>
+   gh pr create \
+     --title "feat({context}): {PR title}" \
+     --base <previous-branch-or-main> \
+     --body "Part of spec: .ai/specs/{file}. Implements phases {N}–{M}."
+   ```
+
+9. **Update the spec changelog**: `| {YYYY-MM-DD} | PR {N} opened — phases {X}–{Y}. |`
+
+10. **Pause** and confirm with the user before starting the next PR (unless they said "implement all without stopping").
+
+### After all PRs are open
+
+Report the full stack and merge order. Remind the user to merge in order — GitHub will auto-update each PR's base as the previous one merges.
 
 ## Subagent Strategy
 
@@ -53,22 +81,27 @@ Do NOT use subagents for trivial single-file edits.
 
 | Symptom | Action |
 |---------|--------|
-| `make test` fails on the current phase | Fix the test or the code. Don't proceed. |
+| `make test` fails on the current PR | Fix before pushing. Never push a red branch. |
 | `make lint` reports a deptrac violation | A cross-context import slipped in. Replace with a domain event or public application service. |
-| `make migrate-diff` produces unrelated SQL | Investigate the snapshot drift — don't commit unrelated churn. |
+| `make migrate-diff` produces unrelated SQL | Investigate snapshot drift — don't commit unrelated churn. |
 | Phase delivery doesn't match the spec's promise | Update the spec FIRST; then code to the updated promise. |
 | Spec proves wrong mid-implementation | Stop. Update the spec. Re-run `/pre-implement-spec`. Resume. |
+| PR Plan is missing from the spec | Add it before starting. Default grouping: Domain → Persistence → Application → Presentation+Tests. |
 
 ## Output
 
-End of each phase, report:
+End of each PR:
 
 ```
-✅ Phase {N}: {Title}
-   Files touched: {count}
-   Tests added: {count}
-   Spec changelog updated: yes
-   Next: Phase {N+1}: {Title} — proceed? (or all phases done)
-```
+✅ PR {N}: {Title}   →  {PR URL}
+   Branch:  {branch}  →  {base branch}
+   Phases:  {X}–{Y}
+   Files:   {count} touched, {count} tests added
 
-If autonomous (the user said "implement all phases without stopping"), proceed without asking.
+   Merge order so far:
+   1. {PR 1 URL}  ({branch})
+   2. {PR 2 URL}  ({branch})
+   …
+
+   Next: PR {N+1}: {Title} — proceed?
+```

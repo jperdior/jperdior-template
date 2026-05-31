@@ -59,6 +59,25 @@ For each:
 | 0 | …  | … (each phase ends with `make test` green) |
 | 1 | …  | … |
 
+## PR Plan
+
+Each PR is a branch stacked on the previous — merge in order. `/implement-spec` creates these branches and PRs automatically.
+
+| PR | Branch | Phases | Base |
+|----|--------|--------|------|
+| 1 | `feat/{slug}-domain` | 0 | `main` |
+| 2 | `feat/{slug}-persistence` | 1 | PR 1 |
+| 3 | `feat/{slug}-application` | 2 | PR 2 |
+| 4 | `feat/{slug}-presentation` | 3 | PR 3 |
+
+> **Default grouping** — collapse or split rows as the feature warrants:
+> - **Domain**: aggregate, value objects, repository interface, domain events
+> - **Persistence**: XML mapping, Doctrine repository, migration
+> - **Application**: commands, queries, handlers
+> - **Presentation**: controllers, DTOs, routes, functional tests
+>
+> Collapse Domain + Persistence into one PR when the aggregate is simple. Add a Frontend PR when UI is involved. Each PR must leave `make lint && make test` green independently.
+
 ## Risks & Impact Review
 
 | Risk | Severity | Affected area | Mitigation | Residual |
