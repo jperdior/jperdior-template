@@ -31,12 +31,17 @@ sudo make init
 
 > `sudo` is required because `make init` patches `/etc/hosts`. The script is idempotent — if the entries are already present it skips them and does not prompt again.
 
-`make init` does four things in order:
+`make init` does three things in order:
 
 1. Copies `.env.dist` → `.env.local` (skipped if it already exists)
 2. Patches `/etc/hosts` for Traefik `*.localhost` routing (adds `127.0.0.1 api.localhost web.localhost admin.localhost`; on macOS `*.localhost` resolves automatically but the script still runs and exits immediately)
-3. Installs AI skills as Claude Code slash commands into `.claude/skills/` (requires Python 3, pre-installed on macOS and most Linux distros)
-4. Runs `make start` — builds images, starts the stack, and tails logs
+3. Installs AI skills as Claude Code slash commands into `.claude/skills/` (uses only `sh`, `awk`, `grep`, `sed` — no extra runtimes needed)
+
+When init completes, start the stack:
+
+```bash
+make start
+```
 
 First boot takes **2–5 minutes**: Docker pulls base images, builds, runs `composer install`, generates the JWT keypair, creates the Postgres DB, and runs Doctrine migrations. Subsequent starts are seconds.
 
