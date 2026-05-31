@@ -18,7 +18,7 @@ COPY apps/admin/package.json ./apps/admin/
 COPY packages/ui-react/package.json ./packages/ui-react/
 COPY packages/api-client-ts/package.json ./packages/api-client-ts/
 
-RUN pnpm install --filter "@jperdior/admin..."
+RUN pnpm install --filter "./apps/admin..."
 
 FROM node:${NODE_VERSION} AS builder
 
