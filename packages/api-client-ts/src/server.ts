@@ -32,8 +32,12 @@ export function apiClient(): ApiClient {
       });
       if (!res.ok) return null;
       const payload = await res.json() as { token: string; refresh_token: string };
-      jar.set(ACCESS_COOKIE,  payload.token,         { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
-      jar.set(REFRESH_COOKIE, payload.refresh_token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
+      // Cookie writes are only allowed in Server Actions and Route Handlers, not in Server
+      // Components. Swallow the error so the refreshed token is still used for this request.
+      try {
+        jar.set(ACCESS_COOKIE,  payload.token,         { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
+        jar.set(REFRESH_COOKIE, payload.refresh_token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
+      } catch { /* no-op in Server Components */ }
       return payload.token;
     },
   });

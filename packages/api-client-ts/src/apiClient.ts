@@ -12,6 +12,7 @@ export interface CurrentUser {
   email: string;
   roles: string[];
   createdAt: string;
+  mustResetPassword: boolean;
 }
 
 export interface UserSummary {
@@ -19,6 +20,17 @@ export interface UserSummary {
   email: string;
   roles: string[];
   createdAt: string;
+  mustResetPassword: boolean;
+  deletedAt: string | null;
+}
+
+export interface UserDetail {
+  id: string;
+  email: string;
+  roles: string[];
+  createdAt: string;
+  mustResetPassword: boolean;
+  deletedAt: string | null;
 }
 
 interface LoginResponse {
@@ -34,6 +46,14 @@ export interface ApiClient {
   me(): Promise<CurrentUser>;
   // Admin (ROLE_ADMIN)
   listAllUsers(params?: { limit?: number; offset?: number }): Promise<{ total: number; users: UserSummary[] }>;
+  adminGetUser(id: string): Promise<UserDetail>;
+  adminCreateUser(req: { email: string; password: string }): Promise<{ id: string }>;
+  adminUpdateUserRoles(id: string, roles: string[]): Promise<void>;
+  adminForcePasswordReset(id: string): Promise<void>;
+  adminDeleteUser(id: string): Promise<void>;
+  adminRestoreUser(id: string): Promise<void>;
+  // Authenticated user
+  selfResetPassword(newPassword: string): Promise<void>;
 }
 
 export function createApiClient(config: ApiClientConfig): ApiClient {
@@ -95,5 +115,12 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     refresh: (refreshToken) => request('POST', '/auth/refresh', { body: { refresh_token: refreshToken }, auth: false }),
     me:      ()    => request('GET',  '/api/me'),
     listAllUsers: (params) => request('GET', '/api/admin/users', { query: { limit: params?.limit, offset: params?.offset } }),
+    adminGetUser: (id) => request('GET', `/api/admin/users/${id}`),
+    adminCreateUser: (req) => request('POST', '/api/admin/users', { body: req }),
+    adminUpdateUserRoles: (id, roles) => request('PATCH', `/api/admin/users/${id}/roles`, { body: { roles } }),
+    adminForcePasswordReset: (id) => request('POST', `/api/admin/users/${id}/force-password-reset`),
+    adminDeleteUser: (id) => request('DELETE', `/api/admin/users/${id}`),
+    adminRestoreUser: (id) => request('POST', `/api/admin/users/${id}/restore`),
+    selfResetPassword: (newPassword) => request('POST', '/api/users/me/reset-password', { body: { newPassword } }),
   };
 }

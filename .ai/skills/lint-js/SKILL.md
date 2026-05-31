@@ -7,6 +7,27 @@ description: Run all frontend quality checks locally — TypeScript typecheck an
 
 Run the full JS/TS lint suite that mirrors the `js-lint` CI job.
 
+## CRITICAL: Always run inside Docker containers
+
+**Never** invoke `pnpm`, `tsc`, or `eslint` directly on the host machine.
+All JS tooling runs inside the `jperdior-web-1` / `jperdior-admin-1` containers via `make` targets.
+
+## Worktree setup
+
+When working in a git worktree, the running containers mount the **main branch** code, not
+the worktree. Before linting, restart the stack from the worktree so containers pick up your
+changes:
+
+```bash
+# From the main repo root — stops all containers
+make stop
+
+# From the worktree directory — starts containers with worktree code
+make start
+```
+
+Then proceed with the lint commands below.
+
 ## Scope
 
 | Target | Tool |
@@ -14,51 +35,35 @@ Run the full JS/TS lint suite that mirrors the `js-lint` CI job.
 | `apps/web`, `apps/admin`, `packages/*` | TypeScript (`tsc --noEmit`) |
 | `apps/web`, `apps/admin` | ESLint |
 
-## Workflow
-
-Run these from the **repo root**. Stop and report errors before continuing.
-
-### 1 — Install dependencies
+## Quick one-liner (from repo root or worktree root)
 
 ```bash
-pnpm install --frozen-lockfile=false
+make lint-web
 ```
 
-### 2 — TypeScript (all apps + packages)
+This runs typecheck + ESLint for all apps inside the correct containers.
+
+## Step-by-step (if you need to isolate a failure)
+
+### TypeScript (all apps + packages)
 
 ```bash
-pnpm -r --filter './apps/*' --filter './packages/*' typecheck
+docker exec jperdior-web-1 pnpm -r --filter './apps/web' --filter './packages/*' typecheck
+docker exec jperdior-admin-1 pnpm -C apps/admin typecheck
 ```
 
-### 3 — ESLint (apps only)
+### ESLint (apps only)
 
 ```bash
-pnpm -r --filter './apps/*' lint
+docker exec jperdior-web-1 pnpm -C apps/web lint
+docker exec jperdior-admin-1 pnpm -C apps/admin lint
 ```
 
 ## Error handling
 
 - **TypeScript errors**: fix the types in the source file. Never use `@ts-ignore` or `as any` — find the correct type.
 - **ESLint errors**: fix the source. If a rule fires on a legitimate pattern (e.g. `react/no-unescaped-entities`), escape the character properly (`&apos;`, `&quot;`) — don't disable rules.
-- **ESLint warnings** with `--max-warnings=0`: treat them as errors.
 
-## Quick one-liner (from repo root)
+## Pre-PR gate
 
-```bash
-make lint          # runs everything (php + js)
-# or JS only:
-pnpm -r --filter './apps/*' --filter './packages/*' typecheck && pnpm -r --filter './apps/*' lint
-```
-
-## Per-package shortcut
-
-```bash
-pnpm -C apps/web typecheck
-pnpm -C apps/web lint
-
-pnpm -C apps/admin typecheck
-pnpm -C apps/admin lint
-
-pnpm -C packages/ui-react typecheck
-pnpm -C packages/api-client-ts typecheck
-```
+Run `make lint-web` and confirm it passes before offering to create a PR.

@@ -12,6 +12,8 @@
         <field name="password" type="hashed_password" length="255"/>
         <field name="roles"    type="json"/>
         <field name="createdAt" column="created_at" type="datetime_immutable"/>
+        <field name="mustResetPassword" column="must_reset_password" type="boolean"/>
+        <field name="deletedAt" column="deleted_at" type="datetime_immutable" nullable="true"/>
 
         <unique-constraints>
             <unique-constraint name="uq_users_email" columns="email"/>

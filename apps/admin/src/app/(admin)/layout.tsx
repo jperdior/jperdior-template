@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Button } from '@jperdior/ui-react';
 import { apiClient } from '@jperdior/api-client-ts/server';
-import { clearTokens, isAuthenticated } from '@/lib/auth';
+import { clearTokens, isAuthenticated } from '@/lib/auth'; // clearTokens used by signOut action
 
 async function signOut() {
   'use server';
@@ -19,11 +19,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   try {
     const me = await apiClient().me();
     if (!me.roles.includes('ROLE_ADMIN')) {
-      await clearTokens();
       redirect('/login?error=admin-required');
     }
   } catch {
-    await clearTokens();
     redirect('/login');
   }
 

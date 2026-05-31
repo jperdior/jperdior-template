@@ -16,4 +16,11 @@ interface UserRepository
     public function findAll(int $limit, int $offset): array;
 
     public function countAll(): int;
+
+    public function findByIdIncludingDeleted(UserId $id): ?User;
+
+    /** @return list<User> */
+    public function findAllIncludingDeleted(int $limit, int $offset): array;
+
+    public function countAllIncludingDeleted(): int;
 }

@@ -32,6 +32,7 @@ final class MeController
             new OA\Property(property: 'email', type: 'string', format: 'email'),
             new OA\Property(property: 'roles', type: 'array', items: new OA\Items(type: 'string')),
             new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
+            new OA\Property(property: 'mustResetPassword', type: 'boolean'),
         ]),
     )]
     public function __invoke(): JsonResponse
@@ -46,6 +47,7 @@ final class MeController
             'email' => $response->email,
             'roles' => $response->roles,
             'createdAt' => $response->createdAt,
+            'mustResetPassword' => $response->mustResetPassword,
         ]);
     }
 }
