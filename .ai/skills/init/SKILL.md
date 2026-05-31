@@ -23,19 +23,23 @@ One-shot local dev bootstrap for a fresh clone. Idempotent — safe to run again
    echo "Review .env.local and adjust APP_SECRET / JWT_PASSPHRASE / DB credentials before production use."
    ```
 
-3. **Start the stack**:
+3. **Personalize the project** (before starting the stack — easiest before the first image build):
+   Ask the user: "Before starting the stack, would you like to personalize the project? Say **'customize my project'** or run `/customize-project` now — it renames placeholder package names and adds your project description to `AGENTS.md`."
+   Wait for the user to confirm or skip before proceeding.
+
+4. **Start the stack**:
    ```sh
    make start
    ```
    The first boot takes 2–5 minutes (image build + `composer install` + migrations).
 
-4. **Verify**:
+5. **Verify**:
    ```sh
    curl -s http://api.localhost/api/doc | grep -q openapi \
      && echo "API OK" || echo "API not ready yet — check make logs"
    ```
 
-5. **Report** the service URLs and next steps.
+6. **Report** the service URLs and next steps.
 
 ## Output
 
@@ -53,9 +57,6 @@ Next steps:
   make logs          — tail all container logs
   make api-shell     — shell inside the API container
   make seed-admin EMAIL=you@example.com  — promote a user to admin
-
-  When you're ready to personalize the project name and docs, say
-  "customize my project" or run /customize-project.
 ```
 
 ## Rules

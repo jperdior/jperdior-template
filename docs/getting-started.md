@@ -37,7 +37,9 @@ sudo make init
 2. Patches `/etc/hosts` for Traefik `*.localhost` routing (adds `127.0.0.1 api.localhost web.localhost admin.localhost`; on macOS `*.localhost` resolves automatically but the script still runs and exits immediately)
 3. Installs AI skills as Claude Code slash commands into `.claude/skills/` (uses only `sh`, `awk`, `grep`, `sed` — no extra runtimes needed)
 
-When init completes, start the stack:
+When init completes, **personalize the project** before starting the stack. In Claude Code, say **"customize my project"** or run `/customize-project`. This renames placeholder package names, the Makefile project variable, and adds your project description to `AGENTS.md`. It is much easier to do this before the containers have ever built.
+
+Then start the stack:
 
 ```bash
 make start
