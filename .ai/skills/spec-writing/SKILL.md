@@ -20,6 +20,11 @@ Design and review specifications against this template's architecture (DDD + Hex
 9. **Integration Coverage**: list the Playwright / PHPUnit functional tests that must exist for the new behaviour.
 10. **Compliance Gate**: apply [references/compliance-gate.md](references/compliance-gate.md).
 11. **Output**: finalise the spec.
+12. **Publish the spec to main** (spec-only PR):
+    - You should already be in a worktree on a `spec/<slug>` branch (created via `/new-feature` at the start, using `spec/` prefix instead of `feat/`). If not, create one now.
+    - Commit only the spec file: `git add .ai/specs/{file} && git commit -m "spec: {title}"`
+    - Open a PR to `main` with `gh pr create --base main --title "spec: {title}" --body "Design doc — no code changes. See .ai/specs/{file}."`
+    - **Stop here.** Do not start implementation until the spec PR is merged to main. Once merged, run `/new-feature` to open the implementation worktree.
 
 ## Output Formats
 

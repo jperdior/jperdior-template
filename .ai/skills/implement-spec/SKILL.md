@@ -9,6 +9,7 @@ Execute an approved spec under `.ai/specs/{date}-{slug}.md`. Implement phase by 
 
 ## Prerequisites
 
+- The spec is on `main` — merged via a spec-only PR from a `spec/<slug>` branch. Never implement against a spec that only lives on a feature branch.
 - The spec passed `/pre-implement-spec` with verdict = ready.
 - `make start` boots cleanly on the current branch (the feature base branch from `/new-feature`).
 
