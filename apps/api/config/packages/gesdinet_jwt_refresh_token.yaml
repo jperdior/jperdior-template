@@ -1,5 +1,5 @@
 gesdinet_jwt_refresh_token:
-    refresh_token_class: Gesdinet\JWTRefreshTokenBundle\Entity\RefreshToken
+    refresh_token_class: App\User\Infrastructure\Security\RefreshToken
     ttl: '%env(int:JWT_REFRESH_TTL)%'
     ttl_update: true
     single_use: true
