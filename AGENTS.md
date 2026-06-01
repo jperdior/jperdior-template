@@ -157,7 +157,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 ## Workflow Orchestration
 
 **Recommended AI-first path for any non-trivial feature:**
-`/spec-writing` (design + spec doc) → `/implement-spec` (code, calls scaffolding skills internally) → PR
+`/spec-writing` (design + spec doc, ends with a `spec/<slug>` PR to main) → merge spec PR → `/new-feature` + `/implement-spec` (code, calls scaffolding skills internally) → PR
 
 Use `/scaffold-bounded-context`, `/add-command`, `/add-route` **directly** only for small, already-specified additions where a full spec would be overhead.
 
