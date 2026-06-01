@@ -30,10 +30,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-6">
-            <Link href="/users" className="text-sm font-semibold">
+            <Link href="/dashboard" className="text-sm font-semibold">
               jperdior · Admin
             </Link>
             <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+              <Link href="/dashboard" className="hover:text-foreground">Dashboard</Link>
               <Link href="/users" className="hover:text-foreground">Users</Link>
             </nav>
           </div>
