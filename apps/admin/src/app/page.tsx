@@ -4,7 +4,7 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } fro
 import { isAuthenticated } from '@/lib/auth';
 
 export default async function AdminLandingPage() {
-  if (await isAuthenticated()) redirect('/users');
+  if (await isAuthenticated()) redirect('/dashboard');
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-16">

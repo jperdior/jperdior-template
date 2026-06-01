@@ -17,7 +17,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   const parsed = schema.safeParse({
     email:    formData.get('email'),
     password: formData.get('password'),
-    next:     formData.get('next') ?? '/users',
+    next:     formData.get('next') ?? '/dashboard',
   });
   if (!parsed.success) return { error: 'Invalid email or password.' };
 
@@ -53,5 +53,5 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   }
 
   await persistTokens(token, refreshToken);
-  redirect(parsed.data.next || '/users');
+  redirect(parsed.data.next || '/dashboard');
 }
