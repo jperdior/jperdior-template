@@ -86,7 +86,7 @@ Do NOT use subagents for trivial single-file edits.
 | `make migrate-diff` produces unrelated SQL | Investigate snapshot drift — don't commit unrelated churn. |
 | Phase delivery doesn't match the spec's promise | Update the spec FIRST; then code to the updated promise. |
 | Spec proves wrong mid-implementation | Stop. Update the spec. Re-run `/pre-implement-spec`. Resume. |
-| PR Plan is missing from the spec | Add it before starting. Default grouping: Domain → Persistence → Application → Presentation+Tests. |
+| PR Plan is missing from the spec | Add it before starting — group phases into increments that are independently reviewable and leave the app in a valid state when merged. |
 
 ## Output
 
