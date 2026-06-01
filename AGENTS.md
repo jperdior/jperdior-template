@@ -189,7 +189,7 @@ docs/         ARCHITECTURE, getting-started, auth, adding-a-bounded-context, ops
 ## Conventions (project-wide)
 
 - **PHP**: `declare(strict_types=1);` at the top of every file. Final classes by default. `readonly` for value objects, DTOs, queries, responses. `DateTimeImmutable` everywhere in domain code, never `DateTime`.
-- **Bounded contexts**: plural-or-singular PascalCase (`User`, `Note`, `Subscriptions`).
+- **Bounded contexts**: plural-or-singular PascalCase (`User`, `Order`, `Subscription`).
 - **Event IDs**: `<context>.<aggregate>.<action_past_tense>` (e.g. `user.account.created`).
 - **DB**: snake_case columns and tables; plural table names; UUID PKs; columns `id`, `created_at`, `updated_at`, `deleted_at` where applicable.
 - **TypeScript**: `strict: true`; no `any`; React server components by default in `apps/web` and `apps/admin`.

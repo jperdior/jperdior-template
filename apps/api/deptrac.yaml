@@ -9,9 +9,6 @@ deptrac:
         - name: User
           collectors:
               - { type: classLike, value: '^App\\User\\.*' }
-        - name: Note
-          collectors:
-              - { type: classLike, value: '^App\\Note\\.*' }
         - name: Shared
           collectors:
               - { type: classLike, value: '^App\\Shared\\.*' }
@@ -36,13 +33,6 @@ deptrac:
             - Symfony
             - Doctrine
             - Vendor
-        Note:
-            - Shared
-            - SharedKernel
-            - Symfony
-            - Doctrine
-            - Vendor
-
         # Shared adapters depend on the kernel + framework but never on a specific context.
         Shared:
             - SharedKernel
