@@ -59,6 +59,7 @@ For each:
 | 0 | …  | … (each phase ends with `make test` green) |
 | 1 | …  | … |
 
+
 ## Risks & Impact Review
 
 | Risk | Severity | Affected area | Mitigation | Residual |
