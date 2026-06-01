@@ -82,7 +82,6 @@ apps/api/
 │   │   │   └── Symfony/Resources/config/services.yaml
 │   │   └── Presentation/Http/ExceptionListener.php
 │   ├── User/                      ← bounded context: auth
-│   ├── Note/                      ← bounded context: hello-world
 │   └── <NextContext>/             ← drop a folder, get a context
 └── tests/
     ├── Unit/
@@ -110,8 +109,8 @@ Adding a new handler = `implements CommandHandler` (or Query/Event). No manual t
 
 ```yaml
 # config/services.yaml
-App\Note\Domain\NoteRepository:
-    alias: App\Note\Infrastructure\Persistence\DoctrineNoteRepository
+App\<Context>\Domain\<Context>Repository:
+    alias: App\<Context>\Infrastructure\Persistence\Doctrine<Context>Repository
 ```
 
 ## Doctrine Mapping Registration
@@ -122,17 +121,17 @@ doctrine:
     orm:
         auto_mapping: false
         mappings:
-            Note:
+            <Context>:
                 type: xml
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/Note/Infrastructure/Persistence/Doctrine/Mapping'
-                prefix: 'App\Note\Domain'
-                alias: Note
+                dir: '%kernel.project_dir%/src/<Context>/Infrastructure/Persistence/Doctrine/Mapping'
+                prefix: 'App\<Context>\Domain'
+                alias: <Context>
 ```
 
 ## Adding a New Context — Checklist
 
-1. Use `/scaffold-bounded-context` (or copy the User/Note layout manually).
+1. Use `/scaffold-bounded-context` (or copy the User layout manually).
 2. Add the new context's mapping under `doctrine.yaml`.
 3. Add the repository alias under `services.yaml`.
 4. Run `make migrate-diff`, review SQL, commit.
