@@ -20,6 +20,10 @@ doctrine:
                 dir: '%kernel.project_dir%/src/User/Infrastructure/Persistence/Doctrine/Mapping'
                 prefix: 'App\User\Domain'
                 alias: User
+            GesdinetJWTRefreshTokenBundle:
+                type: xml
+                is_bundle: true
+                alias: RefreshTokenBundle
 
 when@test:
     doctrine:

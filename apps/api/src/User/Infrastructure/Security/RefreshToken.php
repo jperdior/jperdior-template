@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\User\Infrastructure\Security;
 
-use Gesdinet\JWTRefreshTokenBundle\Model\AbstractRefreshToken;
+use Gesdinet\JWTRefreshTokenBundle\Entity\RefreshToken as BaseRefreshToken;
 
-final class RefreshToken extends AbstractRefreshToken
+final class RefreshToken extends BaseRefreshToken
 {
 }
