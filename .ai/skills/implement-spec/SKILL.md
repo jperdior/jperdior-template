@@ -10,28 +10,26 @@ Execute an approved spec under `.ai/specs/{date}-{slug}.md`. Implement phase by 
 ## Prerequisites
 
 - The spec passed `/pre-implement-spec` with verdict = ready.
-- The spec has a **PR Plan** table (see spec template). If it is missing, add one before proceeding.
 - `make start` boots cleanly on the current branch (the feature base branch from `/new-feature`).
 
 If any precondition fails, stop and inform the user.
 
 ## Workflow
 
-The unit of work is a **PR**, not a phase. Each PR is a branch stacked on the previous one.
-Phases within the same PR are implemented sequentially on that branch before it is pushed.
+Each phase in the spec becomes its own branch and PR, stacked on the previous. Merge in order.
 
-### For each PR in the spec's PR Plan:
+### For each phase:
 
-1. **Create the branch** from the current HEAD (feature base for PR 1, previous PR's branch for PR 2+):
+1. **Create the branch** from the current HEAD (feature base for Phase 0, previous phase's branch for Phase N+1):
    ```sh
-   git checkout -b <branch>   # e.g. feat/billing-domain
+   git checkout -b feat/{slug}-phase-{N}-{short-title}
    ```
 
-2. **Read every phase** assigned to this PR. Identify all deliverables, files to touch, tests to add.
+2. **Read the spec phase**. Identify deliverables, files to touch, tests to add.
 
-3. **Delegate research** to Explore subagents when phases span multiple unfamiliar files.
+3. **Delegate research** to Explore subagents when the phase spans multiple unfamiliar files.
 
-4. **Implement all phases for this PR**:
+4. **Implement**:
    - PHP: follow the bounded-context layout. Use `/scaffold-bounded-context` for new contexts, `/add-command`, `/add-query`, `/add-route` for additions.
    - Frontend: follow the route shape under `apps/web/src/app/` or `apps/admin/src/app/`. Use `/scaffold-nextjs-page`, `/scaffold-shadcn-form`.
    - Migrations: run `make migrate-diff`; review the SQL; commit it.
@@ -47,24 +45,24 @@ Phases within the same PR are implemented sequentially on that branch before it 
 
 6. **Code review gate**: invoke `/code-review` on the diff. Resolve every Critical and High finding.
 
-7. **Commit** — one commit per phase within the PR. Format: `feat({context}): {phase title} (spec: {file})`.
+7. **Commit**: `feat({context}): {phase title} (spec: {file})`
 
 8. **Push and open the PR**:
    ```sh
-   git push -u origin <branch>
+   git push -u origin feat/{slug}-phase-{N}-{short-title}
    gh pr create \
-     --title "feat({context}): {PR title}" \
-     --base <previous-branch-or-main> \
-     --body "Part of spec: .ai/specs/{file}. Implements phases {N}–{M}."
+     --title "feat({context}): {phase title}" \
+     --base {previous-branch-or-main} \
+     --body "Phase {N} of spec .ai/specs/{file}."
    ```
 
-9. **Update the spec changelog**: `| {YYYY-MM-DD} | PR {N} opened — phases {X}–{Y}. |`
+9. **Update the spec changelog**: `| {YYYY-MM-DD} | Phase {N} implemented — {PR URL}. |`
 
-10. **Pause** and confirm with the user before starting the next PR (unless they said "implement all without stopping").
+10. **Pause** and confirm with the user before starting the next phase (unless they said "implement all without stopping").
 
-### After all PRs are open
+### After all phases are done
 
-Report the full stack and merge order. Remind the user to merge in order — GitHub will auto-update each PR's base as the previous one merges.
+Report the full stack and merge order. Remind the user to merge in order — GitHub auto-updates each PR's base as the previous one merges.
 
 ## Subagent Strategy
 
@@ -81,27 +79,25 @@ Do NOT use subagents for trivial single-file edits.
 
 | Symptom | Action |
 |---------|--------|
-| `make test` fails on the current PR | Fix before pushing. Never push a red branch. |
+| `make test` fails on the current phase | Fix before pushing. Never push a red branch. |
 | `make lint` reports a deptrac violation | A cross-context import slipped in. Replace with a domain event or public application service. |
 | `make migrate-diff` produces unrelated SQL | Investigate snapshot drift — don't commit unrelated churn. |
 | Phase delivery doesn't match the spec's promise | Update the spec FIRST; then code to the updated promise. |
 | Spec proves wrong mid-implementation | Stop. Update the spec. Re-run `/pre-implement-spec`. Resume. |
-| PR Plan is missing from the spec | Add it before starting — group phases into increments that are independently reviewable and leave the app in a valid state when merged. |
 
 ## Output
 
-End of each PR:
+End of each phase:
 
 ```
-✅ PR {N}: {Title}   →  {PR URL}
-   Branch:  {branch}  →  {base branch}
-   Phases:  {X}–{Y}
+✅ Phase {N}: {Title}   →  {PR URL}
+   Branch:  feat/{slug}-phase-{N}-{title}  →  {base branch}
    Files:   {count} touched, {count} tests added
 
    Merge order so far:
-   1. {PR 1 URL}  ({branch})
-   2. {PR 2 URL}  ({branch})
+   1. {PR URL}  (feat/{slug}-phase-0-…)
+   2. {PR URL}  (feat/{slug}-phase-1-…)
    …
 
-   Next: PR {N+1}: {Title} — proceed?
+   Next: Phase {N+1}: {Title} — proceed?
 ```

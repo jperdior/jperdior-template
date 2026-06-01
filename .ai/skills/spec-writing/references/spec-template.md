@@ -59,19 +59,6 @@ For each:
 | 0 | …  | … (each phase ends with `make test` green) |
 | 1 | …  | … |
 
-## PR Plan
-
-Each PR is a branch stacked on the previous — merge in order. `/implement-spec` creates these branches and PRs automatically.
-
-Group phases into PRs that make sense to deliver and review independently. There is no fixed number. Ask: "can a reviewer understand and approve this PR on its own? does merging it leave the app in a valid, non-broken state?"
-
-| PR | Branch | Phases | Delivers | Base |
-|----|--------|--------|----------|------|
-| 1 | `feat/{slug}-{pr1-name}` | 0–1 | {what this increment delivers} | `main` |
-| 2 | `feat/{slug}-{pr2-name}` | 2 | {what this increment delivers} | PR 1 |
-| … | … | … | … | … |
-
-> Each PR must leave `make lint && make test` green on its own branch.
 
 ## Risks & Impact Review
 

@@ -15,7 +15,7 @@ Design and review specifications against this template's architecture (DDD + Hex
 4. **Apply Answers**: remove the Open Questions block and fill the skeleton.
 5. **Research**: when relevant, compare against open-source leaders / RFCs / Symfony recipes. Quote evidence.
 6. **Design**: write the Architecture, Data Models, API Contracts sections. For every aggregate, declare which **bounded context** it lives in. For every endpoint, declare which **bus** it dispatches to. For every cross-context need, declare the **domain event** or **public application service** used (NOT a direct import).
-7. **Phasing**: break delivery into testable phases. Each phase ends with `make test` passing and a working app. Then produce a **PR Plan** table (see spec template) grouping phases into increments that make sense to deliver and review independently — not necessarily one PR per layer. Ask: "can a reviewer understand and approve this PR on its own? does merging it leave the app in a valid state?" There is no fixed number of PRs. Each PR must leave `make lint && make test` green on its own branch.
+7. **Phasing**: break delivery into testable phases. Each phase ends with `make test` passing and a working app. Each phase will become its own PR — so define phases at a granularity that is independently reviewable and leaves the app in a valid state when merged.
 8. **Risks & Impact**: document concrete failure scenarios (severity, affected area, mitigation, residual risk).
 9. **Integration Coverage**: list the Playwright / PHPUnit functional tests that must exist for the new behaviour.
 10. **Compliance Gate**: apply [references/compliance-gate.md](references/compliance-gate.md).
