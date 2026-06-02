@@ -11,7 +11,7 @@ use Jperdior\SharedKernel\Domain\Aggregate\AggregateRoot;
 
 final class User extends AggregateRoot
 {
-    /** @param list<string> $roles Role values e.g. ['ROLE_USER'] */
+    /** @param list<Role> $roles */
     private function __construct(
         private readonly UserId $id,
         private Email $email,
@@ -23,9 +23,7 @@ final class User extends AggregateRoot
     ) {
     }
 
-    /**
-     * @param list<Role> $roles
-     */
+    /** @param list<Role> $roles */
     public static function register(
         UserId $id,
         Email $email,
@@ -33,12 +31,11 @@ final class User extends AggregateRoot
         array $roles,
         DateTimeImmutable $createdAt,
     ): self {
-        $roleStrings = array_map(static fn (Role $r) => $r->value, $roles ?: [Role::USER]);
-        $user = new self($id, $email, $password, $roleStrings, $createdAt);
+        $user = new self($id, $email, $password, $roles ?: [Role::USER], $createdAt);
         $user->record(new UserRegistered(
             $id->value,
             $email->value,
-            $user->roles,
+            $user->roleStrings(),
             $createdAt->format(DateTimeInterface::ATOM),
         ));
 
@@ -59,7 +56,7 @@ final class User extends AggregateRoot
         bool $mustResetPassword = false,
         ?DateTimeImmutable $deletedAt = null,
     ): self {
-        return new self($id, $email, $password, array_map(static fn (Role $r) => $r->value, $roles), $createdAt, $mustResetPassword, $deletedAt);
+        return new self($id, $email, $password, $roles, $createdAt, $mustResetPassword, $deletedAt);
     }
 
     public function id(): UserId
@@ -80,13 +77,13 @@ final class User extends AggregateRoot
     /** @return list<Role> */
     public function roles(): array
     {
-        return array_map(static fn (string $r) => Role::from($r), $this->roles);
+        return $this->roles;
     }
 
     /** @return list<string> */
     public function roleStrings(): array
     {
-        return $this->roles;
+        return array_map(static fn (Role $r) => $r->value, $this->roles);
     }
 
     public function createdAt(): DateTimeImmutable
@@ -111,14 +108,14 @@ final class User extends AggregateRoot
 
     public function promoteToAdmin(): void
     {
-        if (!\in_array(Role::ADMIN->value, $this->roles, true)) {
-            $this->roles[] = Role::ADMIN->value;
+        if (!\in_array(Role::ADMIN, $this->roles, true)) {
+            $this->roles[] = Role::ADMIN;
         }
     }
 
     public function demoteFromAdmin(): void
     {
-        $this->roles = array_values(array_filter($this->roles, static fn (string $r) => $r !== Role::ADMIN->value));
+        $this->roles = array_values(array_filter($this->roles, static fn (Role $r) => $r !== Role::ADMIN));
     }
 
     public function forcePasswordReset(): void
