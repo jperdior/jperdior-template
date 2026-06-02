@@ -103,10 +103,6 @@ db-reset: ## Drop and recreate the database (DANGEROUS)
 
 # ----- Tests -----
 
-setup-test-db: ## Create and migrate the test database
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console doctrine:database:create --env=test --if-not-exists
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console doctrine:migrations:migrate --env=test --no-interaction
-
 test: test-api test-web ## Run the full test matrix
 
 test-api: ## Run PHP unit + functional tests

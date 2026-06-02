@@ -210,7 +210,6 @@ make api-shell          # bash inside the api container
 make clean              # stop + remove volumes (including JWT keys)
 make migrate            # apply pending Doctrine migrations
 make migrate-diff       # generate migration from entity changes
-make setup-test-db      # create + migrate the test DB
 make test               # phpunit + pnpm test
 make test-api           # phpunit only
 make lint               # phpstan + cs-fixer + deptrac + tsc + eslint
