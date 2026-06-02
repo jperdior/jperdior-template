@@ -33,7 +33,7 @@ apps/api/src/<Context>/
 ├── Infrastructure/
 │   └── Persistence/
 │       ├── Doctrine<Aggregate>Repository.php ← extends Shared\Infrastructure\Doctrine\DoctrineRepository
-│       └── Doctrine/Mapping/<Aggregate>.orm.xml
+│       └── Doctrine/<Aggregate>Model.php    ← PHP attributes, primitive fields; toDomain/toOrm in repository
 └── Presentation/
     └── Http/
         ├── {Create,Update,Delete,Get,List}<Aggregate>Controller.php
@@ -44,7 +44,15 @@ apps/api/src/<Context>/
    ```yaml
    App\<Context>\Domain\<Aggregate>Repository: '@App\<Context>\Infrastructure\Persistence\Doctrine<Aggregate>Repository'
    ```
-6. **Update `config/packages/doctrine.yaml`**: register the context's mapping namespace.
+6. **Update `config/packages/doctrine.yaml`**: register the context's mapping namespace with `type: attribute`:
+   ```yaml
+   <Context>:
+       type: attribute
+       is_bundle: false
+       dir: '%kernel.project_dir%/src/<Context>/Infrastructure/Persistence/Doctrine'
+       prefix: 'App\<Context>\Infrastructure\Persistence\Doctrine'
+       alias: <Context>
+   ```
 7. **Generate the first migration**: `make migrate-diff`. Review the SQL.
 8. **Generate the AGENTS.md** at `apps/api/src/<Context>/AGENTS.md` using `/create-agents-md`.
 9. **Generate the first test**: `apps/api/tests/Functional/<Context>/<Aggregate>Test.php` (smoke test for the Create endpoint).
@@ -54,7 +62,7 @@ apps/api/src/<Context>/
 - **One aggregate root per context** by default. Multiple aggregates require justification.
 - **No cross-context imports** in the skeleton. If the context needs data from `User`, design the access via domain events or a public application service.
 - **Cross-context ID references**: if the new context stores a reference to another context's aggregate (e.g. the user who owns a resource), define a *local* value object with a context-appropriate name — never import the other context's ID type. Example: `Order\Domain\ValueObject\OwnerId` (not `User\Domain\ValueObject\UserId`). Extend the shared-kernel base: `final readonly class OwnerId extends UuidValueObject {}`. It is the same UUID — it is a different concept in this context's language.
-- **No Doctrine attributes** on the domain entity. XML only.
+- **No Doctrine attributes** on the domain entity. ORM mapping belongs on `<Aggregate>Model` in `Infrastructure/Persistence/Doctrine/`.
 - **Value objects validated in their constructor** (`InvalidArgumentException` on bad input).
 - **Repository interface in `Domain/`**, never in `Infrastructure/`.
 - **Initial migration is bounded** to the new tables only — no churn on existing tables.

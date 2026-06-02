@@ -11,12 +11,7 @@ use Jperdior\SharedKernel\Domain\Aggregate\AggregateRoot;
 
 final class User extends AggregateRoot
 {
-    /**
-     * Backing fields are primitive types so Doctrine can hydrate them directly.
-     * Getters wrap them in value objects.
-     *
-     * @param list<string> $roles Role values e.g. ['ROLE_USER']
-     */
+    /** @param list<string> $roles Role values e.g. ['ROLE_USER'] */
     private function __construct(
         private readonly UserId $id,
         private Email $email,
