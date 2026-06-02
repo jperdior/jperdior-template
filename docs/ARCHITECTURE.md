@@ -4,7 +4,7 @@
 
 - **Modular monolith** in PHP 8.4 / Symfony 7.4. One API app (`apps/api`), many bounded contexts inside it.
 - **DDD + Hexagonal + CQRS.** Four-layer bounded contexts; three Symfony Messenger buses.
-- **XML Doctrine mapping** — no ORM attributes on domain entities.
+- **Persistence Model pattern** — dedicated `*Model` infrastructure classes own all Doctrine attributes; domain entities are ORM-free.
 - **JWT auth** with single-use refresh-token rotation. Single-tenant.
 - **Frontends** are Next.js 15 (App Router) consuming the API via a generated TS client.
 - **Strict cross-context boundaries** enforced by `deptrac` in CI.
@@ -66,10 +66,9 @@ Every context under `apps/api/src/<Context>/` follows the same four-layer struct
 │
 ├── Infrastructure/                  ← Symfony/Doctrine adapters
 │   ├── Persistence/
-│   │   ├── Doctrine<Aggregate>Repository.php
+│   │   ├── Doctrine<Aggregate>Repository.php  ← toDomain() + toOrm()
 │   │   └── Doctrine/
-│   │       ├── Mapping/<Aggregate>.orm.xml
-│   │       └── Type/<ValueObject>Type.php   ← custom DBAL types
+│   │       └── <Aggregate>Model.php           ← PHP attributes, primitives only
 │   └── Symfony/
 │       ├── Resources/config/services.yaml   ← repository alias
 │       └── Console/<Command>Command.php
@@ -172,7 +171,7 @@ final class UserIdType extends Type
 }
 ```
 
-Types are registered in `config/packages/doctrine.yaml` and referenced in the XML mapping.
+With the Persistence Model pattern, custom DBAL types are no longer needed. The `*Model` persistence class uses primitive fields (`string`, `bool`, `array`, `DateTimeImmutable`). The repository's `toDomain()` method constructs value objects from those primitives; `toOrm()` maps them back.
 
 ---
 
@@ -192,7 +191,7 @@ See [auth.md](auth.md) for the full flow including the frontend cookie strategy.
 
 - **PostgreSQL 16**. Doctrine 3 with `underscore_number_aware` naming strategy.
 - **UUID v4 primary keys** (generated at the application layer, not the DB).
-- **XML mapping only**. No `#[ORM\*]` attributes on domain entities — the domain is framework-agnostic.
+- **Persistence Model pattern**. Each aggregate has a `*Model` class in `Infrastructure/Persistence/Doctrine/` with Doctrine PHP attributes and primitive fields. Domain entities carry no ORM annotations — they are framework-agnostic. The repository converts between model and aggregate via `toDomain()` / `toOrm()`.
 - **Migrations** under `apps/api/migrations/`. Generated with `make migrate-diff`, reviewed manually, applied with `make migrate`.
 - **One aggregate root per write transaction.** Use `TransactionInterface` from `shared-kernel-php` when you need to span aggregates (rare).
 - **Read DTOs in queries.** Query handlers return readonly response objects, not hydrated aggregates.

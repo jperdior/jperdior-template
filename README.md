@@ -66,7 +66,7 @@ The recommended flow for any non-trivial feature:
 | API | PHP 8.4 + Symfony 7.4 |
 | Architecture | DDD + Hexagonal + CQRS, modular monolith |
 | Auth | Lexik JWT + Gesdinet refresh-token rotation |
-| Persistence | PostgreSQL 16, Doctrine 3 (XML mapping) |
+| Persistence | PostgreSQL 16, Doctrine 3 (Persistence Model pattern) |
 | Queue | Symfony Messenger — sync by default, RabbitMQ-ready via `--profile async` |
 | Cache / Locks | Redis 7 |
 | Public frontend | Next.js 15 App Router, TypeScript strict, Tailwind, shadcn/ui |
@@ -82,7 +82,7 @@ The API follows **DDD + Hexagonal Architecture + CQRS** organised as a modular m
 
 - **Domain** — pure PHP: aggregates, value objects, repository interfaces, domain events. No framework code allowed here.
 - **Application** — use cases as Commands and Queries dispatched through a bus. Handlers are framework-agnostic.
-- **Infrastructure** — Doctrine repositories (XML ORM mappings only, never annotations), external adapters.
+- **Infrastructure** — Doctrine repositories with `*Model` persistence classes (PHP attributes on infrastructure models, never on domain entities), external adapters.
 - **Presentation** — Symfony controllers and request DTOs. Thin: validate input, dispatch to bus, return response.
 
 Cross-context communication goes through the event bus only — direct imports between contexts are forbidden. [`deptrac`](https://github.com/qossmic/deptrac) enforces this in CI.

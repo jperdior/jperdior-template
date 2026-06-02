@@ -59,7 +59,7 @@ Do **not** start any new work until the user has acknowledged the merged state.
 - **Never** import framework code (`Symfony\*`, `Doctrine\*`, `Predis\*`) inside `Domain/`.
 - **Never** call command/query handlers directly from controllers — always go through the bus.
 - **Never** import another bounded context's `Domain/` or `Application/` — cross-context communication goes through the event bus or a public application service. (CI: `deptrac` enforces this.)
-- **Never** add Doctrine attributes to domain entities; ORM mapping is XML only.
+- **Never** add Doctrine attributes to domain entities; ORM mapping belongs on `*Model` persistence classes in `Infrastructure/Persistence/Doctrine/`.
 - **Never** add `tenant_id` columns to entities in `apps/api/src/`. This template is single-tenant by design. For multi-tenancy, fork the template.
 - **Never** edit generated files (`apps/api/openapi.json`, `packages/api-client-ts/src/types.gen.ts`) by hand.
 - **Never** commit credentials, raw tokens, or `.env.local`.
@@ -120,7 +120,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | User aggregate, JWT, refresh tokens, security.yaml | `apps/api/src/User/AGENTS.md` + `docs/auth.md` |
 | Adding ROLE_* checks | `apps/api/AGENTS.md` → Security |
 | **Persistence** | |
-| New aggregate + repository + XML mapping | `apps/api/AGENTS.md` → Persistence |
+| New aggregate + `*Model` + repository | `apps/api/AGENTS.md` → Persistence |
 | Encrypted columns, soft deletes, JSON fields | `apps/api/AGENTS.md` → Persistence |
 | **Frontend** | |
 | New page in `apps/web` or `apps/admin` | `apps/web/AGENTS.md` (or `apps/admin/AGENTS.md`) + `.ai/skills/scaffold-nextjs-page/SKILL.md` |
