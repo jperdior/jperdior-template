@@ -62,28 +62,29 @@ services:
       - "${RABBITMQ_PORT:-5672}:5672"
       - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
 
-  worker:
-    profiles: [async]
-    environment:
-      APP_ENV: dev
-      APP_DEBUG: "1"
-    volumes:
-      - ../../apps/api:/app/apps/api
-      - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
-      - composer_cache:/var/cache/composer
-      - api_jwt:/app/apps/api/config/jwt
-    user: "0:0"
-    working_dir: /app/apps/api
-    command:
-      - sh
-      - -c
-      - |
-        set -e
-        mkdir -p var/cache var/log
-        while [ ! -f /app/apps/api/vendor/autoload.php ]; do
-          sleep 1
-        done
-        exec php bin/console messenger:consume async -vv
+  # worker: uncomment together with rabbitmq when async messaging is needed (make start-async)
+  # worker:
+  #   profiles: [async]
+  #   environment:
+  #     APP_ENV: dev
+  #     APP_DEBUG: "1"
+  #   volumes:
+  #     - ../../apps/api:/app/apps/api
+  #     - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
+  #     - composer_cache:/var/cache/composer
+  #     - api_jwt:/app/apps/api/config/jwt
+  #   user: "0:0"
+  #   working_dir: /app/apps/api
+  #   command:
+  #     - sh
+  #     - -c
+  #     - |
+  #       set -e
+  #       mkdir -p var/cache var/log
+  #       while [ ! -f /app/apps/api/vendor/autoload.php ]; do
+  #         sleep 1
+  #       done
+  #       exec php bin/console messenger:consume async -vv
 
   nginx:
     ports: !reset []

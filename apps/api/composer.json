@@ -23,6 +23,7 @@
         "predis/predis": "^2.0",
         "symfony/asset": "7.4.*",
         "symfony/console": "7.4.*",
+        "symfony/monolog-bundle": "^3.10",
         "symfony/doctrine-messenger": "7.4.*",
         "symfony/dotenv": "7.4.*",
         "symfony/flex": "^2",

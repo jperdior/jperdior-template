@@ -1,0 +1,37 @@
+monolog:
+    channels:
+        - deprecation
+
+when@dev:
+    monolog:
+        handlers:
+            main:
+                type: stream
+                path: "php://stderr"
+                level: debug
+                # suppress the event/doctrine flood so real app logs are visible
+                channels: ["!event", "!doctrine"]
+            deprecation:
+                type: stream
+                path: "php://stderr"
+                level: info
+                channels: [deprecation]
+
+when@prod:
+    monolog:
+        handlers:
+            main:
+                type: fingers_crossed
+                action_level: error
+                handler: nested
+                excluded_http_codes: [404, 405]
+                buffer_size: 50
+            nested:
+                type: stream
+                path: "php://stderr"
+                level: debug
+                formatter: monolog.formatter.json
+            deprecation:
+                type: stream
+                path: "php://stderr"
+                channels: [deprecation]
