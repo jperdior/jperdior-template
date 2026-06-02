@@ -5,8 +5,10 @@ cd /app/apps/api
 
 mkdir -p var/cache var/log
 
-# Install vendor if missing (first boot or after image rebuild).
-if [ ! -f vendor/autoload.php ]; then
+# In dev, always install so dev deps (phpstan, cs-fixer, deptrac) are present even when
+# the api_vendor named volume was seeded from the production image (--no-dev).
+# In prod/test, only install when vendor is absent.
+if [ "${APP_ENV:-prod}" = "dev" ] || [ ! -f vendor/autoload.php ]; then
   composer install --no-interaction --no-progress
 fi
 

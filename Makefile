@@ -37,7 +37,11 @@ init: ## Bootstrap a fresh clone: copy .env.local, patch /etc/hosts, install ski
 start: _ensure-volume-mountpoints build up logs ## Build, start, and tail logs
 
 _ensure-volume-mountpoints: ## Pre-create Docker named-volume mount points as the host user
-	@mkdir -p node_modules apps/web/.next apps/admin/.next apps/api/config/jwt
+	@mkdir -p node_modules apps/web/.next apps/admin/.next apps/api/config/jwt \
+	          .pnpm-store \
+	          apps/web/node_modules apps/admin/node_modules \
+	          packages/api-client-ts/node_modules packages/ui-react/node_modules \
+	          apps/api/vendor apps/api/var apps/api/public/bundles
 
 build: ## Build all container images
 	@${DOCKER_COMPOSE} build
