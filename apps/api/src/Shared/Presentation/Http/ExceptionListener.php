@@ -19,9 +19,11 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 final class ExceptionListener
 {
     public function __construct(
-        #[Autowire('%kernel.debug%')] private readonly bool $debug,
+        #[Autowire('%kernel.debug%')]
+        private readonly bool $debug,
         private readonly LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ExceptionEvent $event): void
     {
@@ -41,7 +43,7 @@ final class ExceptionListener
         };
 
         if ($status >= 500) {
-            $this->logger->error('Unhandled exception: ' . $exception->getMessage(), ['exception' => $exception]);
+            $this->logger->error('Unhandled exception: '.$exception->getMessage(), ['exception' => $exception]);
         }
 
         $body = ['code' => $code, 'message' => $message];
