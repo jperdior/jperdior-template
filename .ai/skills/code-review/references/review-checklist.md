@@ -6,7 +6,7 @@
 - [ ] Controllers dispatch via `CommandBus` / `QueryBus` (never inject a handler)
 - [ ] Repository interfaces in `Domain/`, implementations in `Infrastructure/Persistence/`
 - [ ] Repository implementations aliased to interfaces in `config/services.yaml`
-- [ ] Doctrine mapping is XML; no `#[ORM\*]` on domain entities
+- [ ] No `#[ORM\*]` on domain entities; ORM attributes belong on `*Model` classes in `Infrastructure/Persistence/Doctrine/`
 - [ ] Cross-context interaction via domain events or public application services
 - [ ] `tenant_id` columns absent from core entities (`tenancy-php` opt-in only)
 

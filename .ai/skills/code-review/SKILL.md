@@ -6,7 +6,7 @@ description: Review code changes (PR, diff, branch, commit) against this templat
 # Code Review
 
 Review code changes against:
-- DDD + Hexagonal + CQRS rules (bounded-context isolation, bus discipline, XML mapping)
+- DDD + Hexagonal + CQRS rules (bounded-context isolation, bus discipline, Persistence Model pattern)
 - Security & data integrity (auth, refresh-token rotation, validation, migrations)
 - Naming & structure (singular aggregates, plural tables, snake_case columns)
 - Code quality (`declare(strict_types=1);`, no `any`, final readonly DTOs)
@@ -106,7 +106,7 @@ Rules:
 
 - NO `use App\<OtherContext>\Domain\…` or `…\Application\…` in another context.
 - Controllers dispatch through `CommandBus` / `QueryBus`. Handlers MUST NOT be wired directly into controllers.
-- Domain entities MUST NOT carry Doctrine attributes; mapping is XML in `Infrastructure/Persistence/Doctrine/Mapping/`.
+- Domain entities MUST NOT carry Doctrine attributes; ORM mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
 - No `tenant_id` column in core entities (only inside `tenancy-php`).
 - Repository interfaces in `Domain/`, Doctrine implementations in `Infrastructure/Persistence/`, aliased in `config/services.yaml`.
 

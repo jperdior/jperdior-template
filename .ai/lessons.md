@@ -6,9 +6,9 @@ Institutional memory of mistakes worth not repeating. One entry per lesson. Writ
 
 ## L-001 — Doctrine attributes on domain entities
 
-**Don't.** Domain entities live in `Domain/` and may not import anything framework-specific. Doctrine mapping is XML, kept in `Infrastructure/Persistence/Doctrine/Mapping/<Aggregate>.orm.xml`. If you add `#[ORM\Entity]` to a domain entity, you've coupled the domain to ORM and a future replacement (or a swap to read models) becomes a rewrite.
+**Don't.** Domain entities live in `Domain/` and may not import anything framework-specific. If you add `#[ORM\Entity]` to a domain entity, you've coupled the domain to ORM and a future replacement (or a swap to read models) becomes a rewrite. Instead, create a `*Model` class in `Infrastructure/Persistence/Doctrine/` that Doctrine owns, and map primitives there. The repository's `toDomain()` / `toOrm()` methods handle the conversion.
 
-**How to apply**: when a developer or AI agent proposes attribute mapping, point them at the XML file and `apps/api/AGENTS.md` → Persistence.
+**How to apply**: when a developer or AI agent proposes attribute mapping on a domain entity, point them at `*Model` pattern and `apps/api/AGENTS.md` → Persistence.
 
 ---
 
@@ -50,13 +50,13 @@ Institutional memory of mistakes worth not repeating. One entry per lesson. Writ
 
 ---
 
-## L-006 — Custom DBAL types for value objects (PHP 8.4)
+## L-006 — Persistence Model pattern (not custom DBAL types)
 
-**Don't** map domain entity properties typed as value objects without a custom DBAL type. PHP 8.4 lazy-ghost objects enforce typed property assignment strictly — if a property is typed `UserId` and Doctrine hydrates a raw string into it, you get a `TypeError`.
+**Don't** map domain entity properties typed as value objects via custom DBAL types. The old approach (custom `Type` classes registered in `doctrine.yaml`) was needed when Doctrine managed the domain entity directly — now the `*Model` persistence class uses only primitives, so no custom types are required.
 
-**Why**: PHP 8.4 changed how Doctrine hydrates entities. The fix is a custom `Type` class that converts between the DB primitive and the value object at the persistence boundary. One type per value object. Register in `doctrine.yaml`, reference in the XML mapping.
+**Why**: PHP 8.4 lazy-ghost objects enforce typed property assignment strictly. Doctrine managing a domain entity with value-object properties causes `TypeError`. The Persistence Model pattern sidesteps this entirely: `*Model` has `string $id`, `string $email`, etc., and the repository's `toDomain()` constructs the value objects.
 
-**How to apply**: every value-object-typed property on a domain entity needs a corresponding DBAL type. See `src/User/Infrastructure/Doctrine/Type/` for the pattern.
+**How to apply**: every new aggregate gets a `<Aggregate>Model.php` in `Infrastructure/Persistence/Doctrine/` with primitive fields and Doctrine PHP attributes. No `dbal.types` registration needed. See `src/User/Infrastructure/Persistence/Doctrine/UserModel.php` for the pattern.
 
 ---
 

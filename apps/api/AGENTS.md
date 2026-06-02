@@ -7,7 +7,7 @@ Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context
 - Match the four-layer layout in every context: `Domain/`, `Application/`, `Infrastructure/`, `Presentation/`.
 - Dispatch through `CommandBus` / `QueryBus` from controllers. Never inject a handler.
 - Place repository interfaces in `Domain/`, Doctrine implementations in `Infrastructure/Persistence/`, alias them in `config/services.yaml`.
-- Use **XML** Doctrine mapping under `Infrastructure/Persistence/Doctrine/Mapping/`.
+- Use PHP attributes on `*Model` persistence classes under `Infrastructure/Persistence/Doctrine/`. Register each context with `type: attribute` in `config/packages/doctrine.yaml`. Never put `#[ORM\*]` on Domain entities.
 - `declare(strict_types=1);` at the top of every file.
 - `final readonly` for value objects, DTOs, commands, queries, responses.
 - `DateTimeImmutable` everywhere in domain code; never `DateTime`.
@@ -25,7 +25,7 @@ Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context
 ## Never
 
 - **Never** import another context's `Domain/` or `Application/`. CI `deptrac` enforces this.
-- **Never** add `#[ORM\*]` attributes to domain entities. XML only.
+- **Never** add `#[ORM\*]` attributes to domain entities. ORM mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
 - **Never** add `tenant_id` columns to entities here. Tenancy is in `packages/tenancy-php`.
 - **Never** call `em->find()` from a controller. Use a query.
 - **Never** catch a domain exception in a controller unless transforming it to a specific HTTP status with rationale.
@@ -60,7 +60,7 @@ apps/api/
 │   ├── routes.yaml
 │   ├── services.yaml             ← _instanceof tags for 3 buses + service aliases
 │   └── packages/
-│       ├── doctrine.yaml          ← XML mapping per context
+│       ├── doctrine.yaml          ← attribute mapping per context
 │       ├── doctrine_migrations.yaml
 │       ├── framework.yaml
 │       ├── messenger.yaml         ← command.bus / query.bus / event.bus
@@ -122,10 +122,10 @@ doctrine:
         auto_mapping: false
         mappings:
             <Context>:
-                type: xml
+                type: attribute
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/<Context>/Infrastructure/Persistence/Doctrine/Mapping'
-                prefix: 'App\<Context>\Domain'
+                dir: '%kernel.project_dir%/src/<Context>/Infrastructure/Persistence/Doctrine'
+                prefix: 'App\<Context>\Infrastructure\Persistence\Doctrine'
                 alias: <Context>
 ```
 

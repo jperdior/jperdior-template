@@ -72,7 +72,7 @@ Every non-trivial spec includes:
 - **Problem Statement** — what we're solving.
 - **Proposed Solution** — high-level approach.
 - **Architecture** — bounded-context layout, layer responsibilities, bus interactions.
-- **Data Models** — entities, value objects, ORM mapping (XML).
+- **Data Models** — entities, value objects, `*Model` persistence class fields.
 - **API Contracts** — HTTP routes (path + method + DTO + response), CLI commands.
 - **Phasing** — broken into testable phases; each phase ends with a working app.
 - **Risks & Impact Review** — concrete failure scenarios, severity, mitigation, residual risk.

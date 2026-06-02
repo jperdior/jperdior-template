@@ -51,7 +51,7 @@ Application/
 └── Query/GetCurrentUser/{GetCurrentUserQuery,GetCurrentUserQueryHandler,CurrentUserResponse}.php
 
 Infrastructure/
-├── Persistence/{DoctrineUserRepository.php, Doctrine/Mapping/User.orm.xml}
+├── Persistence/{DoctrineUserRepository.php, Doctrine/UserModel.php}
 ├── Symfony/SymfonyPasswordHasher.php           (adapter for Symfony password_hasher)
 └── Symfony/Security/{SecurityUser,UserProvider}.php
 └── Symfony/Console/PromoteAdminCommand.php

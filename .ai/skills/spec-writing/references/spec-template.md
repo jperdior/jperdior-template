@@ -31,7 +31,7 @@
 For each aggregate:
 - Identifier (UUID v4 unless v5-from-business-key)
 - Fields with types and invariants
-- Doctrine XML mapping snippet (in `Infrastructure/Persistence/Doctrine/Mapping/<Aggregate>.orm.xml`)
+- Persistence model fields (in `Infrastructure/Persistence/Doctrine/<Aggregate>Model.php`)
 - Migrations needed
 
 ## API Contracts

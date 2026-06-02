@@ -5,7 +5,7 @@ description: Draft or review architectural specs under .ai/specs/. Use when star
 
 # Spec Writing & Review
 
-Design and review specifications against this template's architecture (DDD + Hexagonal + CQRS, XML Doctrine mapping, three Messenger buses, bounded-context isolation enforced by deptrac). Adopt the **staff engineer** persona — flexible about innovation, uncompromising about boundaries.
+Design and review specifications against this template's architecture (DDD + Hexagonal + CQRS, Persistence Model pattern, three Messenger buses, bounded-context isolation enforced by deptrac). Adopt the **staff engineer** persona — flexible about innovation, uncompromising about boundaries.
 
 ## Workflow
 
@@ -62,7 +62,7 @@ See [references/spec-checklist.md](references/spec-checklist.md).
 
 1. **Boundary integrity**: does the spec propose any `use App\<OtherContext>\Domain\…` import? If yes, that's a **Critical** violation — propose an event or a public application service instead.
 2. **Bus discipline**: do controllers dispatch through `CommandBus` / `QueryBus`? Or does the spec wire a handler directly into a controller? Critical.
-3. **Mapping discipline**: does the spec add `#[ORM\Entity]` / `#[ORM\Column]` attributes to a domain entity? Critical — XML mapping only.
+3. **Mapping discipline**: does the spec add `#[ORM\Entity]` / `#[ORM\Column]` attributes to a domain entity? Critical — ORM attributes belong on `*Model` persistence classes in `Infrastructure/Persistence/Doctrine/`, never on domain entities.
 4. **Aggregate granularity**: is there exactly one aggregate root per write transaction? Splitting one logical transaction across two aggregates is a smell; merging two distinct lifecycles into one aggregate is also a smell.
 5. **Value object usage**: are user-supplied strings validated at value-object construction (`UserId`, `Email`, `NoteTitle`) rather than after handler dispatch?
 6. **Multi-tenancy hygiene**: does the spec add `tenant_id` to a core entity? If yes, reject — direct the author at `docs/multitenancy.md` and the `tenancy-php` opt-in.
@@ -79,7 +79,7 @@ See [references/spec-checklist.md](references/spec-checklist.md).
 - **No `any`** in TypeScript; **`declare(strict_types=1);`** in every PHP file.
 - **`final readonly`** for value objects, DTOs, queries, responses.
 - **`DateTimeImmutable`** everywhere in domain code.
-- **Doctrine mapping is XML**, never attributes.
+- **Domain entities carry no ORM attributes.** Doctrine mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
 - **Forms** use shadcn `Form` + react-hook-form + zod.
 - **Frontend** consumes the API via `@jperdior/api-client-ts` — never raw `fetch`.
 

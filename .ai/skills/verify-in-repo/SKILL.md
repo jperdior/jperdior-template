@@ -31,11 +31,9 @@ Independent check that a specific change is present in the working tree (and opt
 
 | Check | Result |
 |-------|--------|
-| File `apps/api/src/Note/Domain/Note.php` exists | YES / NO |
-| `class Note` defined in that file | YES / NO |
-| Doctrine mapping `Note.orm.xml` exists | YES / NO |
-| Repository interface `NoteRepository` exists | YES / NO |
-| Doctrine repository implementation exists | YES / NO |
+| File `{path/to/claimed/file}` exists | YES / NO |
+| `{class or symbol}` defined in that file | YES / NO |
+| {any other structural check relevant to the claim} | YES / NO |
 | Committed in this branch | YES (sha {x}) / NO |
 | Pushed to origin | YES / NO |
 

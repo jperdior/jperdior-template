@@ -5,11 +5,11 @@ description: Generate a Doctrine migration via `php bin/console doctrine:migrati
 
 # Scaffold Doctrine Migration
 
-Generate a migration matching the current entity / XML mapping state, then **review** it before committing.
+Generate a migration matching the current `*Model` persistence class state, then **review** it before committing.
 
 ## Workflow
 
-1. **Confirm entity / XML change is committed locally** (not just in the editor — the diff tool reads what Doctrine sees on disk).
+1. **Confirm `*Model` change is committed locally** (not just in the editor — the diff tool reads what Doctrine sees on disk).
 2. **Run the diff**:
    ```sh
    make migrate-diff

@@ -36,10 +36,7 @@ apps/api/src/<Context>/
 │   ├── Persistence/
 │   │   ├── Doctrine<Aggregate>Repository.php   extends DoctrineRepository
 │   │   └── Doctrine/
-│   │       ├── Mapping/
-│   │       │   └── <Aggregate>.orm.xml
-│   │       └── Type/
-│   │           └── <Aggregate>IdType.php       custom DBAL type
+│   │       └── <Aggregate>Model.php            PHP attributes, primitive fields
 │   └── Symfony/
 │       └── Resources/config/services.yaml      repository alias
 └── Presentation/
@@ -88,75 +85,65 @@ Key rules:
 - `DateTimeImmutable` everywhere. Never `DateTime`.
 - No framework imports. No `Symfony\*`, `Doctrine\*`, or anything outside your `Domain/` and `Jperdior\SharedKernel\`.
 
-### 3. Write the custom DBAL type
+### 3. Write the persistence model
 
-PHP 8.4's lazy-ghost objects enforce typed property assignment strictly. If a domain entity property is typed `<Aggregate>Id` and Doctrine tries to hydrate a raw UUID string into it, you get a `TypeError`. The fix is a custom DBAL type:
+No `#[ORM\*]` attributes on domain entities — the domain is framework-agnostic. Instead, create a `*Model` class in `Infrastructure/Persistence/Doctrine/` that Doctrine owns entirely. It uses only primitive PHP types; the repository converts between model and aggregate.
 
 ```php
-// src/<Context>/Infrastructure/Doctrine/Type/<Aggregate>IdType.php
+// src/<Context>/Infrastructure/Persistence/Doctrine/<Aggregate>Model.php
 declare(strict_types=1);
 
-namespace App\<Context>\Infrastructure\Doctrine\Type;
+namespace App\<Context>\Infrastructure\Persistence\Doctrine;
 
-use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Types\Type;
-use App\<Context>\Domain\<Aggregate>Id;
+use DateTimeImmutable;
+use Doctrine\ORM\Mapping as ORM;
 
-final class <Aggregate>IdType extends Type
+#[ORM\Entity]
+#[ORM\Table(name: '<aggregates>')]
+final class <Aggregate>Model
 {
-    public const NAME = '<aggregate>_id';
+    #[ORM\Id]
+    #[ORM\Column(type: 'string', length: 36)]
+    #[ORM\GeneratedValue(strategy: 'NONE')]
+    public string $id;
 
-    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?<Aggregate>Id
-    {
-        return null !== $value ? <Aggregate>Id::fromString((string) $value) : null;
-    }
+    #[ORM\Column(name: 'created_at', type: 'datetime_immutable')]
+    public DateTimeImmutable $createdAt;
 
-    public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
-    {
-        return $value instanceof <Aggregate>Id ? $value->value : null;
-    }
-
-    public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
-    {
-        return $platform->getStringTypeDeclarationSQL($column);
-    }
-
-    public function getName(): string { return self::NAME; }
+    // add other primitive fields here
 }
 ```
 
-Register it in `apps/api/config/packages/doctrine.yaml`:
+Table names: plural, snake_case. Column names: snake_case. All fields `public` — no getters needed, this class is infrastructure-only.
 
-```yaml
-doctrine:
-    dbal:
-        types:
-            <aggregate>_id: App\<Context>\Infrastructure\Doctrine\Type\<Aggregate>IdType
+Then implement `toDomain()` and `toOrm()` in the repository:
+
+```php
+private function toDomain(<Aggregate>Model $m): <Aggregate>
+{
+    return <Aggregate>::rehydrate(
+        <Aggregate>Id::fromString($m->id),
+        $m->createdAt,
+        // ...
+    );
+}
+
+private function toOrm(<Aggregate> $agg, ?<Aggregate>Model $existing = null): <Aggregate>Model
+{
+    $model = $existing ?? new <Aggregate>Model();
+    $model->id = $agg->id()->value;
+    $model->createdAt = $agg->createdAt();
+    return $model;
+}
+
+public function save(<Aggregate> $agg): void
+{
+    $existing = $this->entityManager()->find(<Aggregate>Model::class, $agg->id()->value);
+    $this->persist($this->toOrm($agg, $existing));
+}
 ```
 
-### 4. Write the XML mapping
-
-No `#[ORM\*]` attributes on domain entities. Doctrine mapping lives in XML:
-
-```xml
-<!-- src/<Context>/Infrastructure/Persistence/Doctrine/Mapping/<Aggregate>.orm.xml -->
-<?xml version="1.0" encoding="UTF-8"?>
-<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
-                  https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
-
-    <entity name="App\<Context>\Domain\<Aggregate>" table="<aggregates>">
-        <id name="id" type="<aggregate>_id" column="id"/>
-        <field name="createdAt" type="datetime_immutable" column="created_at"/>
-        <!-- other fields -->
-    </entity>
-</doctrine-mapping>
-```
-
-Table names: plural, snake_case. Column names: snake_case. ID type: your custom DBAL type. `DateTimeImmutable` fields use `datetime_immutable`.
-
-### 5. Register the Doctrine mapping
+### 4. Register the Doctrine mapping
 
 In `apps/api/config/packages/doctrine.yaml`, under `orm.mappings`:
 
@@ -166,10 +153,10 @@ doctrine:
         auto_mapping: false
         mappings:
             <Context>:
-                type: xml
+                type: attribute
                 is_bundle: false
-                dir: '%kernel.project_dir%/src/<Context>/Infrastructure/Persistence/Doctrine/Mapping'
-                prefix: 'App\<Context>\Domain'
+                dir: '%kernel.project_dir%/src/<Context>/Infrastructure/Persistence/Doctrine'
+                prefix: 'App\<Context>\Infrastructure\Persistence\Doctrine'
                 alias: <Context>
 ```
 
@@ -207,7 +194,7 @@ Open the generated file. Review the SQL. Verify it matches what you expect. Then
 make migrate
 ```
 
-Never run migrations without reviewing the SQL first. The `migrate-diff` command diffs the current schema against your XML mappings — it will catch typos in column names and type mismatches.
+Never run migrations without reviewing the SQL first. The `migrate-diff` command diffs the current schema against your `*Model` classes — it will catch typos in column names and type mismatches.
 
 ### 8. Write the command handler and use case
 
