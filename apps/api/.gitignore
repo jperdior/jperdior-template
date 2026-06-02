@@ -22,3 +22,6 @@
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
+
+# Generated Symfony config reference (auto-updated when bundles are installed).
+/config/reference.php
