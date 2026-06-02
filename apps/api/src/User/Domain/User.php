@@ -115,7 +115,7 @@ final class User extends AggregateRoot
 
     public function demoteFromAdmin(): void
     {
-        $this->roles = array_values(array_filter($this->roles, static fn (Role $r) => $r !== Role::ADMIN));
+        $this->roles = array_values(array_filter($this->roles, static fn (Role $r) => Role::ADMIN !== $r));
     }
 
     public function forcePasswordReset(): void
