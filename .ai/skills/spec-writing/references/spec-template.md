@@ -71,6 +71,7 @@ For each:
 |---------|------|------|---------|
 | TC-… | PHPUnit Functional | `apps/api/tests/Functional/…` | … |
 | TC-… | Playwright | `apps/web/e2e/…` | … |
+| TC-… | Playwright | `apps/admin/e2e/…` | … |
 
 ## Backward Compatibility
 
