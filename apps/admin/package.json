@@ -9,7 +9,8 @@
     "start":      "next start -p ${PORT:-3001}",
     "lint":       "eslint .",
     "typecheck":  "tsc --noEmit",
-    "test":       "echo 'no unit tests'"
+    "test":       "echo 'no unit tests; see e2e'",
+    "test:e2e":   "playwright test"
   },
   "dependencies": {
     "@jperdior/api-client-ts": "workspace:*",
@@ -20,6 +21,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.2",
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

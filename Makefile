@@ -125,6 +125,9 @@ test-web: ## Run JS unit tests (web + admin containers)
 test-e2e: ## Run Playwright e2e tests inside a container (requires make start)
 	@${DOCKER_COMPOSE_E2E} run --rm playwright
 
+test-e2e-admin: ## Run admin Playwright e2e tests inside a container (requires make start)
+	@${DOCKER_COMPOSE_E2E} run --rm playwright-admin
+
 # ----- Lint / static analysis -----
 
 lint: lint-shared-kernel lint-api lint-web ## Lint everything
