@@ -12,9 +12,10 @@ Run the integration suite or create new tests from a spec, scenario, or feature 
 ### Running existing tests
 
 ```sh
-make test-api        # PHPUnit unit + functional
-make test-e2e        # Playwright (web)
-make test            # everything
+make test-api              # PHPUnit unit + functional
+make test-e2e              # Playwright (apps/web)
+make test-e2e-admin        # Playwright (apps/admin)
+make test                  # everything
 ```
 
 To filter PHPUnit:
@@ -22,9 +23,12 @@ To filter PHPUnit:
 make test-api ARG="--filter SignUpControllerTest"
 ```
 
-To run a single Playwright spec, exec into the running web container:
+To run a single Playwright spec, exec into the running container:
 ```sh
+# web
 docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml exec web pnpm -C apps/web exec playwright test e2e/auth.spec.ts
+# admin
+docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml exec admin pnpm -C apps/admin exec playwright test e2e/auth.spec.ts
 ```
 
 ### Creating new tests
@@ -41,7 +45,8 @@ docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/d
 
 3. **Generate the scaffold**:
    - PHPUnit: place under `apps/api/tests/Functional/<Context>/<Controller>Test.php`. Extend `FunctionalTestCase`.
-   - Playwright: place under `apps/web/e2e/<area>/<flow>.spec.ts`. Import helpers from `apps/web/e2e/helpers/`.
+   - Playwright (web journeys): place under `apps/web/e2e/<area>/<flow>.spec.ts`. Import helpers from `apps/web/e2e/helpers/`.
+   - Playwright (admin journeys): place under `apps/admin/e2e/<area>/<flow>.spec.ts`. Import helpers from `apps/admin/e2e/helpers/`.
 
 4. **Walk the flow** (Playwright only): with `make start` running, navigate the UI and confirm selectors (`getByRole` / `getByLabel` / `getByText`).
 
@@ -124,7 +129,10 @@ test.describe('<Feature>: <journey name>', () => {
 `apps/web/e2e/helpers/auth.ts` exposes:
 - `signUp(page, options?)` — signs up a unique user via the UI and returns `{ email, password }`. Lands on `/dashboard` after signup.
 
-Add more helpers to `apps/web/e2e/helpers/` as journeys grow (e.g. `signIn`, `signInAsAdmin`).
+`apps/admin/e2e/helpers/auth.ts` exposes:
+- `loginAsAdmin(page)` — logs in using `PLAYWRIGHT_ADMIN_EMAIL` / `PLAYWRIGHT_ADMIN_PASSWORD` env vars. Throws if either is unset. Lands on `/dashboard` after login.
+
+Add more helpers to the respective `e2e/helpers/` directories as journeys grow.
 
 For PHP, `apps/api/tests/Functional/FunctionalTestCase.php` exposes:
 - `loginAs(string $email, string $password): string` — returns the JWT
