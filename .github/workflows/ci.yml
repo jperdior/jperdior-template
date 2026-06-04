@@ -200,6 +200,9 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://web.localhost
         run: pnpm -C apps/web exec playwright test
       - name: Seed admin user
+        env:
+          PLAYWRIGHT_ADMIN_EMAIL: admin@e2e.test
+          PLAYWRIGHT_ADMIN_PASSWORD: e2eAdminPass1!
         run: make seed-e2e-admin
       - name: Playwright (admin)
         env:
