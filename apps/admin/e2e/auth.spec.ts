@@ -13,6 +13,6 @@ test('admin login → lands on dashboard', async ({ page }) => {
     'Set PLAYWRIGHT_ADMIN_EMAIL and PLAYWRIGHT_ADMIN_PASSWORD to run this test',
   );
 
-  const { email } = await loginAsAdmin(page);
-  await expect(page.getByText(email)).toBeVisible();
+  await loginAsAdmin(page);
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 });

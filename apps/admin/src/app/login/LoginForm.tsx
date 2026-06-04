@@ -7,7 +7,7 @@ import { loginAction, type LoginState } from './actions';
 
 export function LoginForm() {
   const search = useSearchParams();
-  const next   = search.get('next') ?? '/users';
+  const next   = search.get('next') ?? '/dashboard';
   const [state, formAction, isPending] = useActionState<LoginState, FormData>(loginAction, {});
 
   return (

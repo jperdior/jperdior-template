@@ -125,7 +125,11 @@ test-web: ## Run JS unit tests (web + admin containers)
 test-e2e: ## Run Playwright e2e tests inside a container (requires make start)
 	@${DOCKER_COMPOSE_E2E} run --rm playwright
 
-test-e2e-admin: ## Run admin Playwright e2e tests inside a container (requires make start)
+seed-e2e-admin: ## Create/promote the e2e admin user (idempotent; requires make start)
+	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console app:user:ensure-admin \
+		"${PLAYWRIGHT_ADMIN_EMAIL}" "${PLAYWRIGHT_ADMIN_PASSWORD}"
+
+test-e2e-admin: seed-e2e-admin ## Run admin Playwright e2e tests inside a container (requires make start)
 	@${DOCKER_COMPOSE_E2E} run --rm playwright-admin
 
 # ----- Lint / static analysis -----
