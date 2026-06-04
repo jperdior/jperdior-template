@@ -131,7 +131,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Workflow** | |
 | First-time project customization (rename placeholders, add project context) | `.ai/skills/customize-project/SKILL.md` |
 | First-time local setup (hosts, .env.local, stack boot) | `.ai/skills/init/SKILL.md` |
-| Starting any new feature (creates worktree + branch from main) | `.ai/skills/new-feature/SKILL.md` |
+| Starting a spec branch OR implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — called twice: `spec/<slug>` then `feat/<slug>` |
 | **Specs & PR Automation** | |
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
 | Pre-implementation audit | `.ai/skills/pre-implement-spec/SKILL.md` |
@@ -156,8 +156,36 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 ## Workflow Orchestration
 
-**Recommended AI-first path for any non-trivial feature:**
-`/spec-writing` (design + spec doc, ends with a `spec/<slug>` PR to main) → merge spec PR → `/new-feature` + `/implement-spec` (code, calls scaffolding skills internally) → PR
+**Full spec-driven path (any non-trivial feature — 3+ steps or architectural decisions):**
+
+```
+Step 1 — Design
+  /new-feature spec/<slug>     ← worktree for spec branch
+  /spec-writing                ← draft spec, open spec-only PR to main
+  [merge spec PR]
+
+Step 2 — Audit
+  /pre-implement-spec .ai/specs/{file}.md   ← readiness report; fix gaps before coding
+
+Step 3 — Implement
+  /new-feature feat/<slug>     ← worktree for implementation branch
+  /implement-spec .ai/specs/{file}.md       ← phase by phase, CI gate after each
+  /open-pr                     ← implementation PR to main
+```
+
+**Short path (small, already-specified addition where a full spec is overhead):**
+
+Use `/scaffold-bounded-context`, `/add-command`, `/add-route` directly. Still run `make lint && make test` before `/open-pr`.
+
+**Skill roles at a glance:**
+
+| Skill | Phase | Purpose |
+|-------|-------|---------|
+| `/new-feature` | Design + Implement | Creates a worktree+branch from `main`. Called **twice**: once with `spec/` prefix, once with `feat/` prefix. |
+| `/spec-writing` | Design | Drafts the spec, opens the spec-only PR. Stops before any code is written. |
+| `/pre-implement-spec` | Audit | Audits the merged spec for gaps, missing tests, BC risks. Verdict must be "ready" before coding starts. |
+| `/implement-spec` | Implement | Executes the spec phase by phase; runs the CI gate after each phase. |
+| `/open-pr` | Ship | Opens the implementation PR using the repository PR template. |
 
 Use `/scaffold-bounded-context`, `/add-command`, `/add-route` **directly** only for small, already-specified additions where a full spec would be overhead.
 
