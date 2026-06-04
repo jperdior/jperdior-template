@@ -23,8 +23,32 @@ Design and review specifications against this template's architecture (DDD + Hex
 12. **Publish the spec to main** (spec-only PR):
     - You should already be in a worktree on a `spec/<slug>` branch (created via `/new-feature` at the start, using `spec/` prefix instead of `feat/`). If not, create one now.
     - Commit only the spec file: `git add .ai/specs/{file} && git commit -m "spec: {title}"`
-    - Open a PR to `main` with `gh pr create --base main --title "spec: {title}" --body "Design doc — no code changes. See .ai/specs/{file}."`
-    - **Stop here.** Do not start implementation until the spec PR is merged to main. Once merged, run `/new-feature` to open the implementation worktree.
+    - Open a PR to `main` using the repository PR template:
+      ```sh
+      gh pr create --base main --title "spec: {title}" --body "$(cat <<'EOF'
+      ## What
+      Design spec for {feature} — no code changes.
+
+      ## Why
+      <!-- Link to issue or describe the motivation -->
+
+      ## How
+      Spec only. Implementation follows after merge via `/pre-implement-spec` + `/implement-spec`.
+      See `.ai/specs/{file}` for architecture, data models, API contracts, and phasing.
+
+      ## Test plan
+      N/A — spec-only PR, no code changed.
+      Integration test plan is documented in the spec under "Integration Coverage".
+
+      ## Checklist
+      - [x] No code changes — spec document only
+      - [ ] Spec reviewed for DDD / Hexagonal / CQRS compliance (Final Compliance Report filled)
+      - [x] No credentials or tokens committed
+      EOF
+      )"
+      ```
+    - **Stop here.** Do not start implementation until the spec PR is merged to main.
+    - Once merged, the implementation flow is: `/pre-implement-spec {file}` (audit) → `/new-feature feat/<slug>` (worktree) → `/implement-spec {file}`.
 
 ## Output Formats
 

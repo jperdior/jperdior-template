@@ -24,20 +24,27 @@ Open a PR for the work already on the current branch (the branch must have commi
 4. **Open the PR**:
    ```sh
    gh pr create --title "<type>(<context>): <summary>" --body "$(cat <<'EOF'
-   ## Summary
-   - bullet 1
-   - bullet 2
+   ## What
+   <!-- One sentence: what does this PR do? -->
 
-   ## Spec
-   {link to .ai/specs/... or "N/A"}
+   ## Why
+   Implements spec: <!-- .ai/specs/{file}.md — or "N/A" if no spec -->
+
+   ## How
+   <!-- Key implementation decisions. Skip the obvious. -->
 
    ## Test plan
-   - [ ] make lint
-   - [ ] make test
-   - [ ] make test-e2e (if applicable)
+   - [ ] `make lint` exits 0
+   - [ ] `make test` exits 0
+   - [ ] `make test-e2e` exits 0 (if UI changed)
+   - [ ] Manually tested: <!-- describe the happy path you exercised -->
 
-   ## Screenshots
-   (if UI changed)
+   ## Checklist
+   - [ ] No cross-bounded-context Domain imports (`deptrac` will catch them in CI)
+   - [ ] New entities use XML mapping only (no `#[ORM\*]` attributes)
+   - [ ] New migration reviewed — `up()` and `down()` both correct
+   - [ ] No credentials or tokens committed
+   - [ ] OpenAPI-affecting change → `make gen-api` run and diff committed
    EOF
    )"
    ```
