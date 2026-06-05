@@ -136,6 +136,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
 | Pre-implementation audit | `.ai/skills/pre-implement-spec/SKILL.md` |
 | Implementing an approved spec | `.ai/skills/implement-spec/SKILL.md` |
+| Syncing context AGENTS.md after implementation | `.ai/skills/sync-context-docs/SKILL.md` |
 | Code review (CI gate) | `.ai/skills/code-review/SKILL.md` |
 | Auto PR workflows | `.ai/skills/auto-create-pr/SKILL.md`, `.ai/skills/auto-review-pr/SKILL.md`, `.ai/skills/merge-buddy/SKILL.md` |
 | **Testing** | |
@@ -170,6 +171,7 @@ Step 2 — Audit
 Step 3 — Implement
   /new-feature feat/<slug>     ← worktree for implementation branch
   /implement-spec .ai/specs/{file}.md       ← phase by phase, CI gate after each
+  /sync-context-docs                        ← update bounded context AGENTS.md files
   /open-pr                     ← implementation PR to main
 ```
 
@@ -185,6 +187,7 @@ Use `/scaffold-bounded-context`, `/add-command`, `/add-route` directly. Still ru
 | `/spec-writing` | Design | Drafts the spec, opens the spec-only PR. Stops before any code is written. |
 | `/pre-implement-spec` | Audit | Audits the merged spec for gaps, missing tests, BC risks. Verdict must be "ready" before coding starts. |
 | `/implement-spec` | Implement | Executes the spec phase by phase; runs the CI gate after each phase. |
+| `/sync-context-docs` | Document | Updates `apps/api/src/<Context>/AGENTS.md` for every context touched by the branch. Run before `/open-pr`. |
 | `/open-pr` | Ship | Opens the implementation PR using the repository PR template. |
 
 Use `/scaffold-bounded-context`, `/add-command`, `/add-route` **directly** only for small, already-specified additions where a full spec would be overhead.
