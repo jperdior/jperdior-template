@@ -27,7 +27,7 @@ A spec is a structured document written **before** implementation. It covers:
 - Open questions that must be resolved before coding starts
 - Risks and rollback plan
 
-Pending specs live at the top level (`specs/<slug>/SPEC.md`). Deployed specs move to `specs/implemented/<slug>/SPEC.md`. The AI reads the spec before writing a line of code, which means implementation stays aligned with the agreed design rather than drifting as the codebase evolves.
+Specs are flat files named `.ai/specs/{YYYY-MM-DD}-{slug}.md` (e.g. `2026-06-06-add-notes.md`). The AI reads the spec before writing a line of code, which means implementation stays aligned with the agreed design rather than drifting as the codebase evolves.
 
 The spec format is enforced by `/spec-writing`. It's not optional ceremony — it's how you catch "we'll need a migration for that" before someone writes 300 lines of code against the wrong schema.
 
@@ -42,6 +42,17 @@ Skills exist because the same tasks come up repeatedly. Without a skill, the AI 
 Testing guidance at two layers:
 - **PHPUnit functional tests**: how to write `WebTestCase` tests with transaction rollback isolation, how to use page objects and fixtures, how to test CQRS flows end-to-end through HTTP
 - **Playwright e2e**: full user journey tests that run against a live Compose stack; used for critical paths (sign-up → login → protected action)
+
+### Multi-agent patterns
+
+Several skills spawn parallel subagents to do work faster and more thoroughly than a single sequential pass:
+
+- **`/pre-implement-spec`** — after reading the spec, launches three agents simultaneously: a Gap & Compliance reviewer, a Backward Compatibility auditor, and a Risk & Security assessor. Each has a focused role prompt and reports findings independently; the orchestrator synthesises them into the Readiness Report.
+- **`/code-review`** — launches an Architecture reviewer, a Security reviewer, and a Frontend reviewer in parallel while the CI gate runs at the same time. The separate role prompts keep each agent narrowly focused.
+- **`/implement-spec`** — before coding each phase, spawns Explore agents in parallel to map call sites, test coverage, event subscribers, and migration scope. All writes stay in the main agent.
+- **`/parallel-research`** — standalone skill for ad-hoc multi-angle codebase exploration. Use it before implementing anything in unfamiliar territory.
+
+The rule throughout: **spawn in parallel, write in the main agent**. Subagents are readers and analysts; they never produce commits.
 
 ### Lessons (`.ai/lessons.md`)
 
@@ -82,12 +93,20 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 
 | Skill | What it does |
 |-------|-------------|
-| `/spec-writing` | Produces a `.ai/specs/<slug>/SPEC.md` with the full spec format |
-| `/pre-implement-spec` | Audits a spec against the codebase; flags risks, proposes plan |
-| `/implement-spec` | Implements an approved spec end-to-end; runs lint + test before reporting done |
-| `/code-review` | Reviews the current branch diff against conventions: DDD layers, missing tests, migration correctness, OpenAPI completeness |
+| `/new-feature` | Creates an isolated git worktree + branch from `main`. Called twice per spec-driven feature: once with `spec/` prefix, once with `feat/` prefix |
+| `/spec-writing` | Produces a `.ai/specs/{YYYY-MM-DD}-{slug}.md` with the full spec format; opens a spec-only PR |
+| `/pre-implement-spec` | Audits a merged spec against the codebase using parallel specialized agents; flags gaps, BC risks, and missing tests; produces a Readiness Report |
+| `/implement-spec` | Implements an approved spec phase by phase; runs the CI gate after each phase |
+| `/sync-context-docs` | Updates `AGENTS.md` files for every bounded context touched by the branch; run before opening the PR |
+| `/code-review` | Reviews the current branch diff using parallel specialized reviewer agents (architecture, security, frontend) and runs the CI gate simultaneously |
 | `/check-and-commit` | Lint + test + commit |
-| `/fix-specs` | Updates stale specs after implementation drift |
+| `/fix-specs` | Normalises spec filenames under `.ai/specs/` to the `{YYYY-MM-DD}-{slug}.md` convention |
+
+### Research
+
+| Skill | What it does |
+|-------|-------------|
+| `/parallel-research` | Spawns multiple Explore subagents simultaneously to map an unfamiliar area of the codebase from different angles before implementing |
 
 ### PHP / Symfony
 
@@ -98,6 +117,7 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 | `/add-query` | Adds a Query + Handler + UseCase + Response DTO |
 | `/add-route` | Adds an HTTP endpoint with controller, request DTO, and Nelmio OpenAPI attributes |
 | `/scaffold-doctrine-migration` | Runs `migrate-diff`, reviews SQL, helps write rollback |
+| `/lint-php` | Runs PHPStan + cs-fixer + deptrac locally inside Docker |
 
 ### Frontend
 
@@ -106,6 +126,8 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 | `/scaffold-nextjs-page` | App Router page with loading and error boundaries |
 | `/scaffold-shadcn-form` | react-hook-form + zod + shadcn Form primitives; validates against ds-rules |
 | `/regenerate-api-client` | Runs openapi-typescript against the live API, commits the result |
+| `/lint-js` | Runs tsc + ESLint locally inside Docker |
+| `/integration-tests` | Run, create, or convert PHPUnit functional and Playwright e2e tests |
 
 ### PR automation
 
@@ -116,6 +138,13 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 | `/merge-buddy` | Verifies CI is green and merges |
 | `/root-cause` | Investigates a failing test or production bug |
 | `/fix` | Applies a root-cause fix found by `/root-cause` |
+
+### Harness maintenance
+
+| Skill | What it does |
+|-------|-------------|
+| `/create-agents-md` | Generates a minimal `AGENTS.md` for a new package or bounded context |
+| `/skill-creator` | Scaffolds a new skill from a description |
 
 ---
 
@@ -180,22 +209,28 @@ Short entries get read. Long entries get skipped.
 ## Typical session
 
 ```sh
-# Start a new feature
-/new-feature
+# Step 1 — Design: spec worktree
+/new-feature spec/password-reset
 
-# Write the spec
+# Write the spec, answer open questions, open a spec-only PR to main
 /spec-writing "user can reset their password"
 
-# Review and fill open questions, then:
-/pre-implement-spec
+# [merge the spec PR]
 
-# After approval:
+# Step 2 — Audit: catch gaps before writing code
+/pre-implement-spec .ai/specs/2026-06-06-password-reset.md
+
+# Step 3 — Implement: feature worktree
+/new-feature feat/password-reset
+
+# Scaffold and implement phase by phase
 /scaffold-bounded-context PasswordReset   # if new context needed
-/add-command PasswordReset RequestPasswordReset
-/add-command PasswordReset ConfirmPasswordReset
-/add-route PasswordReset RequestPasswordReset
+/implement-spec .ai/specs/2026-06-06-password-reset.md
 
-# Review:
+# Update AGENTS.md files for touched contexts
+/sync-context-docs
+
+# Review the full diff before opening the PR
 /code-review
 
 # Open PR:

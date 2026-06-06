@@ -139,6 +139,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Syncing context AGENTS.md after implementation | `.ai/skills/sync-context-docs/SKILL.md` |
 | Code review (CI gate) | `.ai/skills/code-review/SKILL.md` |
 | Auto PR workflows | `.ai/skills/auto-create-pr/SKILL.md`, `.ai/skills/auto-review-pr/SKILL.md`, `.ai/skills/merge-buddy/SKILL.md` |
+| **Research** | |
+| Parallel codebase mapping before implementing in unfamiliar territory | `.ai/skills/parallel-research/SKILL.md` |
 | **Testing** | |
 | Functional / integration tests | `apps/api/AGENTS.md` → Testing + `.ai/qa/AGENTS.md` |
 | Playwright end-to-end | `.ai/skills/integration-tests/SKILL.md` |
@@ -193,7 +195,7 @@ Use `/scaffold-bounded-context`, `/add-command`, `/add-route` directly. Still ru
 Use `/scaffold-bounded-context`, `/add-command`, `/add-route` **directly** only for small, already-specified additions where a full spec would be overhead.
 
 1. **Spec-first** for non-trivial tasks (3+ steps or architectural decisions). Check `.ai/specs/` first. Skip for small fixes.
-2. **Subagent strategy**: use subagents for research / parallel analysis. One task per subagent. Keeps main context clean.
+2. **Subagent strategy**: use subagents for research / parallel analysis. One task per subagent. Keeps main context clean. Use `/parallel-research` for structured multi-angle codebase exploration before implementing in unfamiliar territory.
 3. **Self-improvement**: after corrections, update `.ai/lessons.md` or the relevant AGENTS.md.
 4. **Verification**: run `make lint && make test`. Ask: "Would a staff engineer approve this?"
 5. **Elegance check**: for non-trivial changes, pause and ask "is there a more elegant way?"
