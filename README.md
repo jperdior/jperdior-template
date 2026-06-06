@@ -37,11 +37,14 @@ The template ships a set of slash commands for Claude Code (and Codex) that alre
 
 - `/customize-project` — rename all template placeholders and add your project description to `AGENTS.md` — run once after cloning
 - `/spec-writing` — brainstorm and write a feature spec before any code is written
-- `/new-feature` — create an isolated git worktree + branch from main
+- `/new-feature` — create an isolated git worktree + branch from main (called twice: once for the spec, once for the implementation)
+- `/pre-implement-spec` — audit a merged spec for gaps, BC risks, and missing tests before any code is written
 - `/scaffold-bounded-context` — generate the full 4-layer DDD skeleton for a new context
 - `/add-command`, `/add-query`, `/add-route` — add CQRS commands, queries, and HTTP endpoints
 - `/scaffold-nextjs-page`, `/scaffold-shadcn-form` — scaffold frontend pages and forms
-- `/implement-spec` — implement an approved spec (calls scaffolding skills internally)
+- `/implement-spec` — implement an approved spec phase by phase, with CI gate between phases
+- `/parallel-research` — spawn multiple Explore agents in parallel to map unfamiliar code before touching it
+- `/code-review` — review a diff or branch against DDD/CQRS/security rules; runs the CI gate
 
 → See [docs/ai-workflow.md](docs/ai-workflow.md) for the full spec-first development workflow.
 
@@ -49,11 +52,13 @@ The template ships a set of slash commands for Claude Code (and Codex) that alre
 
 The recommended flow for any non-trivial feature:
 
-1. `/new-feature` — create a worktree + branch
-2. `/spec-writing` — design the feature, produce a spec doc in `.ai/specs/`
-3. `/implement-spec` — implement from the approved spec
-4. `make lint && make test` — mandatory pre-PR gate
-5. Open PR — CI runs PHPStan, cs-fixer, deptrac, tsc, ESLint, PHPUnit, and JS tests
+1. `/new-feature spec/<slug>` — create a worktree + branch for the spec
+2. `/spec-writing` — design the feature, produce a spec doc in `.ai/specs/`, open a spec-only PR
+3. `/pre-implement-spec` — audit the merged spec for gaps, BC risks, and missing tests
+4. `/new-feature feat/<slug>` — create a worktree + branch for implementation
+5. `/implement-spec` — implement from the approved spec, phase by phase
+6. `make lint && make test` — mandatory pre-PR gate
+7. Open PR — CI runs PHPStan, cs-fixer, deptrac, tsc, ESLint, PHPUnit, and JS tests
 
 → See [AGENTS.md](AGENTS.md) for the full task router and AI conventions.
 
