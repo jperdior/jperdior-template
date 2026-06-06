@@ -67,14 +67,35 @@ Report the full stack and merge order. Remind the user to merge in order — Git
 
 ## Subagent Strategy
 
-Use Explore subagents in parallel for:
-- Mapping all existing call sites of a class you intend to change.
-- Finding every controller that depends on a given service.
-- Confirming a migration's scope before generating.
+### When to spawn — before writing any code for a phase
 
-Use one Plan subagent when a phase's design needs more thought than the spec captured.
+If the phase touches ≥3 unfamiliar files or spans multiple bounded contexts, spawn Explore subagents **in parallel** before writing a single line. Do not interleave research and implementation.
 
-Do NOT use subagents for trivial single-file edits.
+**Spawn one agent per angle. Each gets a single, focused question.**
+
+| Angle | Example prompt |
+|-------|----------------|
+| Call sites | "Find every place in `apps/api/src/` that calls `NoteRepository` (not via an interface). List `file:line` only." |
+| Controller dependencies | "List every controller that dispatches `CreateNote` or any Note-related command. File paths and class names only." |
+| Test coverage | "List all PHPUnit test files that import or instantiate `NoteCommandHandler`. File paths only." |
+| Event subscribers | "Find all classes that listen to the `note.note.created` event ID. Return class name and file path." |
+| Migration scope | "List every table referenced in `apps/api/src/Note/Infrastructure/Persistence/` ORM mappings. Table names only." |
+| Frontend dependencies | "Find all TypeScript files that import from `@jperdior/api-client-ts` and call a note-related endpoint. File and endpoint." |
+
+Collect all results before opening any file to edit.
+
+### Plan subagent
+
+Spawn one Plan subagent when:
+- A phase's design needs more thought than the spec captured.
+- The phase touches ≥3 bounded contexts.
+- A migration's scope is unclear from the ORM mappings alone.
+
+### Rules
+
+- Do NOT spawn subagents for single-file edits — the overhead isn't worth it.
+- Do NOT delegate code generation to subagents — all writes happen in the main agent to ensure consistency.
+- Run all research agents before starting implementation, not interleaved with it.
 
 ## When Things Go Wrong
 

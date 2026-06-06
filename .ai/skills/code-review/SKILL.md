@@ -18,12 +18,31 @@ Produce categorised findings (Critical / High / Medium / Low) and run the **CI V
 
 1. **Scope**: identify the changed files. Classify each by layer (Domain / Application / Infrastructure / Presentation / Frontend / Ops / Tests / Spec / Docs).
 2. **Context**: read every touched module's `AGENTS.md`. Read `.ai/lessons.md`. If the change references a spec, read it.
-3. **CI Verification Gate (MANDATORY)**: run the same checks CI runs. Every step MUST pass. See section below.
+3. **Parallel execution**: spawn the specialized reviewer agents (see **Parallel Reviewer Agents** below) **and** start the CI Verification Gate **at the same time**. The agents analyze the diff statically while CI runs real checks — no need to wait for CI before reviewing.
 4. **Backward-compatibility gate**: check every change for contract-surface impact. Flag violations as **Critical** unless the deprecation protocol is followed.
 5. **Boundary gate**: grep the diff for cross-context imports. Run `make lint-api` (which includes deptrac). Any violation is **Critical**.
 6. **Checklist**: apply [references/review-checklist.md](references/review-checklist.md). Flag with severity + file + line + fix.
-7. **Test coverage**: verify behaviour changes are covered. Missing coverage on risk paths is **High**.
+7. **Merge findings**: combine findings from all reviewer agents + BC gate + checklist. Deduplicate — same `file:line` reported by multiple agents keeps the highest severity.
 8. **Output**: produce the review report in the format below.
+
+## Parallel Reviewer Agents
+
+After loading context (step 2), spawn the following subagents simultaneously. Each receives: the diff, the affected `AGENTS.md` content, `.ai/lessons.md`, and the relevant Quick Rule Reference section from this skill.
+
+### Reviewer 1 — Architecture & Boundaries (always)
+**Role**: You are an expert DDD + Hexagonal + CQRS architect. Your sole focus is structural correctness: boundaries, bus discipline, and mapping discipline. You do not review security or frontend concerns.
+**Scope**: cross-context imports (`use App\<OtherContext>\Domain\…` or `…\Application\…`), bus discipline (no handler wired directly into a controller), ORM attributes on domain entities, CQRS naming (commands imperative, events past-tense), repository placement (interface in `Domain/`, implementation in `Infrastructure/Persistence/`), `_instanceof` auto-tagging.
+**Produces**: Architecture findings (Critical / High / Medium / Low).
+
+### Reviewer 2 — Security & Data Integrity (always)
+**Role**: You are an expert application security engineer specialising in Symfony PHP backends. Your sole focus is auth, input validation, data integrity, and safe credential handling. You do not review architecture or frontend concerns.
+**Scope**: `#[IsGranted('ROLE_*')]` on every non-public endpoint, input validation at value-object construction, password hashing via `password_hasher` (argon2id), refresh-token rotation enabled and revocation handled, minimal error disclosure on auth endpoints (never reveal whether an email exists), migration scope (unrelated tables are Critical).
+**Produces**: Security findings (Critical / High / Medium / Low).
+
+### Reviewer 3 — Frontend & Design System (only if `apps/web/` or `apps/admin/` files changed)
+**Role**: You are an expert Next.js 15 / React frontend engineer with deep knowledge of design systems and accessibility. Your sole focus is frontend quality, DS compliance, and UX correctness. You do not review backend or architecture concerns.
+**Scope**: DS token usage — no hardcoded colors or text sizes (see `.ai/ds-rules.md`), every `"use client"` file must be justified (interactive or browser API), form patterns (shadcn `Form` + react-hook-form + zod), API calls via `@jperdior/api-client-ts` (never raw `fetch`), i18n (no hardcoded user-facing strings), dialog keyboard shortcuts (`Cmd/Ctrl+Enter` submit, `Escape` cancel).
+**Produces**: Frontend findings (Critical / High / Medium / Low).
 
 ## CI Verification Gate (MANDATORY)
 
