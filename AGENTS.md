@@ -131,7 +131,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Workflow** | |
 | First-time project customization (rename placeholders, add project context) | `.ai/skills/customize-project/SKILL.md` |
 | First-time local setup (hosts, .env.local, stack boot) | `.ai/skills/init/SKILL.md` |
-| Starting a spec branch OR implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — called twice: `spec/<slug>` then `feat/<slug>` |
+| Starting an implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — one `feat/<slug>` worktree covers spec + implementation |
 | **Specs & PR Automation** | |
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
 | Pre-implementation audit | `.ai/skills/pre-implement-spec/SKILL.md` |
@@ -162,19 +162,17 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 **Full spec-driven path (any non-trivial feature — 3+ steps or architectural decisions):**
 
 ```
-Step 1 — Design
-  /new-feature spec/<slug>     ← worktree for spec branch
-  /spec-writing                ← draft spec, open spec-only PR to main
-  [merge spec PR]
+Step 1 — Create worktree
+  /new-feature feat/<slug>     ← one worktree covers both spec and implementation
 
-Step 2 — Audit
+Step 2 — Design (inside the worktree)
+  /spec-writing                ← draft spec locally (committed to feat/<slug>, no separate spec PR)
   /pre-implement-spec .ai/specs/{file}.md   ← readiness report; fix gaps before coding
 
 Step 3 — Implement
-  /new-feature feat/<slug>     ← worktree for implementation branch
   /implement-spec .ai/specs/{file}.md       ← phase by phase, CI gate after each
   /sync-context-docs                        ← update bounded context AGENTS.md files
-  /open-pr                     ← implementation PR to main
+  /open-pr                     ← single PR to main (includes spec + implementation)
 ```
 
 **Short path (small, already-specified addition where a full spec is overhead):**
@@ -185,12 +183,12 @@ Use `/scaffold-bounded-context`, `/add-command`, `/add-route` directly. Still ru
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
-| `/new-feature` | Design + Implement | Creates a worktree+branch from `main`. Called **twice**: once with `spec/` prefix, once with `feat/` prefix. |
-| `/spec-writing` | Design | Drafts the spec, opens the spec-only PR. Stops before any code is written. |
-| `/pre-implement-spec` | Audit | Audits the merged spec for gaps, missing tests, BC risks. Verdict must be "ready" before coding starts. |
+| `/new-feature` | Setup | Creates a `feat/<slug>` worktree+branch from `main`. Called **once** per feature. |
+| `/spec-writing` | Design | Drafts the spec locally on the feature branch. Does **not** open a spec-only PR. |
+| `/pre-implement-spec` | Audit | Audits the local spec for gaps, missing tests, BC risks. Verdict must be "ready" before coding starts. |
 | `/implement-spec` | Implement | Executes the spec phase by phase; runs the CI gate after each phase. |
 | `/sync-context-docs` | Document | Updates `apps/api/src/<Context>/AGENTS.md` for every context touched by the branch. Run before `/open-pr`. |
-| `/open-pr` | Ship | Opens the implementation PR using the repository PR template. |
+| `/open-pr` | Ship | Opens the implementation PR (spec + code) using the repository PR template. |
 
 Use `/scaffold-bounded-context`, `/add-command`, `/add-route` **directly** only for small, already-specified additions where a full spec would be overhead.
 
