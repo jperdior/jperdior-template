@@ -9,7 +9,10 @@ Design and review specifications against this template's architecture (DDD + Hex
 
 ## Workflow
 
-1. **Load Context**: read the task description and `.ai/specs/AGENTS.md`. Identify which bounded contexts and packages are affected. Use the root `AGENTS.md` Task Router to find every related guide.
+0. **Worktree gate** — run `git branch --show-current` before doing anything else. If the result is `main` (or any protected branch), **stop immediately** and tell the user:
+   > "You're on `main`. Run `/new-feature feat/<slug>` first to create the feature worktree, then re-run `/spec-writing` from inside it."
+   Do not create any file, do not read context, do not proceed until the branch is a `feat/*` branch.
+1. **Load Context**: read the task description and `.ai/specs/AGENTS.md`. Identify which bounded contexts and packages are affected. Use the root `AGENTS.md` Task Router to find every related guide. **Read `.ai/business-rules.md`** — check every existing rule for the affected contexts. A spec that silently contradicts or duplicates an existing rule is a **Critical** finding.
 2. **Initialize**: create `.ai/specs/{YYYY-MM-DD}-{kebab-case-title}.md`.
 3. **Start Minimal — Skeleton + Open Questions Gate**: Write a skeleton (TLDR + 2-3 key sections only). Before writing the skeleton, scan the brief for **critical unknowns** — decisions where the wrong assumption forces a rewrite. List them as an **Open Questions** block (`Q1`, `Q2`, …) immediately after the TLDR. **STOP after presenting the skeleton.** Do not proceed past this gate until the user has answered every question.
 4. **Apply Answers**: remove the Open Questions block and fill the skeleton.
