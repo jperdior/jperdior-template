@@ -70,6 +70,7 @@ See [references/spec-checklist.md](references/spec-checklist.md).
 8. **Idempotency**: are subscribers and workers idempotent? Messenger can retry.
 9. **Auth & RBAC**: does every protected endpoint declare its `ROLE_*` requirement?
 10. **Frontend boundary**: for UI work, is the Server/Client component boundary explicit? Are `"use client"` files justified? Does the spec describe loading / error / empty states?
+11. **API contract field alignment**: every endpoint with a request or response body must include an explicit JSON example — not just a DTO class name. The PHP DTO constructor property name (e.g., `$password`) is the exact JSON key that `#[MapRequestPayload]` deserializes, and the TypeScript client must use that exact key. A spec that only names the DTO class without showing the JSON shape is a **High** finding — it guarantees a field-name mismatch between backend and frontend.
 
 ## Quick Rules
 
