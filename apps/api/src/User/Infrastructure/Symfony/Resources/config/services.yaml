@@ -1,3 +1,9 @@
 services:
     App\User\Domain\UserRepository:
         alias: App\User\Infrastructure\Persistence\DoctrineUserRepository
+
+    App\User\Domain\PasswordRecoveryTokenRepository:
+        alias: App\User\Infrastructure\Persistence\DoctrinePasswordRecoveryTokenRepository
+
+    App\User\Domain\RefreshTokenRevoker:
+        alias: App\User\Infrastructure\Security\GesdinetRefreshTokenRevoker
