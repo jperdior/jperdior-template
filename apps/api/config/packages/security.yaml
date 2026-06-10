@@ -21,6 +21,16 @@ security:
             stateless: true
             security: false
 
+        forgot_password:
+            pattern: ^/auth/forgot-password$
+            stateless: true
+            security: false
+
+        reset_password:
+            pattern: ^/auth/reset-password$
+            stateless: true
+            security: false
+
         login:
             pattern: ^/auth/login$
             stateless: true
@@ -46,7 +56,7 @@ security:
             entry_point: jwt
 
     access_control:
-        - { path: ^/auth/(login|signup|refresh), roles: PUBLIC_ACCESS }
+        - { path: ^/auth/(login|signup|refresh|forgot-password|reset-password), roles: PUBLIC_ACCESS }
         - { path: ^/api/doc,                     roles: PUBLIC_ACCESS }
         - { path: ^/api/admin,                   roles: ROLE_ADMIN }
         - { path: ^/api,                         roles: IS_AUTHENTICATED_FULLY }

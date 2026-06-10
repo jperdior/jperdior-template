@@ -1,0 +1,27 @@
+framework:
+    rate_limiter:
+        forgot_password:
+            policy: fixed_window
+            limit: 3
+            interval: '10 minutes'
+
+        reset_password:
+            policy: fixed_window
+            limit: 10
+            interval: '1 minute'
+
+when@test:
+    framework:
+        cache:
+            pools:
+                cache.rate_limiter:
+                    adapter: cache.adapter.array
+        rate_limiter:
+            forgot_password:
+                policy: fixed_window
+                limit: 1000
+                interval: '1 minute'
+            reset_password:
+                policy: fixed_window
+                limit: 1000
+                interval: '1 minute'

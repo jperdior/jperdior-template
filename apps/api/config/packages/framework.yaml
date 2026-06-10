@@ -2,6 +2,12 @@ framework:
     secret: '%env(APP_SECRET)%'
     handle_all_throwables: true
 
+    # Behind Traefik + nginx in dev, and behind ingress controllers in prod, every request
+    # appears to come from the proxy IP. Trust the X-Forwarded-* headers so the real client
+    # IP reaches the rate limiter. REMOTE_ADDR means "trust whoever is directly connected to us".
+    trusted_proxies: '127.0.0.1,REMOTE_ADDR'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
+
     session:
         handler_id: null
         cookie_secure: auto
