@@ -44,6 +44,9 @@ export interface ApiClient {
   login(req: { email: string; password: string }): Promise<LoginResponse>;
   refresh(refreshToken: string): Promise<LoginResponse>;
   me(): Promise<CurrentUser>;
+  // Password recovery (public)
+  forgotPassword(email: string): Promise<void>;
+  resetPasswordWithToken(token: string, newPassword: string): Promise<void>;
   // Admin (ROLE_ADMIN)
   listAllUsers(params?: { limit?: number; offset?: number }): Promise<{ total: number; users: UserSummary[] }>;
   adminGetUser(id: string): Promise<UserDetail>;
@@ -114,6 +117,10 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     login:   (req) => request('POST', '/auth/login',  { body: req, auth: false }),
     refresh: (refreshToken) => request('POST', '/auth/refresh', { body: { refresh_token: refreshToken }, auth: false }),
     me:      ()    => request('GET',  '/api/me'),
+    forgotPassword: (email) =>
+      request('POST', '/auth/forgot-password', { body: { email }, auth: false }),
+    resetPasswordWithToken: (token, newPassword) =>
+      request('POST', '/auth/reset-password', { body: { token, newPassword }, auth: false }),
     listAllUsers: (params) => request('GET', '/api/admin/users', { query: { limit: params?.limit, offset: params?.offset } }),
     adminGetUser: (id) => request('GET', `/api/admin/users/${id}`),
     adminCreateUser: (req) => request('POST', '/api/admin/users', { body: req }),

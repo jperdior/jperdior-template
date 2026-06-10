@@ -1,11 +1,19 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/', '/login', '/signup'];
+const PUBLIC_PATHS = ['/', '/login', '/signup', '/forgot-password'];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith('/_next') || pathname.startsWith('/api')) {
+  // The trailing slash on `/reset-password/` is intentional: it whitelists token-bearing
+  // reset URLs (`/reset-password/<token>`) without exposing the existing authenticated
+  // `/reset-password` page (used by `mustResetPassword` flow).
+  if (
+    PUBLIC_PATHS.includes(pathname) ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/reset-password/')
+  ) {
     return NextResponse.next();
   }
 
