@@ -1,12 +1,11 @@
-# QA Integration Testing Instructions
+# QA Testing Instructions
 
 ## Always
 
-- Prefer executable Playwright TypeScript tests under `apps/web/e2e/` and `apps/admin/e2e/`.
 - Prefer Symfony **functional tests** (PHPUnit + `WebTestCase`) for API behaviour, under `apps/api/tests/Functional/<Context>/`.
-- Reuse shared helpers from `apps/web/e2e/helpers/` (or `apps/admin/e2e/helpers/`).
+- Prefer **Vitest + React Testing Library** for frontend component / hook behaviour, colocated next to the unit under `apps/web/src/**/__tests__/` or `apps/admin/src/**/__tests__/`.
 - Keep tests independent, data-independent, deterministic, and safe across retries.
-- Create required fixtures per test (prefer API setup over UI clicks). Always clean up created data in `finally` / teardown.
+- Create required fixtures per test (prefer API setup over UI clicks for functional tests). Always clean up created data in `finally` / teardown.
 
 ## Ask First
 
@@ -16,14 +15,14 @@
 ## Never
 
 - Never rely on seeded/demo data being present.
-- Never leave broken tests; fix them or skip with `test.skip()` + a clear reason.
-- Never let a Playwright test mutate another test's data.
+- Never leave broken tests; fix them or skip with `it.skip()` / `markTestSkipped` + a clear reason.
+- Never let a test mutate another test's data or global state (DB rows, cookies, module mocks).
 
 ## Validation Commands
 
 ```bash
 make test-api        # PHPUnit unit + functional
-make test-e2e        # Playwright end-to-end
+make test-web        # Vitest (apps/web + apps/admin)
 make test            # everything
 ```
 
@@ -32,18 +31,19 @@ Run a single PHP test:
 make test-api ARG="--filter SignUpControllerTest"
 ```
 
-Run a single Playwright test:
+Run a single Vitest file, inside the container:
 ```bash
-pnpm -C apps/web exec playwright test e2e/auth.spec.ts
+docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml \
+  exec web pnpm -C apps/web exec vitest run src/app/__tests__/smoke.test.tsx
 ```
 
 ---
 
 ## Two Layers of Tests
 
-### 1. Functional tests (PHPUnit, behind the bus)
+### 1. API functional tests (PHPUnit, behind the bus)
 
-For API behaviour: pick the `WebTestCase` base + transaction rollback per test.
+For API behaviour: `WebTestCase` base + transactional rollback per test.
 
 - Location: `apps/api/tests/Functional/<Context>/<Endpoint>Test.php`
 - Pattern: one test class per controller action.
@@ -70,25 +70,24 @@ final class CreateNoteControllerTest extends FunctionalTestCase
 }
 ```
 
-### 2. End-to-end tests (Playwright, browser)
+### 2. Frontend unit tests (Vitest + React Testing Library, jsdom)
 
-For full user journeys touching the UI.
+For component behaviour, presentational logic, hooks, and Server Action wrappers.
 
-- Location: `apps/web/e2e/<area>/<flow>.spec.ts` or `apps/admin/e2e/<area>/<flow>.spec.ts`
-- Pattern: one spec file per user journey.
-- Helpers: `apps/web/e2e/helpers/{auth,api,fixtures}.ts`
+- Location: `apps/web/src/**/__tests__/<Subject>.test.tsx` or `apps/admin/src/**/__tests__/<Subject>.test.tsx`
+- Pattern: one test file per non-trivial component, hook, or pure module.
+- Environment: jsdom. `next/link` and `next/navigation` are mocked in each app's `vitest.setup.ts`.
 
-```ts
-import { test, expect } from '@playwright/test';
-import { signUp } from './helpers/auth';
+```tsx
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { PaginationControls } from '../PaginationControls';
 
-test('user can sign up and create a note', async ({ page }) => {
-  const { email, password } = await signUp(page);
-  await page.goto('/notes');
-  await page.getByRole('button', { name: 'New note' }).click();
-  await page.getByLabel('Title').fill('hello world');
-  await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByText('hello world')).toBeVisible();
+describe('PaginationControls', () => {
+  it('shows the Next link when there are more rows', () => {
+    render(<PaginationControls total={42} offset={0} limit={10} />);
+    expect(screen.getByRole('link', { name: 'Next' })).toHaveAttribute('href', '?offset=10');
+  });
 });
 ```
 
@@ -102,30 +101,26 @@ test('user can sign up and create a note', async ({ page }) => {
 
 ## Test Rules
 
-- Use Playwright locators (`getByRole`, `getByLabel`, `getByText`) — avoid CSS selectors.
-- Reference the source spec in a top comment: `// Source: .ai/specs/2026-06-12-add-notes.md`.
-- Keep tests independent — each handles its own auth.
+- Use role-based queries (`getByRole`, `getByLabel`, `getByText`) — avoid `getByTestId` and CSS selectors.
+- Reference the source spec in a top comment when applicable: `// Source: .ai/specs/2026-06-12-add-notes.md`.
+- Keep tests independent — each handles its own setup.
 - Keep tests data-independent — no reliance on seeded records.
-- Use API fixtures for setup whenever possible; reserve UI clicks for the assertion path.
-- One `.spec.ts` file per user journey.
-- Clean up created data in `finally`.
+- Use API fixtures for setup whenever possible in functional tests; reserve UI clicks for the assertion path.
+- One PHPUnit test class per controller. Colocate Vitest files next to the unit they cover under `__tests__/`.
+- Clean up created data in `finally` / teardown.
 
 ## Default Credentials
 
-The Notes hello-world ships with two seeded users (created by `make seed-demo`):
+The hello-world ships with two seeded users (created by `make seed-demo`):
 
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | `admin@example.com` | `secret` |
 | User  | `user@example.com`  | `secret` |
 
-Tests SHOULD create their own users via `signUp` rather than depend on these.
+Tests SHOULD create their own users via the API rather than depend on these.
 
 ## Results Presentation
-
-For headless runs (`make test-e2e`):
-- Console: pass/fail summary.
-- HTML report: `apps/web/playwright-report/` (open with `pnpm -C apps/web exec playwright show-report`).
 
 For AI-driven exploratory runs, report:
 

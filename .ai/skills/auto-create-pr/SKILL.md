@@ -24,7 +24,6 @@ Execute a user-described task autonomously and open a GitHub PR. Resumable via `
    make lint
    make test
    make build-web      # if UI changed
-   make test-e2e       # if UI changed
    ```
    Every command MUST exit 0.
 6. **Code review gate**: run `/code-review` on the diff. Resolve every Critical and High finding.
@@ -48,7 +47,6 @@ Execute a user-described task autonomously and open a GitHub PR. Resumable via `
    ## Test plan
    - [x] `make lint` exits 0
    - [x] `make test` exits 0
-   - [x] `make test-e2e` exits 0 (if UI changed)
    - [ ] Manually tested: <!-- describe the happy path you exercised -->
 
    ## Checklist

@@ -19,7 +19,7 @@ Review a PR end-to-end: check it out in a worktree, run the verification gate, r
    ```
 4. **Verification gate**:
    ```sh
-   make lint && make test && make build-web && make test-e2e
+   make lint && make test && make build-web
    ```
    Capture the result of each step. Run lint and test in parallel where possible.
 5. **Run `/code-review`** on the diff (`git diff origin/{baseRefName}...HEAD`).

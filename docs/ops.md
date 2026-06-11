@@ -193,7 +193,7 @@ helm upgrade my-project ops/k8s -f my-values.yaml --atomic
 | `test.sh` | PHPUnit (unit + functional) + `pnpm test` |
 | `build.sh` | Production `composer install --no-dev` + Next.js `pnpm build` |
 
-The Playwright e2e suite is not part of `test.sh`. It runs in its own CI job against an ephemeral Compose stack — see `.ai/skills/integration-tests/SKILL.md`.
+Frontend unit tests (Vitest + React Testing Library, `apps/web` and `apps/admin`) run inside `test.sh` via `pnpm test`. See `.ai/skills/integration-tests/SKILL.md` for the testing layers and how to add a new test.
 
 Every PR must pass lint + test before merge. The `make lint` and `make test` targets replicate these checks locally so you never push a red build.
 

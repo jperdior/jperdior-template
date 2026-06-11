@@ -36,7 +36,6 @@ Open a PR for the work already on the current branch (the branch must have commi
    ## Test plan
    - [ ] `make lint` exits 0
    - [ ] `make test` exits 0
-   - [ ] `make test-e2e` exits 0 (if UI changed)
    - [ ] Manually tested: <!-- describe the happy path you exercised -->
 
    ## Checklist

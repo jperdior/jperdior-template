@@ -41,7 +41,7 @@ Skills exist because the same tasks come up repeatedly. Without a skill, the AI 
 
 Testing guidance at two layers:
 - **PHPUnit functional tests**: how to write `WebTestCase` tests with transaction rollback isolation, how to use page objects and fixtures, how to test CQRS flows end-to-end through HTTP
-- **Playwright e2e**: full user journey tests that run against a live Compose stack; used for critical paths (sign-up → login → protected action)
+- **Vitest + React Testing Library**: jsdom-based unit tests for `apps/web` and `apps/admin` — components, hooks, presentational logic, Server Action client wrappers. Colocated under `src/**/__tests__/`.
 
 ### Multi-agent patterns
 
@@ -127,7 +127,7 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 | `/scaffold-shadcn-form` | react-hook-form + zod + shadcn Form primitives; validates against ds-rules |
 | `/regenerate-api-client` | Runs openapi-typescript against the live API, commits the result |
 | `/lint-js` | Runs tsc + ESLint locally inside Docker |
-| `/integration-tests` | Run, create, or convert PHPUnit functional and Playwright e2e tests |
+| `/integration-tests` | Run, create, or convert PHPUnit functional tests (API) and Vitest + RTL tests (apps/web, apps/admin) |
 
 ### PR automation
 

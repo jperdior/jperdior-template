@@ -181,46 +181,6 @@ services:
       - "traefik.http.routers.admin.entrypoints=web"
       - "traefik.http.services.admin.loadbalancer.server.port=3001"
 
-  playwright:
-    profiles: [e2e]
-    image: mcr.microsoft.com/playwright:v1.60.0-jammy
-    working_dir: /repo
-    volumes:
-      - ../..:/repo
-      - playwright_node_modules:/repo/node_modules
-      - pnpm_store:/repo/.pnpm-store
-    environment:
-      PLAYWRIGHT_BASE_URL: http://web:3000
-    command:
-      - sh
-      - -c
-      - |
-        set -e
-        npm install -g pnpm@11.5.0 --silent
-        pnpm install --filter "@jperdior/web..."
-        pnpm -C apps/web exec playwright test
-
-  playwright-admin:
-    profiles: [e2e]
-    image: mcr.microsoft.com/playwright:v1.60.0-jammy
-    working_dir: /repo
-    volumes:
-      - ../..:/repo
-      - playwright_admin_node_modules:/repo/node_modules
-      - pnpm_store:/repo/.pnpm-store
-    environment:
-      PLAYWRIGHT_BASE_URL: http://admin:3001
-      PLAYWRIGHT_ADMIN_EMAIL: ${PLAYWRIGHT_ADMIN_EMAIL:-}
-      PLAYWRIGHT_ADMIN_PASSWORD: ${PLAYWRIGHT_ADMIN_PASSWORD:-}
-    command:
-      - sh
-      - -c
-      - |
-        set -e
-        npm install -g pnpm@11.5.0 --silent
-        pnpm install --filter "@jperdior/admin..."
-        pnpm -C apps/admin exec playwright test
-
 volumes:
   composer_cache:
   api_jwt:
@@ -236,5 +196,3 @@ volumes:
   api_client_ts_node_modules:
   ui_react_node_modules:
   pnpm_store:
-  playwright_node_modules:
-  playwright_admin_node_modules:

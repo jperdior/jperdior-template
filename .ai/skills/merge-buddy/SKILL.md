@@ -41,7 +41,7 @@ Survey open PRs and answer: **which are ready to merge right now, and which are 
 | # | Title | Author | Label | Reason |
 |---|-------|--------|-------|--------|
 | 130 | refactor(api): … | carol | changes-requested | review found 2 Critical issues |
-| 131 | chore(deps): bump foo | dave | merge-queue | CI failing (test-e2e) |
+| 131 | chore(deps): bump foo | dave | merge-queue | CI failing (js-tests-unit) |
 ```
 
 ## Rules

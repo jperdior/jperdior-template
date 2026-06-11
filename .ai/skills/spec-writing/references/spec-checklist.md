@@ -40,7 +40,7 @@
 ## 6. Tests
 
 - [ ] At least one PHPUnit Functional test per controller action
-- [ ] At least one Playwright e2e test per user journey
+- [ ] At least one Vitest + RTL test for every non-trivial frontend component, hook, or pure module added
 - [ ] Edge cases enumerated (auth required, ownership, validation errors)
 
 ## 7. Backward Compatibility

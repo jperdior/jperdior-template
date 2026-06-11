@@ -15,5 +15,5 @@ Run before declaring a spec ready for implementation. Every row MUST pass.
 | DateTime | `DateTimeImmutable` everywhere in domain code? | Yes. |
 | Final readonly | Value objects, DTOs, queries, responses `final readonly`? | Yes. |
 | `strict_types` | Every PHP file in `src/` and `tests/`? | Yes. |
-| Tests | Coverage planned (PHPUnit + Playwright)? | Yes. |
+| Tests | Coverage planned (PHPUnit Functional for API + Vitest + RTL for frontend)? | Yes. |
 | BC | Any contract surface removed/renamed without deprecation bridge? | No. |

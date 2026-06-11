@@ -53,9 +53,8 @@ After loading context (step 2), spawn the following subagents simultaneously. Ea
 | 1 | `make lint-api` | PHPStan + cs-fixer + deptrac | Fix or flag as Critical |
 | 2 | `make lint-web` | tsc + ESLint | Fix or flag as Critical |
 | 3 | `make test-api` | PHPUnit unit + functional | Fix or flag as Critical |
-| 4 | `make test-web` | JS unit tests | Fix or flag as Critical |
+| 4 | `make test-web` | Vitest (apps/web + apps/admin) | Fix or flag as Critical |
 | 5 | `make build-web` | Production Next.js build | Fix or flag as Critical |
-| 6 | `make test-e2e` (if UI changed) | Playwright | Fix or flag as Critical |
 
 Rules:
 - Run steps 1-2 and 3-4 in parallel to save time.
@@ -79,7 +78,6 @@ Rules:
 | `make test-api` | PASS/FAIL | |
 | `make test-web` | PASS/FAIL | |
 | `make build-web` | PASS/FAIL | |
-| `make test-e2e` | PASS/FAIL/SKIP | |
 
 ## Findings
 

@@ -20,7 +20,6 @@ Take a working branch from "I think it's done" to "committed and pushed with con
 3. **If UI changed**, also run:
    ```sh
    make build-web
-   make test-e2e
    ```
 4. **Fix obvious problems**:
    - Code-style issues → `make lint-fix`

@@ -63,9 +63,9 @@
 ## Tests
 
 - [ ] PHPUnit Functional for every controller action
-- [ ] Playwright e2e for every user journey touched
+- [ ] Vitest + RTL coverage for every non-trivial frontend component, hook, or pure module touched
 - [ ] Tests independent (each handles its own auth + cleanup)
-- [ ] No `test.only` / `iOnly` / debug logs left behind
+- [ ] No `test.only` / `it.only` / debug logs left behind
 
 ## Backward Compatibility
 
