@@ -34,7 +34,9 @@ init: ## Bootstrap a fresh clone: copy .env.local, patch /etc/hosts, install ski
 
 # ----- Lifecycle -----
 
-start: _ensure-volume-mountpoints build up logs ## Build, start, and tail logs
+start: _ensure-volume-mountpoints build up wait ## Build, start, and wait until web/api/admin serve HTTP
+
+start-logs: start logs ## Same as `make start`, then tail logs
 
 _ensure-volume-mountpoints: ## Pre-create Docker named-volume mount points as the host user
 	@mkdir -p node_modules apps/web/.next apps/admin/.next apps/api/config/jwt \
@@ -48,6 +50,10 @@ build: ## Build all container images
 
 up: ## Start containers in the background
 	@${DOCKER_COMPOSE} up -d
+
+wait: ## Block until web, api and admin respond over HTTP
+	@TRAEFIK_PORT=$$(grep -s '^TRAEFIK_PORT=' $(ENV_FILE) | cut -d= -f2-) \
+	 sh ops/scripts/wait-for-stack.sh
 
 stop: ## Stop and remove containers
 	@${DOCKER_COMPOSE} down --remove-orphans
