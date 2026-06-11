@@ -1,6 +1,6 @@
 # User — Bounded Context
 
-Owns: authentication, account lifecycle, password hashing, role assignment.
+Owns: authentication, account lifecycle, password hashing, role assignment, password recovery.
 
 ## Surface
 
@@ -9,10 +9,21 @@ Owns: authentication, account lifecycle, password hashing, role assignment.
 | `/auth/signup` | POST | public | Creates a User with `ROLE_USER`. |
 | `/auth/login` | POST | public | Lexik JWT `json_login`. Returns `token` + `refresh_token`. |
 | `/auth/refresh` | POST | public | Gesdinet refresh-token rotation. |
+| `/auth/forgot-password` | POST | public | Issues a 1-hour recovery token, emails it. Always 204 (BR-U05). Rate-limited 3/10 min per IP. |
+| `/auth/reset-password` | POST | public | Redeems the recovery token to set a new password. Marks token used; revokes all of the user's refresh tokens. Rate-limited 10/min per IP. |
+| `/api/users/me/reset-password` | POST | `IS_AUTHENTICATED_FULLY` | Authenticated self-reset (existing). |
+| `/api/admin/users/{id}/force-password-reset` | POST | `ROLE_ADMIN` | Admin-forced reset (existing). |
 | `/api/me` | GET | `IS_AUTHENTICATED_FULLY` | Current user payload. |
 | `/api/admin/users` | GET | `ROLE_ADMIN` | Paginated list of every user. |
 
 CLI: `app:user:promote-admin <email>` grants `ROLE_ADMIN`.
+
+### Password recovery — flow at a glance
+
+1. `POST /auth/forgot-password { email }` → issues a `PasswordRecoveryToken` (`bin2hex(random_bytes(48))`, SHA-256 hashed at rest, 1-hour TTL). Supersedes any prior unused tokens for the same user. Sends an email with the plain token in the link via `PasswordRecoveryEmailSender`.
+2. `POST /auth/reset-password { token, newPassword }` → looks up by `SHA-256(token)` with `PESSIMISTIC_WRITE` lock inside a transaction, validates (`PasswordRecoveryToken::validate`), changes the password, marks the token used, **and revokes all Gesdinet refresh tokens for the user** (`RefreshTokenRevoker`).
+
+The Symfony Mailer DSN comes from `MAILER_DSN`. In dev this defaults to `smtp://mailpit:1025` (Mailpit dev service). **Production forks must override `MAILER_DSN` and `MAILER_FROM`** — the local default points at a dev-only service and will silently fail (logged, user still sees 204) without it.
 
 ## Always
 
@@ -20,7 +31,8 @@ CLI: `app:user:promote-admin <email>` grants `ROLE_ADMIN`.
 - Pass passwords through `PasswordHasherInterface`. NEVER hash inline.
 - Emit `UserRegistered` after sign-up.
 - Enforce refresh-token single-use rotation (Gesdinet config: `single_use: true`).
-- Update the `users` and `refresh_tokens` tables only through migrations.
+- After any password change reachable without authentication (currently only `ResetPasswordWithToken`), revoke all of the user's refresh tokens via `RefreshTokenRevoker` — a stolen `rt` must not survive a recovery.
+- Update the `users`, `refresh_tokens`, and `password_recovery_tokens` tables only through migrations.
 
 ## Never
 
@@ -34,38 +46,75 @@ CLI: `app:user:promote-admin <email>` grants `ROLE_ADMIN`.
 
 ```
 Domain/
-├── User.php                      (aggregate)
-├── UserId.php                    (Uuid VO)
-├── Email.php                     (string VO with normalisation + RFC validation)
-├── PlainPassword.php             (DTO; length checks)
-├── HashedPassword.php            (string VO; opaque)
-├── Role.php                      (enum: USER, ADMIN)
-├── PasswordHasherInterface.php   (port)
-├── UserRepository.php            (port)
+├── User.php                              (aggregate)
+├── UserId.php                            (Uuid VO)
+├── Email.php                             (string VO with normalisation + RFC validation)
+├── PlainPassword.php                     (DTO; length checks)
+├── HashedPassword.php                    (string VO; opaque)
+├── Role.php                              (enum: USER, ADMIN)
+├── PasswordHasherInterface.php           (port)
+├── UserRepository.php                    (port)
+├── PasswordRecoveryToken.php             (aggregate; bin2hex(random_bytes(48)), SHA-256 stored)
+├── PasswordRecoveryTokenId.php           (Uuid VO)
+├── PasswordRecoveryTokenRepository.php   (port — findByTokenHashForUpdate + markAllUnusedAsUsed)
+├── PasswordRecoveryEmailSender.php       (port — concrete in Infrastructure/Mail)
+├── RefreshTokenRevoker.php               (port — concrete in Infrastructure/Security)
 ├── Event/UserRegistered.php
-└── Exception/{UserNotFound,UserAlreadyExists}.php
+└── Exception/{UserNotFound,UserAlreadyExists,PasswordRecoveryToken{NotFound,Expired,AlreadyUsed}}.php
 
 Application/
-├── Command/SignUp/{SignUpCommand,SignUpCommandHandler}.php
+├── Command/SignUp/{SignUpCommand,SignUpCommandHandler,SignUpUseCase}.php
+├── Command/SelfResetPassword/{...Command,...CommandHandler,...UseCase}.php
+├── Command/ForcePasswordReset/{...Command,...CommandHandler,...UseCase}.php
+├── Command/RequestPasswordRecovery/{...Command,...CommandHandler,...UseCase}.php
+├── Command/ResetPasswordWithToken/{...Command,...CommandHandler,...UseCase}.php   (wraps body in TransactionInterface for PESSIMISTIC_WRITE)
 ├── Command/PromoteToAdmin/{PromoteToAdminCommand,PromoteToAdminCommandHandler}.php
 └── Query/GetCurrentUser/{GetCurrentUserQuery,GetCurrentUserQueryHandler,CurrentUserResponse}.php
 
 Infrastructure/
-├── Persistence/{DoctrineUserRepository.php, Doctrine/UserModel.php}
-├── Symfony/SymfonyPasswordHasher.php           (adapter for Symfony password_hasher)
-└── Symfony/Security/{SecurityUser,UserProvider}.php
-└── Symfony/Console/PromoteAdminCommand.php
+├── Persistence/DoctrineUserRepository.php
+├── Persistence/DoctrinePasswordRecoveryTokenRepository.php
+├── Persistence/Doctrine/{UserModel,PasswordRecoveryTokenModel}.php
+├── Symfony/SymfonyPasswordHasher.php
+├── Symfony/Security/{SecurityUser,UserProvider}.php
+├── Symfony/Console/PromoteAdminCommand.php
+├── Security/{RefreshToken,GesdinetRefreshTokenRevoker}.php
+└── Mail/SymfonyPasswordRecoveryEmailSender.php   (catches TransportException, logs $e->getMessage())
 
 Presentation/
-└── Http/{SignUpController, MeController, Dto/SignUpRequest}.php
+└── Http/{SignUpController, MeController, UserSelfResetPasswordController,
+        ForgotPasswordController, ResetPasswordWithTokenController,
+        Dto/{SignUpRequest, SelfResetPasswordRequest, ForgotPasswordRequest, ResetPasswordWithTokenRequest}, ...}.php
 ```
 
 Login + Refresh endpoints come from Symfony Security + Lexik + Gesdinet bundles — no controller needed.
 
+### Atomic redemption
+
+`password_recovery_tokens` has a partial unique index `(user_id) WHERE used_at IS NULL` so the
+DB enforces "at most one active token per user" — concurrent reset requests race-fail at INSERT
+time. The redemption path also takes `PESSIMISTIC_WRITE` on the row inside a transaction.
+
+### Rate limiting
+
+Two rate limiters configured in `config/packages/rate_limiter.yaml`:
+
+- `forgot_password`: 3 / 10 min per client IP (mitigates email enumeration / spam)
+- `reset_password`: 10 / min per client IP (mitigates Argon2 CPU-DoS)
+
+In tests both are bumped to 1000/min via a `when@test:` block, and the cache pool is swapped to
+the in-memory array adapter.
+
+`config/packages/framework.yaml` sets `trusted_proxies` + `trusted_headers` so the limiter sees
+the real client IP — without it, every request looks like it came from Traefik+nginx and the
+limit becomes effectively global.
+
 ## Tests
 
-- `tests/Functional/User/Presentation/Http/SignUpControllerTest.php`
-- `tests/Functional/User/Presentation/Http/LoginAndMeTest.php`
+- `tests/Functional/User/Presentation/Http/SignUp/` — sign-up cases
+- `tests/Functional/User/Presentation/Http/RequestPasswordRecovery/` — 4 cases
+- `tests/Functional/User/Presentation/Http/ResetPasswordWithToken/` — 6 cases incl. `ItRevokesAllRefreshTokensAfterResetTest`
+- `tests/Functional/Support/Fixture/PasswordRecoveryTokenFixture.php` (`issueFor`, `issueExpiredFor`, `issueUsedFor`, `countForUser`)
 
 Add a `<Verb>CommandHandlerTest.php` whenever you add a new Application command.
 

@@ -48,6 +48,28 @@ final class UserPage
         $this->client->request('GET', $url, server: $server);
     }
 
+    public function forgotPassword(string $email): void
+    {
+        $url = $this->router->generate('api_user_forgot_password');
+        $this->client->request(
+            'POST',
+            $url,
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['email' => $email], \JSON_THROW_ON_ERROR),
+        );
+    }
+
+    public function resetPasswordWithToken(string $token, string $newPassword): void
+    {
+        $url = $this->router->generate('api_user_reset_password_with_token');
+        $this->client->request(
+            'POST',
+            $url,
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode(['token' => $token, 'newPassword' => $newPassword], \JSON_THROW_ON_ERROR),
+        );
+    }
+
     public function getStatusCode(): int
     {
         return $this->client->getResponse()->getStatusCode();

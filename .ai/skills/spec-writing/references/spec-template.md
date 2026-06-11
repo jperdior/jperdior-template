@@ -39,10 +39,21 @@ For each aggregate:
 | Method | Path | Auth | Request DTO | Response DTO | Notes |
 |--------|------|------|-------------|--------------|-------|
 
-For each:
+For each endpoint, include:
 - Validation rules (route attributes + value-object construction)
 - Error responses (404, 422, 401, 403, 409)
 - OpenAPI annotations (Nelmio)
+- **Explicit JSON body example** — required for every endpoint with a request or response body.
+  The PHP DTO constructor property name is the exact JSON key (`#[MapRequestPayload]` uses property names directly).
+  The TypeScript client must use the identical key. Do not leave field names implicit.
+
+  ```jsonc
+  // POST /auth/example — request
+  { "fieldName": "value" }   // must match PHP DTO property $fieldName
+
+  // POST /auth/example — response (if non-empty)
+  { "id": "uuid" }
+  ```
 
 ## Frontend Plan (if applicable)
 

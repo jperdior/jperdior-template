@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use App\Tests\Functional\Support\Fixture\PasswordRecoveryTokenFixture;
 use App\Tests\Functional\Support\Fixture\UserFixture;
 use App\Tests\Functional\Support\Page\UserPage;
 use App\User\Domain\PasswordHasherInterface;
+use App\User\Domain\PasswordRecoveryTokenRepository;
 use App\User\Domain\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -82,5 +84,23 @@ abstract class FunctionalTestCase extends WebTestCase
         $hasher = static::getContainer()->get(PasswordHasherInterface::class);
 
         return new UserFixture($repo, $hasher);
+    }
+
+    protected function passwordRecoveryTokenFixture(): PasswordRecoveryTokenFixture
+    {
+        /** @var EntityManagerInterface $em */
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        /** @var PasswordRecoveryTokenRepository $repo */
+        $repo = static::getContainer()->get(PasswordRecoveryTokenRepository::class);
+
+        return new PasswordRecoveryTokenFixture($em, $repo);
+    }
+
+    protected function entityManager(): EntityManagerInterface
+    {
+        /** @var EntityManagerInterface $em */
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+
+        return $em;
     }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button, Input, Label, Spinner } from '@jperdior/ui-react';
 import { loginAction, type LoginState } from './actions';
@@ -18,7 +19,15 @@ export function LoginForm() {
         <Input id="email" name="email" type="email" autoComplete="email" autoFocus required />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Password</Label>
+          <Link
+            href="/forgot-password"
+            className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <Input id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}

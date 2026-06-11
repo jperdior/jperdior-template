@@ -59,6 +59,15 @@ services:
     working_dir: /app/apps/api
     command: ["sh", "bin/start"]
 
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mailpit.rule=Host(`mailpit.localhost`)"
+      - "traefik.http.routers.mailpit.entrypoints=web"
+      - "traefik.http.services.mailpit.loadbalancer.server.port=8025"
+
   rabbitmq:
     profiles: [async]
     ports:
@@ -111,6 +120,7 @@ services:
       PORT: "3000"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.localhost}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
+      CI: "true"
     volumes:
       - ../..:/repo
       - web_node_modules:/repo/node_modules
@@ -145,6 +155,7 @@ services:
       PORT: "3001"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.localhost}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
+      CI: "true"
     volumes:
       - ../..:/repo
       - admin_node_modules:/repo/node_modules
