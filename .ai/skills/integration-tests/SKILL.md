@@ -1,11 +1,11 @@
 ---
 name: integration-tests
-description: Run, create, and convert integration tests (PHPUnit Functional for the API, Playwright e2e for the frontends). Triggers on "run integration tests", "test this feature", "create test for", "convert scenario", "integration test".
+description: Run, create, and convert backend integration tests (PHPUnit Functional for the API) and frontend unit tests (Vitest + React Testing Library for apps/web and apps/admin). Triggers on "run integration tests", "test this feature", "create test for", "convert scenario", "integration test", "unit test".
 ---
 
-# Integration Tests
+# Integration & Frontend Unit Tests
 
-Run the integration suite or create new tests from a spec, scenario, or feature description.
+Run the test suites or create new tests from a spec, scenario, or feature description.
 
 ## Workflow
 
@@ -13,9 +13,8 @@ Run the integration suite or create new tests from a spec, scenario, or feature 
 
 ```sh
 make test-api              # PHPUnit unit + functional
-make test-e2e              # Playwright (apps/web)
-make test-e2e-admin        # Playwright (apps/admin)
-make test                  # everything
+make test-web              # Vitest (apps/web + apps/admin)
+make test                  # everything (API + frontends)
 ```
 
 To filter PHPUnit:
@@ -23,12 +22,12 @@ To filter PHPUnit:
 make test-api ARG="--filter SignUpControllerTest"
 ```
 
-To run a single Playwright spec, exec into the running container:
+To run a single Vitest file, exec into the container:
 ```sh
 # web
-docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml exec web pnpm -C apps/web exec playwright test e2e/auth.spec.ts
+docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml exec web pnpm -C apps/web exec vitest run src/app/__tests__/smoke.test.tsx
 # admin
-docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml exec admin pnpm -C apps/admin exec playwright test e2e/auth.spec.ts
+docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml exec admin pnpm -C apps/admin exec vitest run src/components/users/__tests__/PaginationControls.test.tsx
 ```
 
 ### Creating new tests
@@ -36,23 +35,21 @@ docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/d
 1. **Find the source**:
    - From a spec: open the spec's **Integration Coverage** section.
    - From a scenario: read the markdown under `.ai/qa/scenarios/`.
-   - From a feature description: ask the user for the user journey.
+   - From a feature description: ask the user for the behaviour to assert.
 
 2. **Decide the test layer**:
    - **PHPUnit Functional** for API contract assertions (status codes, response shape, auth, ownership).
-   - **Playwright e2e** for user journeys that go through the UI.
-   - Most behaviours need **both**: one PHPUnit test per controller action + one Playwright test per journey.
+   - **Vitest + React Testing Library** for frontend component behaviour, presentational logic, hooks, and Server Action client wrappers.
+   - Most user-visible changes need **both**: one PHPUnit test per controller action + one frontend test per non-trivial component or hook.
 
 3. **Generate the scaffold**:
-   - PHPUnit: place under `apps/api/tests/Functional/<Context>/<Controller>Test.php`. Extend `FunctionalTestCase`.
-   - Playwright (web journeys): place under `apps/web/e2e/<area>/<flow>.spec.ts`. Import helpers from `apps/web/e2e/helpers/`.
-   - Playwright (admin journeys): place under `apps/admin/e2e/<area>/<flow>.spec.ts`. Import helpers from `apps/admin/e2e/helpers/`.
+   - PHPUnit: `apps/api/tests/Functional/<Context>/<Controller>Test.php`. Extend `FunctionalTestCase`.
+   - Vitest (web): colocate next to the unit being tested under `__tests__/`, e.g. `apps/web/src/app/<route>/__tests__/<Component>.test.tsx`.
+   - Vitest (admin): same convention under `apps/admin/src/`.
 
-4. **Walk the flow** (Playwright only): with `make start` running, navigate the UI and confirm selectors (`getByRole` / `getByLabel` / `getByText`).
+4. **Write the test** using the templates below.
 
-5. **Write the test** using the templates below.
-
-6. **Verify**: run just the new test, then `make test`.
+5. **Verify**: run just the new test, then `make test`.
 
 ## PHPUnit Functional Template
 
@@ -93,58 +90,42 @@ final class GetMeControllerTest extends FunctionalTestCase
 }
 ```
 
-## Playwright e2e Template
+## Vitest + React Testing Library Template
 
-```ts
-import { test, expect } from '@playwright/test';
-import { signUp } from './helpers/auth';
+```tsx
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { MyComponent } from '../MyComponent';
 
-// Source: .ai/specs/2026-06-12-<feature>.md
-
-test.describe('<Feature>: <journey name>', () => {
-  test('a signed-up user can <do the thing>', async ({ page }) => {
-    const { email } = await signUp(page);
-
-    await page.goto('/<route>');
-    await page.getByRole('button', { name: '<action>' }).click();
-    await page.getByLabel('<field>').fill('<value>');
-    await page.getByRole('button', { name: 'Save' }).click();
-
-    await expect(page.getByRole('heading', { name: '<expected>' })).toBeVisible();
+describe('MyComponent', () => {
+  it('renders the title and a primary action', () => {
+    render(<MyComponent title="Hello" />);
+    expect(screen.getByRole('heading', { name: 'Hello' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
   });
 });
 ```
 
+Each app provides a `vitest.setup.ts` that loads `@testing-library/jest-dom` matchers and mocks `next/link` and `next/navigation`. Reuse those mocks instead of duplicating per-file.
+
 ## Rules
 
-- Each test handles its own auth and fixture lifecycle.
-- Each test cleans up created data in `finally` / teardown.
-- Use Playwright **role-based locators** (`getByRole`, `getByLabel`, `getByText`). Avoid CSS selectors.
+- Each PHPUnit test handles its own auth and fixture lifecycle and cleans up in teardown.
+- Vitest tests must be **deterministic**: no real network, no real timers (use `vi.useFakeTimers()`), no real cookies. Mock module boundaries (`next/headers`, `@jperdior/api-client-ts`) at the test level.
+- Use **role-based queries** (`getByRole`, `getByLabel`, `getByText`). Avoid `getByTestId` and CSS selectors.
 - Reference the spec in a top comment when applicable.
-- One `.spec.ts` file per journey. One PHPUnit test class per controller.
-- Never leave broken tests. Skip with `test.skip()` + clear reason if intentional.
+- One PHPUnit test class per controller. Colocate Vitest files with the unit they cover under `__tests__/`.
+- Never leave broken tests. Skip with `it.skip()` / `markTestSkipped` + a clear reason if intentional.
 
 ## Helpers
-
-`apps/web/e2e/helpers/auth.ts` exposes:
-- `signUp(page, options?)` — signs up a unique user via the UI and returns `{ email, password }`. Lands on `/dashboard` after signup.
-
-`apps/admin/e2e/helpers/auth.ts` exposes:
-- `loginAsAdmin(page)` — logs in using `PLAYWRIGHT_ADMIN_EMAIL` / `PLAYWRIGHT_ADMIN_PASSWORD` env vars. Throws if either is unset. Lands on `/dashboard` after login.
-
-Add more helpers to the respective `e2e/helpers/` directories as journeys grow.
 
 For PHP, `apps/api/tests/Functional/FunctionalTestCase.php` exposes:
 - `loginAs(string $email, string $password): string` — returns the JWT
 - `withinTransaction(callable $fn)` — opt-in transactional wrapper
 
+For Vitest, prefer plain RTL helpers (`userEvent.setup()`, `render`, `screen`). If you find yourself reaching for shared fixtures across many tests, add a `apps/<app>/src/test-utils/` directory rather than copy-pasting.
+
 ## Conditional / metadata gates
-
-If a test requires an env var (e.g. an external API key), declare it at the top:
-
-```ts
-test.skip(!process.env.STRIPE_SECRET_KEY, 'requires STRIPE_SECRET_KEY');
-```
 
 For PHP:
 ```php
@@ -155,4 +136,9 @@ protected function setUp(): void
         self::markTestSkipped('requires STRIPE_SECRET_KEY');
     }
 }
+```
+
+For Vitest:
+```ts
+it.skipIf(!process.env.STRIPE_SECRET_KEY)('exercises Stripe', () => { /* ... */ });
 ```

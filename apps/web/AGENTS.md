@@ -17,7 +17,7 @@ Next.js 16 public app (App Router, RSC by default). Consumes the API via `@jperd
 - **Never** store tokens in `localStorage`. They're HTTP-only cookies, written by `persistTokens()`.
 - **Never** import server-only code (`next/headers`, `@jperdior/api-client-ts/server`) inside `'use client'` files. TypeScript will warn but check.
 - **Never** hard-code colors / sizes — use the DS preset tokens.
-- **Never** put e2e tests anywhere other than `e2e/`.
+- **Never** put test files outside `src/`. Colocate them next to the unit they cover under `__tests__/`.
 
 ## Validation Commands
 
@@ -25,7 +25,7 @@ Next.js 16 public app (App Router, RSC by default). Consumes the API via `@jperd
 pnpm -C apps/web typecheck
 pnpm -C apps/web lint
 pnpm -C apps/web build
-pnpm -C apps/web test:e2e     # requires `make start` to be running
+pnpm -C apps/web test         # Vitest + React Testing Library
 ```
 
 ## Structure
@@ -46,10 +46,8 @@ src/
 │       └── dashboard/page.tsx       ← post-login landing
 ├── lib/auth.ts                      ← persistTokens / clearTokens / isAuthenticated
 └── middleware.ts                    ← redirect to /login when no cookies
-e2e/
-├── auth.spec.ts
-├── helpers/auth.ts
-playwright.config.ts
+vitest.config.ts                     ← Vitest + jsdom config
+vitest.setup.ts                      ← jest-dom matchers + next/link & next/navigation mocks
 tailwind.config.ts
 next.config.ts
 ```

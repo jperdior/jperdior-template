@@ -72,8 +72,7 @@ Choose the smallest relevant set for the change:
 
 ```bash
 make lint          # phpstan + cs-fixer + deptrac + tsc + eslint (all inside containers)
-make test          # phpunit (unit + functional) + pnpm test (all inside containers)
-make test-e2e      # Playwright (requires `make start` first)
+make test          # phpunit (unit + functional) + Vitest (apps/web + apps/admin, all inside containers)
 make build-web     # production Next.js build (web + admin)
 make migrate-diff  # generates a Doctrine migration diff
 ```
@@ -142,8 +141,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Research** | |
 | Parallel codebase mapping before implementing in unfamiliar territory | `.ai/skills/parallel-research/SKILL.md` |
 | **Testing** | |
-| Functional / integration tests | `apps/api/AGENTS.md` → Testing + `.ai/qa/AGENTS.md` |
-| Playwright end-to-end | `.ai/skills/integration-tests/SKILL.md` |
+| API functional / integration tests (PHPUnit) | `apps/api/AGENTS.md` → Testing + `.ai/qa/AGENTS.md` |
+| Frontend unit tests (Vitest + RTL, apps/web + apps/admin) | `.ai/skills/integration-tests/SKILL.md` |
 | Run PHP quality locally (PHPStan / cs-fixer / deptrac) | `.ai/skills/lint-php/SKILL.md` |
 | Run JS quality locally (tsc / ESLint) | `.ai/skills/lint-js/SKILL.md` |
 | **Ops** | |

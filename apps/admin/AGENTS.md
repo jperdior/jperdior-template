@@ -23,6 +23,7 @@ Next.js 16 admin back-office. Same stack as `apps/web` (App Router, RSC by defau
 pnpm -C apps/admin typecheck
 pnpm -C apps/admin lint
 pnpm -C apps/admin build
+pnpm -C apps/admin test         # Vitest + React Testing Library
 ```
 
 ## Structure

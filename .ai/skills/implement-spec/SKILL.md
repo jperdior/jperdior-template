@@ -34,13 +34,12 @@ Each phase in the spec becomes its own branch and PR, stacked on the previous. M
    - PHP: follow the bounded-context layout. Use `/scaffold-bounded-context` for new contexts, `/add-command`, `/add-query`, `/add-route` for additions.
    - Frontend: follow the route shape under `apps/web/src/app/` or `apps/admin/src/app/`. Use `/scaffold-nextjs-page`, `/scaffold-shadcn-form`.
    - Migrations: run `make migrate-diff`; review the SQL; commit it.
-   - Tests: PHPUnit Functional next to the controller; Playwright e2e under `apps/web/e2e/` or `apps/admin/e2e/`.
+   - Tests: PHPUnit Functional next to the controller under `apps/api/tests/Functional/`; Vitest + RTL colocated under `apps/web/src/**/__tests__/` or `apps/admin/src/**/__tests__/`.
 
 5. **Verification gate**:
    ```sh
    make lint
    make test
-   make test-e2e   # only if UI changed
    ```
    Every command MUST exit 0. Fix before continuing.
 

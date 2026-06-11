@@ -62,7 +62,7 @@ Skills also trigger automatically when a task matches the skill's `description`.
 | `pre-implement-spec` | Auditing a spec before implementing it — gaps, risks, contract impact. |
 | `implement-spec` | Executing an approved spec phase by phase with subagents and the code-review gate. |
 | `code-review` | Reviewing a PR/diff/commit against architecture, security, naming, and quality rules. Runs the CI gate. |
-| `integration-tests` | Running and creating Playwright e2e + PHPUnit functional tests from a spec or description. |
+| `integration-tests` | Running and creating PHPUnit functional tests (API) and Vitest + RTL tests (apps/web, apps/admin) from a spec or description. |
 | `check-and-commit` | Run `make lint && make test && make build-web`, fix obvious issues, commit and push. |
 | `fix-specs` | Normalise spec filenames to `{YYYY-MM-DD}-{slug}.md`. |
 | `skill-creator` | Scaffold a new skill folder + SKILL.md template. |

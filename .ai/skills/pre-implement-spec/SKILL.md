@@ -69,7 +69,7 @@ Launch these three subagents simultaneously after step 2. Do not wait for one be
 | Phase | Path / area | Test type | Spec'd? | Exists? |
 |-------|-------------|-----------|---------|---------|
 | 0     | …           | PHPUnit Functional | yes | no |
-| 1     | …           | Playwright e2e | yes | no |
+| 1     | …           | Vitest + RTL | yes | no |
 
 ## Backward Compatibility Audit
 

@@ -17,7 +17,7 @@ Design and review specifications against this template's architecture (DDD + Hex
 6. **Design**: write the Architecture, Data Models, API Contracts sections. For every aggregate, declare which **bounded context** it lives in. For every endpoint, declare which **bus** it dispatches to. For every cross-context need, declare the **domain event** or **public application service** used (NOT a direct import).
 7. **Phasing**: break delivery into testable phases. Each phase ends with `make test` passing and a working app. Each phase will become its own PR — so define phases at a granularity that is independently reviewable and leaves the app in a valid state when merged.
 8. **Risks & Impact**: document concrete failure scenarios (severity, affected area, mitigation, residual risk).
-9. **Integration Coverage**: list the Playwright / PHPUnit functional tests that must exist for the new behaviour.
+9. **Integration Coverage**: list the PHPUnit Functional tests (API) and Vitest + RTL tests (apps/web, apps/admin) that must exist for the new behaviour.
 10. **Compliance Gate**: apply [references/compliance-gate.md](references/compliance-gate.md).
 11. **Output**: finalise the spec. If any new business rules were introduced, add them to `.ai/business-rules.md`.
 12. **Commit the spec locally** on the current `feat/<slug>` branch:

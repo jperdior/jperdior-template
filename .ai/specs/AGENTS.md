@@ -76,7 +76,7 @@ Every non-trivial spec includes:
 - **API Contracts** — HTTP routes (path + method + DTO + response), CLI commands.
 - **Phasing** — broken into testable phases; each phase ends with a working app.
 - **Risks & Impact Review** — concrete failure scenarios, severity, mitigation, residual risk.
-- **Integration Coverage** — which Playwright tests must exist for the new behaviour.
+- **Integration Coverage** — which PHPUnit Functional tests (API) and Vitest + RTL tests (frontend) must exist for the new behaviour.
 - **Final Compliance Report** — checklist of architectural rules cleared.
 - **Changelog** — date + summary appended after implementation.
 

@@ -145,88 +145,18 @@ jobs:
       - run: pnpm -C apps/web build
       - run: pnpm -C apps/admin build
 
-  e2e-playwright:
-    name: Playwright e2e (ephemeral compose)
+  js-tests-unit:
+    name: JS unit tests (Vitest)
     runs-on: ubuntu-latest
-    needs: [php-tests-functional, js-build]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
       - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
       - run: pnpm install --frozen-lockfile=false
-      - name: Install Playwright browsers (web)
-        run: pnpm -C apps/web exec playwright install --with-deps chromium
-      - name: Install Playwright browsers (admin)
-        run: pnpm -C apps/admin exec playwright install chromium
-      - name: Patch /etc/hosts for Traefik .localhost routing
-        run: echo "127.0.0.1 api.localhost web.localhost admin.localhost" | sudo tee -a /etc/hosts
-      - name: Boot the stack
-        run: |
-          cp .env.dist .env.local
-          make up
-      - name: Wait for API
-        run: |
-          for i in {1..60}; do
-            if curl -sf http://api.localhost/api/doc >/dev/null; then echo "API up"; exit 0; fi
-            sleep 2
-          done
-          echo "API did not become ready in 120s"
-          make logs-ci
-          exit 1
-      - name: Wait for web
-        run: |
-          for i in {1..60}; do
-            if curl -sf http://web.localhost >/dev/null; then echo "Web up"; exit 0; fi
-            sleep 2
-          done
-          echo "Web did not become ready in 120s"
-          make logs-ci
-          exit 1
-      - name: Wait for admin
-        run: |
-          for i in {1..60}; do
-            if curl -sf http://admin.localhost >/dev/null; then echo "Admin up"; exit 0; fi
-            sleep 2
-          done
-          echo "Admin did not become ready in 120s"
-          make logs-ci
-          exit 1
-      - name: Playwright (web)
-        env:
-          PLAYWRIGHT_BASE_URL: http://web.localhost
-        run: pnpm -C apps/web exec playwright test
-      - name: Seed admin user
-        env:
-          PLAYWRIGHT_ADMIN_EMAIL: admin@e2e.test
-          PLAYWRIGHT_ADMIN_PASSWORD: e2eAdminPass1!
-        run: make seed-e2e-admin
-      - name: Playwright (admin)
-        env:
-          PLAYWRIGHT_BASE_URL: http://admin.localhost
-          PLAYWRIGHT_ADMIN_EMAIL: admin@e2e.test
-          PLAYWRIGHT_ADMIN_PASSWORD: e2eAdminPass1!
-        run: pnpm -C apps/admin exec playwright test
-      - name: Upload Playwright report (web)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-web
-          path: apps/web/playwright-report
-          retention-days: 7
-      - name: Upload Playwright report (admin)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-admin
-          path: apps/admin/playwright-report
-          retention-days: 7
-      - name: Compose logs on failure
-        if: failure()
-        run: make logs-ci
-      - name: Stop the stack
-        if: always()
-        run: make stop
+      - run: pnpm -C apps/web test
+      - run: pnpm -C apps/admin test

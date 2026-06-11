@@ -70,8 +70,8 @@ For each:
 | Test ID | Type | Path | Asserts |
 |---------|------|------|---------|
 | TC-… | PHPUnit Functional | `apps/api/tests/Functional/…` | … |
-| TC-… | Playwright | `apps/web/e2e/…` | … |
-| TC-… | Playwright | `apps/admin/e2e/…` | … |
+| TC-… | Vitest + RTL | `apps/web/src/**/__tests__/…` | … |
+| TC-… | Vitest + RTL | `apps/admin/src/**/__tests__/…` | … |
 
 ## Backward Compatibility
 

@@ -215,7 +215,7 @@ Both `apps/web` and `apps/admin` are Next.js 15 App Router applications:
 
 - **One process**: `api` (nginx + php-fpm). No worker container — Messenger buses run synchronously.
 - **Docker Compose** is the primary dev and deployment path. A Helm chart skeleton is included under `ops/k8s/` for Kubernetes.
-- **CI** runs on every PR: `make lint` → `make test` → `make build-web` → (optional) `make test-e2e`.
+- **CI** runs on every PR: `make lint` → `make test` (PHPUnit + Vitest) → `make build-web`.
 
 See [ops.md](ops.md) for the full environment reference.
 
