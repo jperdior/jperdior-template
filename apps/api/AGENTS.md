@@ -20,13 +20,11 @@ Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context
 - Ask before adding a new bundle.
 - Ask before bumping Symfony major/minor versions.
 - Ask before adding a non-`doctrine://` Messenger transport.
-- Ask before adding a tenancy concern (route via `packages/tenancy-php` only).
 
 ## Never
 
 - **Never** import another context's `Domain/` or `Application/`. CI `deptrac` enforces this.
 - **Never** add `#[ORM\*]` attributes to domain entities. ORM mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
-- **Never** add `tenant_id` columns to entities here. Tenancy is in `packages/tenancy-php`.
 - **Never** call `em->find()` from a controller. Use a query.
 - **Never** catch a domain exception in a controller unless transforming it to a specific HTTP status with rationale.
 - **Never** log credentials, tokens, or password hashes.

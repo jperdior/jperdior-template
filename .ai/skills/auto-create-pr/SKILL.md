@@ -15,8 +15,8 @@ Execute a user-described task autonomously and open a GitHub PR. Resumable via `
    - `HANDOFF.md` — current step + open todos (resumable)
 3. **Create a worktree branch**:
    ```sh
-   git worktree add ../jperdior-template.{slug} -b feat/{slug}
-   cd ../jperdior-template.{slug}
+   git worktree add .claude/worktrees/{slug} -b feat/{slug}
+   cd .claude/worktrees/{slug}
    ```
 4. **Implement** the plan step by step. After each step, append `[x]` to the Progress checklist in `PLAN.md` and update `HANDOFF.md`.
 5. **Verification gate** (mandatory):
@@ -105,7 +105,7 @@ The user (or a subsequent `auto-continue-pr` invocation) can resume from `HANDOF
 ```
 ✅ PR opened: {URL}
    Branch: feat/{slug}
-   Worktree: ../jperdior-template.{slug}
+   Worktree: .claude/worktrees/{slug}
    Steps completed: {N}/{M}
    Pipeline label: review
    Category: {feature|bug|…}

@@ -43,7 +43,7 @@ See [references/spec-template.md](references/spec-template.md) for the full skel
 ## Findings
 
 ### Critical
-{Boundary violations (cross-context imports), bus bypass, attribute mapping on domain entities, multi-tenancy in core, missing deprecation bridge}
+{Boundary violations (cross-context imports), bus bypass, attribute mapping on domain entities, missing deprecation bridge}
 
 ### High
 {Missing Phase strategy, unclear undo semantics, missing API contract, no integration coverage}
@@ -64,17 +64,16 @@ See [references/spec-checklist.md](references/spec-checklist.md).
 2. **Bus discipline**: do controllers dispatch through `CommandBus` / `QueryBus`? Or does the spec wire a handler directly into a controller? Critical.
 3. **Mapping discipline**: does the spec add `#[ORM\Entity]` / `#[ORM\Column]` attributes to a domain entity? Critical — ORM attributes belong on `*Model` persistence classes in `Infrastructure/Persistence/Doctrine/`, never on domain entities.
 4. **Aggregate granularity**: is there exactly one aggregate root per write transaction? Splitting one logical transaction across two aggregates is a smell; merging two distinct lifecycles into one aggregate is also a smell.
-5. **Value object usage**: are user-supplied strings validated at value-object construction (`UserId`, `Email`, `NoteTitle`) rather than after handler dispatch?
-6. **Multi-tenancy hygiene**: does the spec add `tenant_id` to a core entity? If yes, reject — direct the author at `docs/multitenancy.md` and the `tenancy-php` opt-in.
-7. **Undoability**: for state-changing commands, is the inverse documented? Even if not implemented yet, the spec should describe how the change can be reverted.
-8. **Idempotency**: are subscribers and workers idempotent? Messenger can retry.
-9. **Auth & RBAC**: does every protected endpoint declare its `ROLE_*` requirement?
-10. **Frontend boundary**: for UI work, is the Server/Client component boundary explicit? Are `"use client"` files justified? Does the spec describe loading / error / empty states?
-11. **API contract field alignment**: every endpoint with a request or response body must include an explicit JSON example — not just a DTO class name. The PHP DTO constructor property name (e.g., `$password`) is the exact JSON key that `#[MapRequestPayload]` deserializes, and the TypeScript client must use that exact key. A spec that only names the DTO class without showing the JSON shape is a **High** finding — it guarantees a field-name mismatch between backend and frontend.
+5. **Value object usage**: are user-supplied strings validated at value-object construction (`UserId`, `Email`, `HashedPassword`) rather than after handler dispatch?
+6. **Undoability**: for state-changing commands, is the inverse documented? Even if not implemented yet, the spec should describe how the change can be reverted.
+7. **Idempotency**: are subscribers and workers idempotent? Messenger can retry.
+8. **Auth & RBAC**: does every protected endpoint declare its `ROLE_*` requirement?
+9. **Frontend boundary**: for UI work, is the Server/Client component boundary explicit? Are `"use client"` files justified? Does the spec describe loading / error / empty states?
+10. **API contract field alignment**: every endpoint with a request or response body must include an explicit JSON example — not just a DTO class name. The PHP DTO constructor property name (e.g., `$password`) is the exact JSON key that `#[MapRequestPayload]` deserializes, and the TypeScript client must use that exact key. A spec that only names the DTO class without showing the JSON shape is a **High** finding — it guarantees a field-name mismatch between backend and frontend.
 
 ## Quick Rules
 
-- **Singular naming** for aggregates, commands, events, queries (`User`, `Note`, not `Users`, `Notes` for the class names — table names ARE plural though).
+- **Singular naming** for aggregates, commands, events, queries (`User`, `Order`, not `Users`, `Orders` for the class names — table names ARE plural though).
 - **Event IDs**: `<context>.<aggregate>.<action_past_tense>` (e.g. `user.account.created`).
 - **No cross-context ORM relationships** — use FK IDs only.
 - **No `any`** in TypeScript; **`declare(strict_types=1);`** in every PHP file.

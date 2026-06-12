@@ -23,7 +23,7 @@ git diff origin/main...HEAD --name-only \
   | sort -u
 ```
 
-Collect the unique context names (e.g. `User`, `Note`). Skip `Shared`.
+Collect the unique context names (e.g. `User`). Skip `Shared`.
 
 ### Step 2 — For each changed context
 

@@ -10,8 +10,5 @@ echo "==> Composer install (apps/api)"
 echo "==> Composer install (packages/shared-kernel-php)"
 ( cd packages/shared-kernel-php && composer install --no-interaction --no-progress --prefer-dist )
 
-echo "==> Composer install (packages/tenancy-php)"
-( cd packages/tenancy-php && composer install --no-interaction --no-progress --prefer-dist )
-
 echo "==> pnpm install (workspace)"
 pnpm install --frozen-lockfile=false

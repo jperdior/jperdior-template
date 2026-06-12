@@ -74,12 +74,12 @@ If the phase touches ≥3 unfamiliar files or spans multiple bounded contexts, s
 
 | Angle | Example prompt |
 |-------|----------------|
-| Call sites | "Find every place in `apps/api/src/` that calls `NoteRepository` (not via an interface). List `file:line` only." |
-| Controller dependencies | "List every controller that dispatches `CreateNote` or any Note-related command. File paths and class names only." |
-| Test coverage | "List all PHPUnit test files that import or instantiate `NoteCommandHandler`. File paths only." |
-| Event subscribers | "Find all classes that listen to the `note.note.created` event ID. Return class name and file path." |
-| Migration scope | "List every table referenced in `apps/api/src/Note/Infrastructure/Persistence/` ORM mappings. Table names only." |
-| Frontend dependencies | "Find all TypeScript files that import from `@jperdior/api-client-ts` and call a note-related endpoint. File and endpoint." |
+| Call sites | "Find every place in `apps/api/src/` that calls `OrderRepository` (not via an interface). List `file:line` only." |
+| Controller dependencies | "List every controller that dispatches `CreateOrder` or any Order-related command. File paths and class names only." |
+| Test coverage | "List all PHPUnit test files that import or instantiate `OrderCommandHandler`. File paths only." |
+| Event subscribers | "Find all classes that listen to the `order.order.created` event ID. Return class name and file path." |
+| Migration scope | "List every table referenced in `apps/api/src/Order/Infrastructure/Persistence/` ORM mappings. Table names only." |
+| Frontend dependencies | "Find all TypeScript files that import from `@jperdior/api-client-ts` and call an order-related endpoint. File and endpoint." |
 
 Collect all results before opening any file to edit.
 

@@ -13,7 +13,7 @@ Independent, paranoid security audit of a single unit of work (one PR / one spec
 2. **Map the surface**: enumerate every input boundary the diff adds or modifies (HTTP endpoints, console commands, Messenger consumers, JWT claims, deserialisation paths, file uploads, SQL queries, regexes).
 3. **Run the OWASP checklist** against each boundary (see below).
 4. **Hunt non-obvious vectors**: time-of-check / time-of-use, race conditions, type-juggling (PHP), JWT algorithm confusion, mass-assignment, IDOR, SSRF, prototype pollution (JS), open-redirect, refresh-token rotation gaps, log injection, denial-of-service via expensive queries.
-5. **Same-pattern sweep**: grep the rest of the codebase for the same dangerous pattern. If `Note` has it, `User` probably does too.
+5. **Same-pattern sweep**: grep the rest of the codebase for the same dangerous pattern. If one context has it, the others probably do too.
 6. **Write the report** under `.ai/analysis/{YYYY-MM-DD}-sec-{slug}.md`.
 
 ## OWASP Checklist (per boundary)

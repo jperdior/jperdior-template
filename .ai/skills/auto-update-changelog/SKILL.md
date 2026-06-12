@@ -52,7 +52,7 @@ Generate a release entry in `CHANGELOG.md` covering every PR merged since the mo
 - chore(deps): bump symfony/messenger 7.4.2 (#170) — @dependabot
 
 ### 📚 Docs
-- docs(multitenancy): clarify SQLFilter activation (#175) — @julio
+- docs(api): clarify CQRS bus wiring (#175) — @julio
 ```
 
 ## Rules

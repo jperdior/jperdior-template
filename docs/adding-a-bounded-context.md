@@ -276,9 +276,3 @@ final class SendOrderConfirmation implements DomainEventSubscriber
 ```
 
 If Context B needs a read projection of Context A's data, subscribe to its events and maintain a local read model. Never reach into A's repository directly.
-
----
-
-## Single-tenant by design
-
-This template has no `tenant_id` columns. All contexts are single-tenant. If your project requires multi-tenancy, fork the template and add your own implementation — a Doctrine `SQLFilter` + request-scoped `TenantContext` is the standard approach, but the details vary enough per project that the template deliberately stays out of that decision.

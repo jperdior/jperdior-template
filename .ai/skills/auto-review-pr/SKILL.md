@@ -14,8 +14,8 @@ Review a PR end-to-end: check it out in a worktree, run the verification gate, r
 3. **Worktree checkout**:
    ```sh
    git fetch origin {headRefName}
-   git worktree add ../jperdior-template.review-{N} origin/{headRefName}
-   cd ../jperdior-template.review-{N}
+   git worktree add .claude/worktrees/review-{N} origin/{headRefName}
+   cd .claude/worktrees/review-{N}
    ```
 4. **Verification gate**:
    ```sh
@@ -37,7 +37,7 @@ Review a PR end-to-end: check it out in a worktree, run the verification gate, r
    - On approve + `needs-qa`: move to `qa`.
    - On approve + `skip-qa`: move to `merge-queue`.
    - On request-changes: move to `changes-requested`.
-10. **Cleanup worktree** (only if not handing off): `git worktree remove ../jperdior-template.review-{N}`.
+10. **Cleanup worktree** (only if not handing off): `git worktree remove .claude/worktrees/review-{N}`.
 
 ## Label Transition Rules
 
