@@ -36,11 +36,10 @@ The Symfony Mailer DSN comes from `MAILER_DSN`. In dev this defaults to `smtp://
 
 ## Never
 
-- Never import `App\Note\…` or any other context's `Domain/`/`Application/`. Communicate via events.
+- Never import another context's `Domain/`/`Application/` (e.g. `App\<OtherContext>\Domain\…`). Communicate via events.
 - Never store plaintext passwords. The aggregate only knows `HashedPassword`.
 - Never log `PlainPassword` or any password-shaped string.
 - Never return the password hash from any endpoint.
-- Never add `tenant_id` here. The User aggregate is single-tenant by design.
 
 ## Structure
 

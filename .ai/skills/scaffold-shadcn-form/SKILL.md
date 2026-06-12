@@ -9,7 +9,7 @@ Generate a typed, validated form following the template's DS rules.
 
 ## Workflow
 
-1. **Ask for the form's purpose** ("create a Note", "edit user profile", "change password").
+1. **Ask for the form's purpose** ("sign up", "edit user profile", "change password").
 2. **Identify the API endpoint** the form submits to.
 3. **Generate the zod schema** matching the API Request DTO.
 4. **Generate the form component**:

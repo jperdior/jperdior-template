@@ -19,7 +19,6 @@ Check `.ai/specs/` before modifying an established bounded context. Create or up
 
 - Never introduce `SPEC-*` filename prefixes — new specs use `{YYYY-MM-DD}-{kebab-case-title}.md`.
 - Never leave stale endpoints, entities, or assumptions in an updated spec.
-- Never write a spec that proposes adding `tenant_id` columns to entities outside the `tenancy-php` package — multi-tenancy stays opt-in (see `docs/multitenancy.md`).
 
 ## Validation Commands
 
@@ -42,7 +41,7 @@ Specs are published to `main` via a **spec-only PR** (`spec/<slug>` branch → P
 
 Examples:
 - `2026-06-04-add-billing-bounded-context.md`
-- `2026-06-07-enable-multitenancy-via-jwt-claim.md`
+- `2026-06-07-add-user-profile-endpoint.md`
 - `2026-06-12-replace-doctrine-transport-with-amqp.md`
 
 ## Workflow
@@ -89,7 +88,6 @@ Every non-trivial spec includes:
 | Schema change touching > 1 entity | Test-only changes |
 | New domain event | Dependency bump |
 | Changing auth/permissions | CI-only changes |
-| Opting into tenancy | |
 
 ## Detailed Guidance
 

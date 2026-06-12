@@ -19,7 +19,7 @@
 ## Checklist
 
 - [ ] No cross-bounded-context Domain imports (`deptrac` will catch them in CI)
-- [ ] New entities use XML mapping only (no `#[ORM\*]` attributes)
+- [ ] Domain entities stay pure PHP; persistence via `#[ORM\*]` attributes on `*Model` classes (no ORM attributes on domain entities)
 - [ ] New migration reviewed — `up()` and `down()` both correct
 - [ ] No credentials or tokens committed
 - [ ] OpenAPI-affecting change → `make gen-api` run and diff committed

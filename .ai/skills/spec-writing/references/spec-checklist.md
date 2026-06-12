@@ -14,7 +14,6 @@
 - [ ] No cross-context `Domain/` or `Application/` imports proposed
 - [ ] Cross-context interaction via event bus or public application service
 - [ ] No proposal to add `#[ORM\*]` attributes to domain entities
-- [ ] No proposal to add `tenant_id` to core entities
 
 ## 3. Data & Security
 

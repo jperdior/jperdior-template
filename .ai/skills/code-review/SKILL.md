@@ -82,7 +82,7 @@ Rules:
 ## Findings
 
 ### Critical
-{Boundary violations, bus bypass, ORM attributes on domain entity, missing auth, tenancy in core, missing deprecation bridge, refresh-token rotation removed.}
+{Boundary violations, bus bypass, ORM attributes on domain entity, missing auth, missing deprecation bridge, refresh-token rotation removed.}
 
 ### High
 {Architecture violation, missing test coverage on risk path, missing OpenAPI annotation, raw fetch instead of api-client-ts.}
@@ -112,7 +112,7 @@ Rules:
 
 | Severity | Criteria | Action |
 |----------|----------|--------|
-| Critical | Security, data integrity, cross-context boundary violation, bus bypass, ORM attribute on domain entity, tenancy leak, BC break without bridge | MUST fix before merge |
+| Critical | Security, data integrity, cross-context boundary violation, bus bypass, ORM attribute on domain entity, BC break without bridge | MUST fix before merge |
 | High | Architecture violation, missing test on risk path, missing auth declaration, raw fetch in frontend | MUST fix before merge |
 | Medium | Convention, suboptimal pattern, missing best practice | Should fix |
 | Low | Style, nit | Nice to have |
@@ -124,7 +124,6 @@ Rules:
 - NO `use App\<OtherContext>\Domain\…` or `…\Application\…` in another context.
 - Controllers dispatch through `CommandBus` / `QueryBus`. Handlers MUST NOT be wired directly into controllers.
 - Domain entities MUST NOT carry Doctrine attributes; ORM mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
-- No `tenant_id` column in core entities (only inside `tenancy-php`).
 - Repository interfaces in `Domain/`, Doctrine implementations in `Infrastructure/Persistence/`, aliased in `config/services.yaml`.
 
 ### Security (Critical)
@@ -137,15 +136,15 @@ Rules:
 
 ### CQRS (High)
 
-- Commands are imperative (`SignUp`, `CreateNote`); events are past tense (`UserRegistered`).
+- Commands are imperative (`SignUp`, `ResetPassword`); events are past tense (`UserRegistered`).
 - Queries return read DTOs, never entities.
 - Async commands are idempotent.
 - `_instanceof` auto-tags handlers; never tag manually.
 
 ### Naming & Structure (High/Medium)
 
-- Aggregates: PascalCase singular (`User`, `Note`).
-- Tables: snake_case plural (`users`, `notes`).
+- Aggregates: PascalCase singular (`User`, `Order`).
+- Tables: snake_case plural (`users`, `orders`).
 - Columns: snake_case (`created_at`, `owner_id`).
 - UUID PKs; explicit FKs; standard columns `id`, `created_at`, `updated_at`, `deleted_at` where applicable.
 - PHP files: `declare(strict_types=1);` at top.
@@ -172,5 +171,4 @@ Check `.ai/lessons.md` against the diff before approving:
 - L-001: No Doctrine attributes on domain entities.
 - L-002: Controllers must dispatch through the bus.
 - L-003: No cross-context imports.
-- L-004: Tenancy is opt-in.
 - L-005: Refresh-token rotation is mandatory.

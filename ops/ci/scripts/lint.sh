@@ -15,7 +15,6 @@ run() {
 
 run "PHPStan (apps/api)"               "cd apps/api && vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M --no-progress"
 run "PHPStan (shared-kernel-php)"      "cd packages/shared-kernel-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress"
-run "PHPStan (tenancy-php)"            "cd packages/tenancy-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress"
 run "php-cs-fixer (apps/api)"          "cd apps/api && vendor/bin/php-cs-fixer fix --dry-run --diff"
 run "deptrac (apps/api)"               "cd apps/api && vendor/bin/deptrac analyse --no-progress"
 run "Typecheck (JS workspaces)"        "pnpm -r --filter './apps/*' --filter './packages/*' typecheck"

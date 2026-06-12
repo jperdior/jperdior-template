@@ -30,16 +30,6 @@ Institutional memory of mistakes worth not repeating. One entry per lesson. Writ
 
 ---
 
-## L-004 — Single-tenant by design
-
-**Don't** add `tenant_id` columns to entities. The template is single-tenant. All entities in `apps/api/src/` are single-tenant by default.
-
-**Why**: multi-tenancy is a significant cross-cutting concern that varies per project. Adding it speculatively creates complexity that most projects never need. If your project requires multi-tenancy, fork the template and add your own implementation — a Doctrine `SQLFilter` + request-scoped `TenantContext` is the standard approach, but the scope and details should be an explicit decision, not a default.
-
-**How to apply**: if you see `tenant_id` anywhere in a generated entity, remove it.
-
----
-
 ## L-005 — Refresh-token rotation
 
 **Don't** ship refresh tokens without rotation. Every successful `/auth/refresh` call MUST issue a *new* refresh token and revoke the previous one in the same transaction. Reuse of a revoked refresh token MUST log the user out everywhere and surface a security event.

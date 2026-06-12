@@ -1,6 +1,6 @@
 {
     "name": "jperdior/api",
-    "description": "Symfony 7.4 API for jperdior-template. DDD + Hexagonal + CQRS via Messenger; JWT auth; PostgreSQL via Doctrine 3 (XML mapping).",
+    "description": "Symfony 7.4 API for jperdior-template. DDD + Hexagonal + CQRS via Messenger; JWT auth; PostgreSQL via Doctrine 3 (attribute mapping on *Model classes).",
     "type": "project",
     "license": "MIT",
     "minimum-stability": "dev",

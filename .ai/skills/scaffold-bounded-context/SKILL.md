@@ -1,6 +1,6 @@
 ---
 name: scaffold-bounded-context
-description: Scaffold a new bounded context under apps/api/src/<Context>/ with Domain, Application, Infrastructure, Presentation layers. Mirrors the User/Note layout. Triggers on "new bounded context", "scaffold context", "add a context".
+description: Scaffold a new bounded context under apps/api/src/<Context>/ with Domain, Application, Infrastructure, Presentation layers. Mirrors the User layout. Triggers on "new bounded context", "scaffold context", "add a context".
 ---
 
 # Scaffold Bounded Context

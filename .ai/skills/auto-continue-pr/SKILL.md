@@ -16,8 +16,8 @@ Resume an `auto-create-pr` run that stopped before completion.
 5. **Check out the branch into a worktree**:
    ```sh
    git fetch origin {headRefName}
-   git worktree add ../jperdior-template.{slug} origin/{headRefName}
-   cd ../jperdior-template.{slug}
+   git worktree add .claude/worktrees/{slug} origin/{headRefName}
+   cd .claude/worktrees/{slug}
    ```
 6. **Read** `.ai/runs/{date}-{slug}/PLAN.md` + `HANDOFF.md`. Find the first unchecked Progress item.
 7. **Continue from that step**. Apply the same verification gate after every step.

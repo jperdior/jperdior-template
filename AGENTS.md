@@ -60,7 +60,6 @@ Do **not** start any new work until the user has acknowledged the merged state.
 - **Never** call command/query handlers directly from controllers — always go through the bus.
 - **Never** import another bounded context's `Domain/` or `Application/` — cross-context communication goes through the event bus or a public application service. (CI: `deptrac` enforces this.)
 - **Never** add Doctrine attributes to domain entities; ORM mapping belongs on `*Model` persistence classes in `Infrastructure/Persistence/Doctrine/`.
-- **Never** add `tenant_id` columns to entities in `apps/api/src/`. This template is single-tenant by design. For multi-tenancy, fork the template.
 - **Never** edit generated files (`apps/api/openapi.json`, `packages/api-client-ts/src/types.gen.ts`) by hand.
 - **Never** commit credentials, raw tokens, or `.env.local`.
 

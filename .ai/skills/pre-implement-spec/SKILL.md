@@ -30,7 +30,7 @@ Launch these three subagents simultaneously after step 2. Do not wait for one be
 
 ### Agent 3 — Risk & Security
 **Role**: You are an expert in application security and Symfony/PHP backend risk assessment. Your job is to surface auth gaps, migration hazards, and idempotency failures before they reach production.
-**Task**: For each Phase, audit: `#[IsGranted]` declarations on new endpoints, migration scope (does it touch tables outside the feature?), idempotency of async handlers, refresh-token rotation if auth is touched, cross-context imports, tenant isolation if `tenancy-php` is in play, and any irreversible operation without a documented rollback path.
+**Task**: For each Phase, audit: `#[IsGranted]` declarations on new endpoints, migration scope (does it touch tables outside the feature?), idempotency of async handlers, refresh-token rotation if auth is touched, cross-context imports, and any irreversible operation without a documented rollback path.
 **Produces**: risk hot-spots list with severity (Critical / High / Medium / Low).
 
 ## Output Format
@@ -50,7 +50,7 @@ Launch these three subagents simultaneously after step 2. Do not wait for one be
 
 ## Critical
 
-{Boundary violations, bus bypass, attribute mapping, missing deprecation bridge, missing auth, multi-tenancy in core.}
+{Boundary violations, bus bypass, attribute mapping, missing deprecation bridge, missing auth.}
 
 ## High
 

@@ -21,10 +21,10 @@ The goal is a **Research Map** — a consolidated set of `file:line` references 
 
 1. **Define the angles.** Based on what you're about to implement, identify 2–5 distinct research dimensions. Each angle must answer exactly one question. Examples:
    - "All direct usages of `UserRepository` (not via interface)"
-   - "All controllers that dispatch commands in the `Note` context"
-   - "All PHPUnit tests that cover `NoteCommandHandler`"
+   - "All controllers that dispatch commands in the `Order` context"
+   - "All PHPUnit tests that cover `OrderCommandHandler`"
    - "All event subscribers listening to `user.account.created`"
-   - "All TypeScript files calling a `/notes` endpoint via the API client"
+   - "All TypeScript files calling a `/orders` endpoint via the API client"
 
 2. **Spawn Explore subagents in parallel** — one per angle. Each agent prompt should open with a role statement so it reasons from the right perspective (e.g. "You are an expert in this PHP/Symfony codebase. Your job is to find all call sites of X. Return file:line only."). Send all spawns in a single message; do not wait for one to return before launching the next.
 
@@ -42,35 +42,35 @@ Each prompt must be:
 - **Minimal output format** — `file:line` list only; no analysis or prose.
 
 **Good:**
-> Find every file in `apps/api/src/` that directly instantiates or injects `DoctrineNoteRepository` (not via its interface `NoteRepository`). Return `file:line` only.
+> Find every file in `apps/api/src/` that directly instantiates or injects `DoctrineOrderRepository` (not via its interface `OrderRepository`). Return `file:line` only.
 
 **Bad:**
-> Look at the Note context and tell me everything that uses repositories.
+> Look at the Order context and tell me everything that uses repositories.
 
 ## Example research map
 
 ```markdown
-## Research Map: Note aggregate refactor
+## Research Map: Order aggregate refactor
 
-### Angle 1 — NoteRepository call sites (non-interface)
-- `apps/api/src/Note/Infrastructure/Persistence/DoctrineNoteRepository.php:1` — definition
-- `apps/api/tests/Note/Infrastructure/DoctrineNoteRepositoryTest.php:12` — only test using concrete class
+### Angle 1 — OrderRepository call sites (non-interface)
+- `apps/api/src/Order/Infrastructure/Persistence/DoctrineOrderRepository.php:1` — definition
+- `apps/api/tests/Order/Infrastructure/DoctrineOrderRepositoryTest.php:12` — only test using concrete class
 
-### Angle 2 — Controllers dispatching Note commands
-- `apps/api/src/Note/Presentation/HTTP/CreateNoteController.php:34` — dispatches CreateNote
-- `apps/api/src/Note/Presentation/HTTP/DeleteNoteController.php:28` — dispatches DeleteNote
+### Angle 2 — Controllers dispatching Order commands
+- `apps/api/src/Order/Presentation/HTTP/CreateOrderController.php:34` — dispatches CreateOrder
+- `apps/api/src/Order/Presentation/HTTP/DeleteOrderController.php:28` — dispatches DeleteOrder
 
-### Angle 3 — PHPUnit tests covering NoteCommandHandler
-- `apps/api/tests/Note/Application/CreateNoteHandlerTest.php:1`
-- `apps/api/tests/Note/Application/DeleteNoteHandlerTest.php:1`
+### Angle 3 — PHPUnit tests covering OrderCommandHandler
+- `apps/api/tests/Order/Application/CreateOrderHandlerTest.php:1`
+- `apps/api/tests/Order/Application/DeleteOrderHandlerTest.php:1`
 
 ### Surprises
-- `apps/api/src/User/Application/CleanupUserNotesHandler.php:18` — imports `Note\Domain\NoteRepository` directly. **Critical: cross-context import.** Raise with user before proceeding.
+- `apps/api/src/User/Application/CleanupUserOrdersHandler.php:18` — imports `Order\Domain\OrderRepository` directly. **Critical: cross-context import.** Raise with user before proceeding.
 
 ### Ready to implement?
 - [x] All call sites identified
 - [x] All tests identified
-- [ ] Cross-context import at `CleanupUserNotesHandler:18` — resolve first
+- [ ] Cross-context import at `CleanupUserOrdersHandler:18` — resolve first
 ```
 
 ## Rules

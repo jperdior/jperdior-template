@@ -5,7 +5,7 @@
 - **Modular monolith** in PHP 8.4 / Symfony 7.4. One API app (`apps/api`), many bounded contexts inside it.
 - **DDD + Hexagonal + CQRS.** Four-layer bounded contexts; three Symfony Messenger buses.
 - **Persistence Model pattern** — dedicated `*Model` infrastructure classes own all Doctrine attributes; domain entities are ORM-free.
-- **JWT auth** with single-use refresh-token rotation. Single-tenant.
+- **JWT auth** with single-use refresh-token rotation.
 - **Frontends** are Next.js 15 (App Router) consuming the API via a generated TS client.
 - **Strict cross-context boundaries** enforced by `deptrac` in CI.
 
@@ -145,33 +145,23 @@ Controller
 
 ---
 
-## Custom DBAL Types
+## Persistence model
 
-Value objects are mapped to their primitive DB representations via custom Doctrine DBAL types. This keeps the domain clean (entities always hold value objects) and prevents PHP 8.4 lazy-ghost hydration errors.
-
-Example pattern (`UserIdType`):
+Domain aggregates are pure PHP — never annotated with `#[ORM\*]`. Each aggregate has a dedicated `*Model` class in `Infrastructure/Persistence/Doctrine/` that carries the Doctrine **PHP attributes** and holds **plain scalar fields** (no value-object types):
 
 ```php
-final class UserIdType extends Type
+#[ORM\Entity]
+#[ORM\Table(name: 'users')]
+class UserModel
 {
-    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?UserId
-    {
-        return null !== $value ? UserId::fromString((string) $value) : null;
-    }
-
-    public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
-    {
-        return $value instanceof UserId ? $value->value : null;
-    }
-
-    public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
-    {
-        return $platform->getStringTypeDeclarationSQL($column);
-    }
+    #[ORM\Id]
+    #[ORM\Column(type: Types::STRING, length: 36)]
+    public string $id;          // stores UserId->value, a plain string
+    // …
 }
 ```
 
-With the Persistence Model pattern, custom DBAL types are no longer needed. The `*Model` persistence class uses primitive fields (`string`, `bool`, `array`, `DateTimeImmutable`). The repository's `toDomain()` method constructs value objects from those primitives; `toOrm()` maps them back.
+The repository's `toDomain(UserModel): User` and `applyToModel(User, UserModel)` are the only places that bridge scalars ↔ value objects. Because the persisted fields are primitives, there are **no custom DBAL types** and the PHP 8.4 lazy-ghost hydration problem never arises. (The only XML mapping in the codebase is the third-party Lexik `RefreshToken` entity, which the bundle ships pre-mapped.)
 
 ---
 
