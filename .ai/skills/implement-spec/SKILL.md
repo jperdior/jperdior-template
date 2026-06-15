@@ -26,7 +26,7 @@ All phases are implemented on the same `feat/<slug>` branch (created by `/new-fe
    - Frontend: follow the route shape under `apps/web/src/app/` or `apps/admin/src/app/`. Use `/scaffold-nextjs-page`, `/scaffold-shadcn-form`.
    - Migrations: run `make migrate-diff`; review the SQL; commit it.
    - Tests: PHPUnit Functional next to the controller under `apps/api/tests/Functional/`; Vitest + RTL colocated under `apps/web/src/**/__tests__/` or `apps/admin/src/**/__tests__/`.
-4. **Run `/sync-context-docs`** — update AGENTS.md for every context touched so far.
+4. **Run `/sync-context-docs`** — update AGENTS.md for every context touched, update `docs/persistence.md` if schema changed, update the spec's Changelog, and sync any other cross-cutting docs.
 5. **Verification gate**:
    ```sh
    make lint
@@ -35,12 +35,12 @@ All phases are implemented on the same `feat/<slug>` branch (created by `/new-fe
    Every command MUST exit 0. Fix before continuing.
 6. **Code review gate**: invoke `/code-review` on the diff. Resolve every Critical and High finding.
 7. **Commit**: `feat({context}): {phase title} (spec: {file})`
-8. **Update the spec changelog**: `| {YYYY-MM-DD} | Phase {N} implemented. |`
-9. **Pause** and confirm with the user before starting the next phase (unless they said "implement all without stopping").
+8. **Pause** and confirm with the user before starting the next phase (unless they said "implement all without stopping").
 
 ### After all phases are done
 
-1. Push the branch:
+1. **Final doc sync**: run `/sync-context-docs` once more to catch any changes from the last phase that weren't covered, then commit the doc changes.
+2. Push the branch:
    ```sh
    git push -u origin $(git rev-parse --abbrev-ref HEAD)
    ```
