@@ -123,6 +123,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Adding an HTTP endpoint | `apps/api/AGENTS.md` → Presentation + `.ai/skills/add-route/SKILL.md` |
 | Adding a Doctrine migration | `.ai/skills/scaffold-doctrine-migration/SKILL.md` |
 | Adding a domain event subscriber | `apps/api/AGENTS.md` → Events |
+| Adding context AGENTS.md / guidelines | `.ai/skills/create-agents-md/SKILL.md` |
 | **Auth** | |
 | User aggregate, JWT, refresh tokens, security.yaml | `apps/api/src/User/AGENTS.md` + `docs/auth.md` |
 | Adding ROLE_* checks | `apps/api/AGENTS.md` → Security |
@@ -139,6 +140,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | First-time project customization (rename placeholders, add project context) | `.ai/skills/customize-project/SKILL.md` |
 | First-time local setup (hosts, .env.local, stack boot) | `.ai/skills/init/SKILL.md` |
 | Starting an implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — one `feat/<slug>` worktree covers spec + implementation |
+| Committing and pushing with CI gate | `.ai/skills/check-and-commit/SKILL.md` |
 | **Specs & PR Automation** | |
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
 | Pre-implementation audit | `.ai/skills/pre-implement-spec/SKILL.md` |
@@ -153,6 +155,10 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Frontend unit tests (Vitest + RTL, apps/web + apps/admin) | `.ai/skills/integration-tests/SKILL.md` |
 | Run PHP quality locally (PHPStan / cs-fixer / deptrac) | `.ai/skills/lint-php/SKILL.md` |
 | Run JS quality locally (tsc / ESLint) | `.ai/skills/lint-js/SKILL.md` |
+| **Bug Fixing** | |
+| Root-cause analysis (failing test, production error, bisect) | `.ai/skills/root-cause/SKILL.md` |
+| Implementing the minimal fix with regression test | `.ai/skills/fix/SKILL.md` |
+| Security audit (OWASP, attack vectors) | `.ai/skills/auto-sec-report/SKILL.md` |
 | **Ops** | |
 | Docker, compose, K8s | `docs/ops.md` + `ops/AGENTS.md` |
 | CI / GitHub Actions | `.github/workflows/` + `docs/ops.md` |
@@ -189,6 +195,17 @@ Step 4 — Clean up (after PR merges)
   make stop-test               ← tear down the headless test stack
 ```
 
+**Bug-fixing path (failing test, production error, security finding):**
+
+```
+/root-cause          ← drill to the offending change (file:line, commit, PR)
+/fix                 ← regression test first → minimal fix → CI gate → code review
+/auto-create-pr      ← PR with `bug` label (or `security` for sec findings)
+/verify-in-repo      ← (optional) sanity gate if you want to confirm the fix landed
+```
+
+Security findings from `/auto-sec-report` can also hand off to `/fix` with the report.
+
 **Short path (small, already-specified addition where a full spec is overhead):**
 
 Use `/scaffold-bounded-context`, `/add-command`, `/add-route` directly. Still run `make lint && make test` before `/open-pr`.
@@ -203,6 +220,10 @@ Use `/scaffold-bounded-context`, `/add-command`, `/add-route` directly. Still ru
 | `/implement-spec` | Implement | Executes the spec phase by phase; runs the CI gate after each phase. |
 | `/sync-context-docs` | Document | Updates `apps/api/src/<Context>/AGENTS.md` for every context touched by the branch. Run per-phase inside `/implement-spec` before the verification gate. |
 | `/open-pr` | Ship | Opens the implementation PR (spec + code) using the repository PR template. |
+| **Bug fixing** | | |
+| `/root-cause` | Diagnose | Drills from a failure to the offending change (file:line, commit, PR). Never fixes — hands off to `/fix`. |
+| `/fix` | Repair | Regression test first, then minimal fix, CI gate, code review, hands off to `/auto-create-pr`. |
+| `/auto-sec-report` | Audit | Paranoid OWASP-oriented security analysis. Hands off to `/fix` with the report. |
 
 Use `/scaffold-bounded-context`, `/add-command`, `/add-route` **directly** only for small, already-specified additions where a full spec would be overhead.
 

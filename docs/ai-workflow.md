@@ -136,9 +136,16 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 |-------|-------------|
 | `/auto-create-pr` | Pushes the branch, opens a GitHub PR with the correct format and labels |
 | `/auto-review-pr` | Reviews a PR by number; checks for convention violations |
-| `/merge-buddy` | Verifies CI is green and merges |
-| `/root-cause` | Investigates a failing test or production bug |
-| `/fix` | Applies a root-cause fix found by `/root-cause` |
+| `/merge-buddy` | Surveys open PRs and reports merge readiness |
+
+### Bug fixing
+
+| Skill | What it does |
+|-------|-------------|
+| `/root-cause` | Drills from a failing test or production error to the offending change (file:line, commit, PR). Hands off to `/fix`. |
+| `/fix` | Regression test first, then minimal fix, CI gate, code review. Hands off to `/auto-create-pr`. |
+| `/auto-sec-report` | OWASP-oriented security audit of a PR, spec, or branch. Hands off to `/fix` with the report. |
+| `/verify-in-repo` | Paranoia gate — confirms a claimed change is actually in the working tree |
 
 ### Harness maintenance
 
@@ -207,7 +214,9 @@ Short entries get read. Long entries get skipped.
 
 ---
 
-## Typical session
+## Typical sessions
+
+### Feature development
 
 ```sh
 # Step 1 — Setup: create worktree from main
@@ -228,6 +237,32 @@ Short entries get read. Long entries get skipped.
 #   git worktree prune
 #   git branch -d feat/add-notes
 #   make stop-test
+```
+
+### Bug fixing
+
+```sh
+# A test is failing or a user reports a bug
+
+# Step 1 — Diagnose
+/root-cause         # finds the offending commit and file:line
+
+# Step 2 — Fix (creates regression test first, then minimal fix)
+/fix                # applies the fix, runs CI gate, hands off to auto-create-pr
+
+# Step 3 — Clean up after the PR merges
+#   Same as feature cleanup above
+```
+
+### Security audit
+
+```sh
+# Step 1 — Audit a PR or branch before release
+/auto-sec-report     # OWASP-oriented analysis, writes report to .ai/analysis/
+
+# Step 2 — Fix any Critical/High findings
+/root-cause          # (if needed) drill into a specific finding
+/fix                 # applies the fix, hands off to auto-create-pr with `security` label
 ```
 
 The skills handle the boilerplate. You handle the domain logic and the review.
