@@ -15,7 +15,7 @@ Spin up an isolated worktree from `main` so the feature has its own branch and w
 2. **Derive the branch name**: `feat/<kebab-case-description>` (max ~40 chars, no special chars except `-`).
 3. **Confirm** the branch name with the user if it was derived (not explicitly given).
 4. **Create the worktree** using `EnterWorktree` with the derived name. This creates `.claude/worktrees/<name>` on a new branch and enters it.
-5. **Restart containers from the worktree**: run `make stop && make start` from the worktree directory. Docker containers mount the directory they were started from — skipping this means all `make lint / test / build` targets run against the previous worktree's code, not yours.
+5. **No container startup needed**: `make test` / `make lint` / `make build-web` auto-start a headless, per-worktree, port-free test stack on first use — they need no `make start`, and multiple worktrees run them in parallel without conflict. (`make start` is only for browser use.)
 6. **Report** the branch name, worktree path, and the correct next steps.
 
 ## Branch naming

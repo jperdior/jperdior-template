@@ -27,12 +27,13 @@ If `AHEAD == 0` the branch has been fully merged into `origin/main`. **Immediate
 > "This conversation is linked to worktree `<path>` on branch `<branch>`, which has already been merged into main. Do you want to switch back to main and clean up the worktree?"
 
 Wait for the user to confirm before doing anything. If they say yes:
-1. Run `make stop` (stops containers that may be running from the worktree)
-2. Exit the worktree (`ExitWorktree` tool if available, otherwise `cd` to main repo root)
-3. Run `sudo rm -rf <worktree-path>` (Docker may have created root-owned files inside)
-4. Run `git worktree prune` from the main repo
-5. Delete the local branch: `git branch -d <branch>`
-6. Run `make start` to restart containers from main
+1. Run `make stop-test` (stops this worktree's headless test stack)
+2. Run `make stop` (stops any dev stack, if running)
+3. Exit the worktree (`ExitWorktree` tool if available, otherwise `cd` to main repo root)
+4. Run `sudo rm -rf <worktree-path>` (Docker may have created root-owned files inside)
+5. Run `git worktree prune` from the main repo
+6. Delete the local branch: `git branch -d <branch>`
+7. Run `make start` to restart containers from main
 
 Do **not** start any new work until the user has acknowledged the merged state.
 
@@ -78,18 +79,26 @@ make migrate-diff  # generates a Doctrine migration diff
 
 ### Worktree container workflow
 
-Docker containers mount the **main branch** code by default. When working in a git worktree,
-restart the stack from the worktree so containers pick up your changes before linting or testing:
+`make test`, `make lint`, `make build-web`, `make migrate-diff`, `make gen-api` (and the
+other CLI targets) run against a **headless, per-worktree test stack** that auto-starts on
+first use — you do **not** need `make start`. The stack:
+
+- is named per worktree (`<project>-test-<worktree-dir>`), so every worktree gets its own
+  isolated containers + volumes (no stale vendor / `.next` across worktrees);
+- publishes **no host ports**, so any number of worktrees run the CI gate in parallel with
+  zero port conflicts;
+- mounts the worktree's code, so it always validates the right tree.
 
 ```bash
-# 1. Stop containers (run from anywhere — stops all containers)
-make stop
-
-# 2. Start containers from the worktree (containers now mount the worktree's code)
-cd /path/to/worktree && make start
+# From anywhere inside the worktree — auto-starts the headless stack on first run:
+make lint && make test          # CI gate, parallel-safe, no `make start` needed
+make up-test                    # (optional) start/refresh the stack explicitly
+make stop-test                  # tear down just this worktree's headless stack
 ```
 
-Then run `make lint && make test` normally.
+`make start` is now only for **browser use**: it brings up the full dev stack (Traefik,
+nginx, redis, minio, mailpit) and binds host ports, so it remains single-instance — run it
+in one worktree at a time.
 
 ### Pre-PR gate (mandatory)
 

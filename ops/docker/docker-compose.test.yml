@@ -1,0 +1,132 @@
+name: ${COMPOSE_PROJECT_NAME:-jperdior}
+
+# Headless CI-gate overlay for docker-compose.base.yml. Used by the Makefile under a
+# PER-WORKTREE project name (DOCKER_COMPOSE_TEST), so every git worktree gets its own
+# fully isolated containers, networks, and named volumes.
+#
+# Differences from the dev overlay (docker-compose.dev.yml):
+#   - Publishes NO host ports → any number of worktrees run lint/test/build at once.
+#   - No Traefik / nginx / redis / minio / mailpit / rabbitmq — only the four
+#     containers that lint/test/build `exec` into: postgres, api, web, admin.
+#   - Containers idle (`sleep infinity`) instead of running dev servers; targets
+#     `exec` CLIs (phpunit, phpstan, pnpm ...) into them.
+#   - Per-worktree volumes also eliminate stale vendor / .next cross-worktree caches.
+#
+# Used via the Makefile:  make up-test  ->  docker compose -p <worktree> -f base -f test up -d postgres api web admin
+#
+# Note: uses Compose-spec !reset / !override to neutralize stanzas inherited from the
+# base file (Compose v2.24+ required, same as the dev overlay).
+
+services:
+  # postgres: inherited from base as-is. Base publishes no host port, so no override
+  # is needed — the test DB (`app_test`) is reachable only inside this project's network.
+
+  # nginx is never started by `make up-test` (it starts an explicit service list and
+  # nothing depends on nginx here), but neutralize its inherited host port so even a
+  # bare `docker compose up` on this stack cannot collide with the dev stack's :8080.
+  nginx:
+    ports: !reset []
+
+  api:
+    depends_on: !override
+      postgres: { condition: service_healthy }
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+      # The headless stack runs no redis. Use a file-based lock (same fallback CI
+      # uses) so lock-guarded endpoints work without a redis dependency.
+      LOCK_DSN: flock
+    volumes:
+      - ../../apps/api:/app/apps/api
+      - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
+      - composer_cache:/var/cache/composer
+      - api_jwt:/app/apps/api/config/jwt
+      - api_vendor:/app/apps/api/vendor
+      - api_var:/app/apps/api/var
+      - api_bundles:/app/apps/api/public/bundles
+    user: "0:0"
+    working_dir: /app/apps/api
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        mkdir -p var/cache var/log
+        composer install --no-interaction --no-progress
+        php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction || true
+        php bin/console doctrine:database:create --if-not-exists --no-interaction || true
+        php bin/console doctrine:migrations:migrate --no-interaction || true
+        exec sleep infinity
+
+  web:
+    build: !reset
+    image: node:22-alpine
+    ports: !reset []
+    depends_on: !reset []
+    environment:
+      NODE_ENV: development
+      CI: "true"
+    volumes:
+      - ../..:/repo
+      - web_node_modules:/repo/node_modules
+      - web_next_cache:/repo/apps/web/.next
+      - pnpm_store:/repo/.pnpm-store
+      - web_app_node_modules:/repo/apps/web/node_modules
+      - api_client_ts_node_modules:/repo/packages/api-client-ts/node_modules
+      - ui_react_node_modules:/repo/packages/ui-react/node_modules
+    working_dir: /repo
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        corepack enable
+        corepack prepare pnpm@11.5.0 --activate
+        pnpm install --filter "@jperdior/web..." --filter "./packages/*"
+        exec sleep infinity
+
+  admin:
+    build: !reset
+    image: node:22-alpine
+    ports: !reset []
+    depends_on: !override
+      web: { condition: service_completed_successfully }
+    environment:
+      NODE_ENV: development
+      CI: "true"
+    volumes:
+      - ../..:/repo
+      - admin_node_modules:/repo/node_modules
+      - admin_next_cache:/repo/apps/admin/.next
+      - pnpm_store:/repo/.pnpm-store
+      - admin_app_node_modules:/repo/apps/admin/node_modules
+      - api_client_ts_node_modules:/repo/packages/api-client-ts/node_modules
+      - ui_react_node_modules:/repo/packages/ui-react/node_modules
+    working_dir: /repo
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        corepack enable
+        corepack prepare pnpm@11.5.0 --activate
+        pnpm install --filter "@jperdior/admin..."
+        exec sleep infinity
+
+volumes:
+  composer_cache:
+  api_jwt:
+  api_vendor:
+  api_var:
+  api_bundles:
+  web_node_modules:
+  web_next_cache:
+  web_app_node_modules:
+  admin_node_modules:
+  admin_next_cache:
+  admin_app_node_modules:
+  api_client_ts_node_modules:
+  ui_react_node_modules:
+  pnpm_store:
