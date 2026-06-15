@@ -88,11 +88,12 @@ Spawn one Plan subagent when:
 
 | Symptom | Action |
 |---------|--------|
-| `make test` fails on the current phase | Fix before pushing. Never push a red branch. |
+| `make test` fails on the current phase | If simple: fix the code or test directly. If the root cause is unclear or spans multiple files, use `/root-cause` to drill down, then `/fix` to ship with a regression test. |
 | `make lint` reports a deptrac violation | A cross-context import slipped in. Replace with a domain event or public application service. |
 | `make migrate-diff` produces unrelated SQL | Investigate snapshot drift — don't commit unrelated churn. |
 | Phase delivery doesn't match the spec's promise | Update the spec FIRST; then code to the updated promise. |
 | Spec proves wrong mid-implementation | Stop. Update the spec. Re-run `/pre-implement-spec`. Resume. |
+| A subtle bug is discovered (passes tests but wrong behaviour) | Use `/root-cause` to find the offending change, then `/fix` to ship a regression test + fix. Review the fix with `/code-review`. |
 
 ## Output
 

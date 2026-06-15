@@ -11,7 +11,13 @@ Find the root cause of a bug or failing test. Output a precise report identifyin
 
 1. **Reproduce** the failure locally. If you can't reproduce, ask the user for exact steps + environment.
 2. **Read the error**: stack trace, failing assertion, log lines. Don't guess — look at the actual output.
-3. **Map to code**: identify the function / class / route involved. Read the source.
+3. **Access container logs** when the error isn't surfaced by tests:
+   ```sh
+   make logs                 # tail all containers (dev stack)
+   make logs-ci              # dump all container logs (headless test stack)
+   ```
+   API logs output to `php://stderr` at `debug` level in dev. Frontend logs are Next.js stdout. Search for error-level entries with `grep -i error`.
+4. **Map to code**: identify the function / class / route involved. Read the source.
 4. **Form a hypothesis** about which change introduced the regression.
 5. **Use `git bisect` or `git log -S`** to find the commit:
    ```sh
