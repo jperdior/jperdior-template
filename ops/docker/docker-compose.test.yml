@@ -90,7 +90,8 @@ services:
     build: !reset
     image: node:22-alpine
     ports: !reset []
-    depends_on: !reset []
+    depends_on: !override
+      web: { condition: service_completed_successfully }
     environment:
       NODE_ENV: development
       CI: "true"

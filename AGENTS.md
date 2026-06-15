@@ -27,12 +27,13 @@ If `AHEAD == 0` the branch has been fully merged into `origin/main`. **Immediate
 > "This conversation is linked to worktree `<path>` on branch `<branch>`, which has already been merged into main. Do you want to switch back to main and clean up the worktree?"
 
 Wait for the user to confirm before doing anything. If they say yes:
-1. Run `make stop` (stops containers that may be running from the worktree)
-2. Exit the worktree (`ExitWorktree` tool if available, otherwise `cd` to main repo root)
-3. Run `sudo rm -rf <worktree-path>` (Docker may have created root-owned files inside)
-4. Run `git worktree prune` from the main repo
-5. Delete the local branch: `git branch -d <branch>`
-6. Run `make start` to restart containers from main
+1. Run `make stop-test` (stops this worktree's headless test stack)
+2. Run `make stop` (stops any dev stack, if running)
+3. Exit the worktree (`ExitWorktree` tool if available, otherwise `cd` to main repo root)
+4. Run `sudo rm -rf <worktree-path>` (Docker may have created root-owned files inside)
+5. Run `git worktree prune` from the main repo
+6. Delete the local branch: `git branch -d <branch>`
+7. Run `make start` to restart containers from main
 
 Do **not** start any new work until the user has acknowledged the merged state.
 
