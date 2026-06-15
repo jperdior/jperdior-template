@@ -31,7 +31,7 @@ find .ai/specs -maxdepth 2 -name '*.md' -print
 - **Root** (`.ai/specs/`): pending, draft, in-progress, or partially implemented specs.
 - **Implemented** (`.ai/specs/implemented/`): fully implemented and deployed specs. Use `git mv` to preserve history when moving.
 
-Specs are published to `main` via a **spec-only PR** (`spec/<slug>` branch → PR → merge) before any implementation branch is created. This keeps the design discoverable from every clone and ensures the design is reviewed before code is written.
+Specs live on the same `feat/<slug>` branch as their implementation. There is no separate spec-only branch or spec-only PR. The spec is committed locally as the first commit, then phases accumulate on the same branch, and a single PR ships spec + implementation together.
 
 ## File Naming
 
@@ -50,7 +50,7 @@ Examples:
 
 - Find related spec(s), read current intent, identify deltas.
 - If no spec exists and triggers apply, create one before implementation (use the `spec-writing` skill).
-- The spec **must be on `main`** (merged via a spec-only PR) before any implementation branch is created. Never implement against a spec that only lives on a feature branch.
+- The spec is authored on the `feat/<slug>` branch (created by `/new-feature`) and committed locally. No spec-only PR is opened. Implementation follows on the same branch after the audit passes.
 
 ### During coding
 

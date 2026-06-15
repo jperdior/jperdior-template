@@ -13,10 +13,17 @@ Execute a user-described task autonomously and open a GitHub PR. Resumable via `
 2. **Create a run folder**: `.ai/runs/{YYYY-MM-DD}-{slug}/` with:
    - `PLAN.md` — task description, file list, step-by-step plan
    - `HANDOFF.md` — current step + open todos (resumable)
-3. **Create a worktree branch**:
+3. **Ensure we're on a feature branch** — check if already inside a `feat/<slug>` worktree (from `/new-feature`):
    ```sh
-   git worktree add .claude/worktrees/{slug} -b feat/{slug}
-   cd .claude/worktrees/{slug}
+   BRANCH=$(git branch --show-current)
+   GIT_DIR=$(cd "$(git rev-parse --git-dir)" && pwd -P)
+   GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
+   if [[ "$BRANCH" == feat/* && "$GIT_DIR" != "$GIT_COMMON" ]]; then
+     echo "Already in feat/<slug> worktree — reusing."
+   else
+     git worktree add .claude/worktrees/{slug} -b feat/{slug}
+     cd .claude/worktrees/{slug}
+   fi
    ```
 4. **Implement** the plan step by step. After each step, append `[x]` to the Progress checklist in `PLAN.md` and update `HANDOFF.md`.
 5. **Verification gate** (mandatory):

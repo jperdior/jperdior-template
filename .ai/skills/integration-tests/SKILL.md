@@ -22,13 +22,15 @@ To filter PHPUnit:
 make test-api ARG="--filter SignUpControllerTest"
 ```
 
-To run a single Vitest file, exec into the container:
+To run a single Vitest file, use `make up-test` first to ensure the headless test stack is running, then exec into the container via the test compose project:
 ```sh
+make up-test
 # web
-docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml exec web pnpm -C apps/web exec vitest run src/app/__tests__/smoke.test.tsx
+pnpm -C apps/web exec vitest run src/app/__tests__/smoke.test.tsx
 # admin
-docker compose -p jperdior -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.dev.yml exec admin pnpm -C apps/admin exec vitest run src/components/users/__tests__/PaginationControls.test.tsx
+pnpm -C apps/admin exec vitest run src/components/users/__tests__/PaginationControls.test.tsx
 ```
+The test stack mounts the worktree's code automatically — no `make start` needed.
 
 ### Creating new tests
 
