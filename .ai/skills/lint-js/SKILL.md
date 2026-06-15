@@ -14,19 +14,7 @@ All JS tooling runs inside the `jperdior-web-1` / `jperdior-admin-1` containers 
 
 ## Worktree setup
 
-When working in a git worktree, the running containers mount the **main branch** code, not
-the worktree. Before linting, restart the stack from the worktree so containers pick up your
-changes:
-
-```bash
-# From the main repo root — stops all containers
-make stop
-
-# From the worktree directory — starts containers with worktree code
-make start
-```
-
-Then proceed with the lint commands below.
+`make lint-web` auto-starts a headless, per-worktree test stack that mounts the worktree's code. No manual stack management is needed — the commands work from anywhere inside the worktree without `make start` or `make stop`.
 
 ## Scope
 

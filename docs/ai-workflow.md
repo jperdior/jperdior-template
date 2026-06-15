@@ -69,12 +69,12 @@ Tailwind + shadcn/ui token rules for frontend work. Semantic tokens only (`bg-ba
 ## The spec-first workflow
 
 ```
-1. Write spec   →  /spec-writing
-2. Audit spec   →  /pre-implement-spec
-3. Implement    →  /implement-spec
-4. Review       →  /code-review
-5. PR           →  /auto-create-pr
-6. Merge        →  /merge-buddy
+1. Create worktree   →  /new-feature
+2. Write spec        →  /spec-writing (auto-proceeds to audit)
+3. Audit spec        →  /pre-implement-spec
+4. Implement         →  /implement-spec (per-phase: sync-context-docs → CI → code-review)
+5. PR                →  /open-pr
+6. Clean up          →  exit worktree, delete worktree/branch, make stop-test
 ```
 
 ### When to write a spec
@@ -93,12 +93,13 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 
 | Skill | What it does |
 |-------|-------------|
-| `/new-feature` | Creates an isolated git worktree + branch from `main`. Called twice per spec-driven feature: once with `spec/` prefix, once with `feat/` prefix |
-| `/spec-writing` | Produces a `.ai/specs/{YYYY-MM-DD}-{slug}.md` with the full spec format; opens a spec-only PR |
-| `/pre-implement-spec` | Audits a merged spec against the codebase using parallel specialized agents; flags gaps, BC risks, and missing tests; produces a Readiness Report |
-| `/implement-spec` | Implements an approved spec phase by phase; runs the CI gate after each phase |
-| `/sync-context-docs` | Updates `AGENTS.md` files for every bounded context touched by the branch; run before opening the PR |
-| `/code-review` | Reviews the current branch diff using parallel specialized reviewer agents (architecture, security, frontend) and runs the CI gate simultaneously |
+| `/new-feature` | Creates an isolated git worktree + branch from `main`. One worktree covers spec + implementation (no separate spec branch or spec PR). |
+| `/spec-writing` | Produces a `.ai/specs/{YYYY-MM-DD}-{slug}.md` with the full spec format. Committed locally, no spec-only PR. Auto-proceeds to `/pre-implement-spec`. |
+| `/pre-implement-spec` | Audits the local spec against the codebase using parallel specialized agents; flags gaps, BC risks, and missing tests; produces a Readiness Report. |
+| `/implement-spec` | Implements an approved spec phase by phase on the same `feat/<slug>` branch. Runs `/sync-context-docs`, CI gate, and `/code-review` per phase. Single PR at the end. |
+| `/sync-context-docs` | Updates `AGENTS.md` files for every bounded context touched by the branch. Run per-phase inside `/implement-spec`. |
+| `/code-review` | Reviews the current branch diff using parallel specialized reviewer agents (architecture, security, frontend) and runs the CI gate simultaneously. |
+| `/open-pr` | Opens the single GitHub PR for the feature branch (spec + implementation). |
 | `/check-and-commit` | Lint + test + commit |
 | `/fix-specs` | Normalises spec filenames under `.ai/specs/` to the `{YYYY-MM-DD}-{slug}.md` convention |
 
@@ -135,9 +136,16 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 |-------|-------------|
 | `/auto-create-pr` | Pushes the branch, opens a GitHub PR with the correct format and labels |
 | `/auto-review-pr` | Reviews a PR by number; checks for convention violations |
-| `/merge-buddy` | Verifies CI is green and merges |
-| `/root-cause` | Investigates a failing test or production bug |
-| `/fix` | Applies a root-cause fix found by `/root-cause` |
+| `/merge-buddy` | Surveys open PRs and reports merge readiness |
+
+### Bug fixing
+
+| Skill | What it does |
+|-------|-------------|
+| `/root-cause` | Drills from a failing test or production error to the offending change (file:line, commit, PR). Hands off to `/fix`. |
+| `/fix` | Regression test first, then minimal fix, CI gate, code review. Hands off to `/auto-create-pr`. |
+| `/auto-sec-report` | OWASP-oriented security audit of a PR, spec, or branch. Hands off to `/fix` with the report. |
+| `/verify-in-repo` | Paranoia gate — confirms a claimed change is actually in the working tree |
 
 ### Harness maintenance
 
@@ -206,35 +214,55 @@ Short entries get read. Long entries get skipped.
 
 ---
 
-## Typical session
+## Typical sessions
+
+### Feature development
 
 ```sh
-# Step 1 — Design: spec worktree
-/new-feature spec/password-reset
+# Step 1 — Setup: create worktree from main
+/new-feature feat/add-notes
 
-# Write the spec, answer open questions, open a spec-only PR to main
-/spec-writing "user can reset their password"
+# Step 2 — Design: write the spec locally, auto-audit
+# (spec-writing creates .ai/specs/{date}-add-notes.md, commits, runs pre-implement-spec)
 
-# [merge the spec PR]
+# Step 3 — Implement: phase by phase on the same branch
+/implement-spec .ai/specs/2026-06-06-add-notes.md
 
-# Step 2 — Audit: catch gaps before writing code
-/pre-implement-spec .ai/specs/2026-06-06-password-reset.md
+# Step 4 — Open the single PR (spec + implementation)
+/open-pr
 
-# Step 3 — Implement: feature worktree
-/new-feature feat/password-reset
+# Step 5 — Clean up after the PR merges
+#   Exit worktree
+#   sudo rm -rf .claude/worktrees/<name>
+#   git worktree prune
+#   git branch -d feat/add-notes
+#   make stop-test
+```
 
-# Scaffold and implement phase by phase
-/scaffold-bounded-context PasswordReset   # if new context needed
-/implement-spec .ai/specs/2026-06-06-password-reset.md
+### Bug fixing
 
-# Update AGENTS.md files for touched contexts
-/sync-context-docs
+```sh
+# A test is failing or a user reports a bug
 
-# Review the full diff before opening the PR
-/code-review
+# Step 1 — Diagnose
+/root-cause         # finds the offending commit and file:line
 
-# Open PR:
-/auto-create-pr
+# Step 2 — Fix (creates regression test first, then minimal fix)
+/fix                # applies the fix, runs CI gate, hands off to auto-create-pr
+
+# Step 3 — Clean up after the PR merges
+#   Same as feature cleanup above
+```
+
+### Security audit
+
+```sh
+# Step 1 — Audit a PR or branch before release
+/auto-sec-report     # OWASP-oriented analysis, writes report to .ai/analysis/
+
+# Step 2 — Fix any Critical/High findings
+/root-cause          # (if needed) drill into a specific finding
+/fix                 # applies the fix, hands off to auto-create-pr with `security` label
 ```
 
 The skills handle the boilerplate. You handle the domain logic and the review.

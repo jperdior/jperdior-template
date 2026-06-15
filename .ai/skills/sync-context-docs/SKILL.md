@@ -7,25 +7,38 @@ description: Update or create AGENTS.md for every bounded context touched by the
 
 After implementing a feature, update (or create) the `AGENTS.md` for every bounded context the branch touched. This keeps business rules, invariants, and API surface documented in the right place so future agents don't have to re-read all the code.
 
-**Run this before `/open-pr` or `/check-and-commit`.**
+**Run this before `/open-pr` or `/check-and-commit`.** Every doc change on the branch must be committed before opening the PR.
 
 ---
 
 ## Workflow
 
-### Step 1 — Identify changed contexts
+### Step 1 — Identify everything that changed
 
 ```bash
+# 1. Which bounded contexts were touched?
 git diff origin/main...HEAD --name-only \
   | grep '^apps/api/src/' \
   | sed 's|apps/api/src/||' \
   | cut -d/ -f1 \
   | sort -u
 ```
-
 Collect the unique context names (e.g. `User`). Skip `Shared`.
 
-### Step 2 — For each changed context
+```bash
+# 2. Were persistence / schema files touched (migrations, *Model, repositories)?
+git diff origin/main...HEAD --name-only \
+  | grep -E 'migrations/|Infrastructure/Persistence/Doctrine/' \
+  | head -5
+```
+
+```bash
+# 3. Were workflow / docs files touched?
+git diff origin/main...HEAD --name-only \
+  | grep -E '^docs/|\.ai/skills/|AGENTS\.md$'
+```
+
+### Step 2 — For each changed bounded context
 
 1. **Check if `apps/api/src/<Context>/AGENTS.md` exists.**
    - If yes: read it (to understand what's already documented) and plan an update.
@@ -35,7 +48,7 @@ Collect the unique context names (e.g. `User`). Skip `Shared`.
    - `Domain/*.php` — aggregates, value objects, domain events, exceptions, invariants
    - `Presentation/Http/` — controllers (routes, HTTP methods, auth annotations)
    - `Application/Command/` and `Application/Query/` — command/query names give the write/read surface
-   - `Infrastructure/` — any notable patterns (DBAL tricks, cross-context adapters, special columns)
+   - `Infrastructure/Persistence/` — new *Model classes, new columns, new repository methods
 
 3. **Write / update the AGENTS.md** following the template below.
 
@@ -44,17 +57,34 @@ Collect the unique context names (e.g. `User`). Skip `Shared`.
    @AGENTS.md
    ```
 
-### Step 3 — Check the root `AGENTS.md` Task Router
+### Step 3 — Sync cross-cutting docs
 
-If the branch introduces a new context or a new task pattern (new type of endpoint, new cross-context communication pattern), add/update the relevant row in the Task Router table in the root `AGENTS.md`.
+Check and update these docs if the branch affected their subject matter:
 
-### Step 4 — Commit
+| Doc | When to update |
+|-----|----------------|
+| `docs/persistence.md` | New entity, new column, new migration, new `*Model` class, new repository pattern |
+| `docs/ARCHITECTURE.md` | New bounded context, new bus, new deployment pattern |
+| `docs/ai-workflow.md` | New skill, changed workflow step, new automation pattern |
+| `.ai/specs/{file}.md` | Update the spec's **Changelog** with phase completion date and summary |
+| `.ai/lessons.md` | New pitfall discovered during implementation — add an L-### entry |
 
-Stage and commit only the doc files:
+Read the existing doc, determine what changed, and update the relevant section. Don't rewrite unchanged sections.
+
+### Step 4 — Check the root `AGENTS.md` Task Router
+
+If the branch introduces a new context or a new task pattern (new type of endpoint, new cross-context communication pattern, new skill), add/update the relevant row in the Task Router table in the root `AGENTS.md`.
+
+### Step 5 — Commit
+
+Stage and commit all doc changes together:
 
 ```bash
-git add apps/api/src/*/AGENTS.md apps/api/src/*/CLAUDE.md AGENTS.md
-git commit -m "docs: sync context AGENTS.md after <feature-name>"
+git add apps/api/src/*/AGENTS.md apps/api/src/*/CLAUDE.md \
+       AGENTS.md \
+       docs/persistence.md docs/ARCHITECTURE.md docs/ai-workflow.md \
+       .ai/specs/ .ai/lessons.md
+git commit -m "docs: sync project docs after <feature-name>"
 ```
 
 ---

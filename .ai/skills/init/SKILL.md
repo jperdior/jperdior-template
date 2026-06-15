@@ -1,13 +1,13 @@
 ---
 name: init
-description: Bootstrap a fresh clone of the project for local development. Checks prerequisites, copies .env.dist, and starts the stack. Triggers on "init", "bootstrap", "set up locally", "first time setup", "getting started", "how do I run this".
+description: Bootstrap a fresh clone of the project for local development. Checks prerequisites, copies .env.local, personalizes the project. Triggers on "init", "bootstrap", "set up locally", "first time setup", "getting started", "how do I run this".
 ---
 
 # Init
 
-One-shot local dev bootstrap for a fresh clone. Idempotent — safe to run again if something failed midway.
+Onboarding wizard for a fresh clone. Checks the environment, sets up config, and personalizes the template so every future AI session knows what you're building.
 
-> **Note:** This skill is the AI-guided alternative to `make init`. It cannot patch `/etc/hosts` because that requires `sudo`. If you are on Linux and need `.localhost` routing, run `sudo make init` from the terminal first — it handles hosts patching and then instructs you to run `make start`.
+> **Note:** This skill is the AI-guided alternative to `make init`. It cannot patch `/etc/hosts` because that requires `sudo`. If you are on Linux and need `.localhost` routing, run `sudo make init` from the terminal first — it patches hosts and installs skills.
 
 ## Workflow
 
@@ -23,45 +23,35 @@ One-shot local dev bootstrap for a fresh clone. Idempotent — safe to run again
    echo "Review .env.local and adjust APP_SECRET / JWT_PASSPHRASE / DB credentials before production use."
    ```
 
-3. **Personalize the project** (before starting the stack — easiest before the first image build):
-   Ask the user: "Before starting the stack, would you like to personalize the project? Say **'customize my project'** or run `/customize-project` now — it renames placeholder package names and adds your project description to `AGENTS.md`."
-   Wait for the user to confirm or skip before proceeding.
+3. **Personalize the project**: run `/customize-project` to rename placeholder package names and add your project description to `AGENTS.md`. This is the right time — before the first image build.
 
-4. **Start the stack**:
-   ```sh
-   make start
-   ```
-   The first boot takes 2–5 minutes (image build + `composer install` + migrations).
+4. **Explain the two stack modes**:
+   - **Headless test stack** (default for development) — auto-starts on `make lint` / `make test` / `make build-web`. Per-worktree, port-free, parallel-safe. No `make start` needed for development.
+   - **Full dev stack** (for browser testing) — `make start` brings up Traefik + nginx + Postgres + Redis + Mailpit with host ports. Needed only when you want to see the app in a browser.
 
-5. **Verify**:
-   ```sh
-   curl -s http://api.localhost/api/doc | grep -q openapi \
-     && echo "API OK" || echo "API not ready yet — check make logs"
-   ```
-
-6. **Report** the service URLs and next steps.
+5. **Report next steps**.
 
 ## Output
 
 ```
-✅ Stack is up.
+✅ Project initialized.
 
-Service URLs:
-  Web app   →  http://web.localhost
-  Admin     →  http://admin.localhost
-  API       →  http://api.localhost
-  API docs  →  http://api.localhost/api/doc
-  Traefik   →  http://localhost:8080
+Config:
+  .env.local: created (review APP_SECRET, JWT_PASSPHRASE, DB credentials)
+  Project personalized: yes / no
 
-Next steps:
-  make logs          — tail all container logs
-  make api-shell     — shell inside the API container
-  make seed-admin EMAIL=you@example.com  — promote a user to admin
+Ready to work:
+  make test               — run tests (auto-starts headless stack)
+  make lint               — run quality checks
+  /new-feature feat/<slug>  — create a worktree + branch for your first feature
+  /spec-writing             — design your first feature spec-first (recommended)
+
+Need a browser preview?
+  make start              — full dev stack with host ports (single instance)
 ```
 
 ## Rules
 
 - Never overwrite an existing `.env.local` — only copy if missing.
-- Always print the service URLs at the end, even if the user ran init before.
-- If `make start` fails, tail `make logs` for 10 seconds and surface the first ERROR line.
+- Never run `make start` from this skill — that's a separate user decision.
 - Do not attempt to patch `/etc/hosts` — that requires sudo and must be done via `make init`.
