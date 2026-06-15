@@ -16,7 +16,7 @@ EXEC := exec -T
 
 .EXPORT_ALL_VARIABLES:
 
-.PHONY: help
+.PHONY: help test lint
 help: ## Show this help
 ifeq ($(UNAME), Linux)
 	@grep -P '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
