@@ -8,6 +8,10 @@ ADMIN_CONTAINER := admin
 ENV_FILE := $(if $(wildcard .env.local),.env.local,.env.dist)
 DOCKER_COMPOSE := docker compose --env-file $(ENV_FILE) -p ${PROJECT_NAME} -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.dev.yml
 DOCKER_COMPOSE_ASYNC := $(DOCKER_COMPOSE) --profile async
+# Headless CI-gate stack: per-worktree project name + no host ports, so lint/test/build
+# run in any number of worktrees in parallel without `make start`. See docker-compose.test.yml.
+TEST_PROJECT_NAME := $(PROJECT_NAME)-test-$(notdir $(PWD))
+DOCKER_COMPOSE_TEST := docker compose --env-file $(ENV_FILE) -p $(TEST_PROJECT_NAME) -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.test.yml
 EXEC := exec -T
 
 .EXPORT_ALL_VARIABLES:
@@ -59,6 +63,15 @@ stop: ## Stop and remove containers
 
 restart: stop start ## Restart the stack
 
+# ----- Headless CI-gate stack (parallel-safe, no host ports, per-worktree) -----
+
+up-test: _ensure-volume-mountpoints ## Start the headless test stack (postgres+api+web+admin); installs deps; no host ports
+	@${DOCKER_COMPOSE_TEST} up -d postgres api web admin
+	@sh ops/scripts/wait-for-test-stack.sh
+
+stop-test: ## Stop and remove this worktree's headless test stack
+	@${DOCKER_COMPOSE_TEST} down --remove-orphans
+
 start-async: ## Start full stack + RabbitMQ + worker (set MESSENGER_TRANSPORT_DSN in .env.local first)
 	@${DOCKER_COMPOSE_ASYNC} up -d
 	@${DOCKER_COMPOSE_ASYNC} logs -f --tail=100
@@ -77,96 +90,96 @@ traefik: ## Open Traefik dashboard in the browser
 
 # ----- Shells -----
 
-api-shell: ## Open a shell inside the API container
-	@${DOCKER_COMPOSE} exec ${API_CONTAINER} sh
+api-shell: up-test ## Open a shell inside the API container (headless test stack)
+	@${DOCKER_COMPOSE_TEST} exec ${API_CONTAINER} sh
 
 worker-shell: ## Open a shell inside the worker container (requires make start-async)
 	@${DOCKER_COMPOSE_ASYNC} exec ${WORKER_CONTAINER} sh
 
-db-shell: ## Open a psql shell
-	@${DOCKER_COMPOSE} exec postgres psql -U $${POSTGRES_USER:-app} $${POSTGRES_DB:-app}
+db-shell: up-test ## Open a psql shell (headless test stack)
+	@${DOCKER_COMPOSE_TEST} exec postgres psql -U $${POSTGRES_USER:-app} $${POSTGRES_DB:-app}
 
 # ----- Composer -----
 
-composer-install: ## composer install inside the API container
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} composer install
+composer-install: up-test ## composer install inside the API container
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} composer install
 
-composer-require: ## make composer-require PACKAGE=vendor/pkg
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} composer require ${PACKAGE}
+composer-require: up-test ## make composer-require PACKAGE=vendor/pkg
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} composer require ${PACKAGE}
 
 # ----- Database / Doctrine -----
 
-migrate: ## Run pending migrations
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console doctrine:migrations:migrate --no-interaction
+migrate: up-test ## Run pending migrations
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console doctrine:migrations:migrate --no-interaction
 
-migrate-diff: ## Generate a migration diff against current entities
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console doctrine:migrations:diff
+migrate-diff: up-test ## Generate a migration diff against current entities
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console doctrine:migrations:diff
 
-db-create: ## Create the database
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console doctrine:database:create --if-not-exists
+db-create: up-test ## Create the database
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console doctrine:database:create --if-not-exists
 
-db-reset: ## Drop and recreate the database (DANGEROUS)
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console doctrine:database:drop --force --if-exists
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console doctrine:database:create
+db-reset: up-test ## Drop and recreate the database (DANGEROUS)
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console doctrine:database:drop --force --if-exists
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console doctrine:database:create
 	@${MAKE} migrate
 
 # ----- Tests -----
 
-test: test-api test-web ## Run the full test matrix
+test: up-test test-api test-web ## Run the full test matrix
 
-test-api: ## Run PHP unit + functional tests
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit ${ARG}
+test-api: up-test ## Run PHP unit + functional tests
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit ${ARG}
 
-test-unit: ## Run PHP unit tests only
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit --testsuite Unit ${ARG}
+test-unit: up-test ## Run PHP unit tests only
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit --testsuite Unit ${ARG}
 
-test-functional: ## Run PHP functional tests only
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit --testsuite Functional ${ARG}
+test-functional: up-test ## Run PHP functional tests only
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit --testsuite Functional ${ARG}
 
-test-web: ## Run JS unit tests (web + admin containers)
-	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web test
-	@${DOCKER_COMPOSE} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin test
+test-web: up-test ## Run JS unit tests (web + admin containers)
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web test
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin test
 
 # ----- Lint / static analysis -----
 
-lint: lint-shared-kernel lint-api lint-web ## Lint everything
+lint: up-test lint-shared-kernel lint-api lint-web ## Lint everything
 
-lint-shared-kernel: ## PHPStan for packages/shared-kernel-php (runs inside API container)
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/phpstan analyse -c /app/packages/shared-kernel-php/phpstan.dist.neon --no-progress --memory-limit=512M
+lint-shared-kernel: up-test ## PHPStan for packages/shared-kernel-php (runs inside API container)
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpstan analyse -c /app/packages/shared-kernel-php/phpstan.dist.neon --no-progress --memory-limit=512M
 
-lint-api: ## PHPStan + php-cs-fixer dry-run + deptrac (apps/api)
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M ${ARG}
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/php-cs-fixer fix --dry-run --diff
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/deptrac analyse --no-progress
+lint-api: up-test ## PHPStan + php-cs-fixer dry-run + deptrac (apps/api)
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M ${ARG}
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/php-cs-fixer fix --dry-run --diff
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/deptrac analyse --no-progress
 
-lint-fix: ## Fix PHP code style
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php vendor/bin/php-cs-fixer fix
+lint-fix: up-test ## Fix PHP code style
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/php-cs-fixer fix
 
-lint-web: ## Typecheck + ESLint on JS workspaces (runs inside web/admin containers)
-	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER}   pnpm -r --filter './apps/web' --filter './packages/*' typecheck
-	@${DOCKER_COMPOSE} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin typecheck
-	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web lint
-	@${DOCKER_COMPOSE} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin lint
+lint-web: up-test ## Typecheck + ESLint on JS workspaces (runs inside web/admin containers)
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER}   pnpm -r --filter './apps/web' --filter './packages/*' typecheck
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin typecheck
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web lint
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin lint
 
 # ----- Build -----
 
-build-api: ## Build the API for production
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} composer install --no-dev --optimize-autoloader
+build-api: up-test ## Build the API for production
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} composer install --no-dev --optimize-autoloader
 
-build-web: ## Build web + admin for production (runs inside web/admin containers)
-	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web build
-	@${DOCKER_COMPOSE} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin build
+build-web: up-test ## Build web + admin for production (runs inside web/admin containers)
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web build
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin build
 
 # ----- OpenAPI / TS client -----
 
-gen-api: ## Regenerate TS client from API OpenAPI spec
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console nelmio:apidoc:dump --format=json > apps/api/openapi.json
-	@${DOCKER_COMPOSE} ${EXEC} ${WEB_CONTAINER} pnpm -C packages/api-client-ts gen
+gen-api: up-test ## Regenerate TS client from API OpenAPI spec
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console nelmio:apidoc:dump --format=json > apps/api/openapi.json
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER} pnpm -C packages/api-client-ts gen
 
 # ----- JWT keys -----
 
-jwt-keys: ## Generate JWT key pair into apps/api/config/jwt/
-	@${DOCKER_COMPOSE} ${EXEC} ${API_CONTAINER} php bin/console lexik:jwt:generate-keypair --skip-if-exists
+jwt-keys: up-test ## Generate JWT key pair into apps/api/config/jwt/
+	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console lexik:jwt:generate-keypair --skip-if-exists
 
 # ----- Seeders -----
 
@@ -175,6 +188,7 @@ seed-admin: ## Promote a user to ROLE_ADMIN (EMAIL=foo@bar.com)
 
 # ----- Clean -----
 
-clean: ## Remove containers, volumes, and generated artefacts
+clean: ## Remove containers, volumes, and generated artefacts (dev + test stacks)
 	@${DOCKER_COMPOSE} down --remove-orphans --volumes
+	@${DOCKER_COMPOSE_TEST} down --remove-orphans --volumes
 	@rm -rf apps/*/node_modules apps/*/.next packages/*/node_modules .turbo .pnpm-store

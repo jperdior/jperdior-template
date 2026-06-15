@@ -11,7 +11,7 @@ Execute an approved spec under `.ai/specs/{date}-{slug}.md`. Implement phase by 
 
 - The spec exists under `.ai/specs/` on the current `feat/<slug>` branch (committed locally).
 - The spec passed `/pre-implement-spec` with verdict = ready.
-- `make start` boots cleanly on the current branch (the feature base branch from `/new-feature`).
+- No container startup needed: `make lint` / `make test` / `make build-web` auto-start a headless, per-worktree, port-free test stack that mounts this worktree's code. Multiple worktrees run the gate in parallel without conflict; `make start` is only for browser use.
 
 If any precondition fails, stop and inform the user.
 

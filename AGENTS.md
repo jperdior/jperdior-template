@@ -78,18 +78,26 @@ make migrate-diff  # generates a Doctrine migration diff
 
 ### Worktree container workflow
 
-Docker containers mount the **main branch** code by default. When working in a git worktree,
-restart the stack from the worktree so containers pick up your changes before linting or testing:
+`make test`, `make lint`, `make build-web`, `make migrate-diff`, `make gen-api` (and the
+other CLI targets) run against a **headless, per-worktree test stack** that auto-starts on
+first use — you do **not** need `make start`. The stack:
+
+- is named per worktree (`<project>-test-<worktree-dir>`), so every worktree gets its own
+  isolated containers + volumes (no stale vendor / `.next` across worktrees);
+- publishes **no host ports**, so any number of worktrees run the CI gate in parallel with
+  zero port conflicts;
+- mounts the worktree's code, so it always validates the right tree.
 
 ```bash
-# 1. Stop containers (run from anywhere — stops all containers)
-make stop
-
-# 2. Start containers from the worktree (containers now mount the worktree's code)
-cd /path/to/worktree && make start
+# From anywhere inside the worktree — auto-starts the headless stack on first run:
+make lint && make test          # CI gate, parallel-safe, no `make start` needed
+make up-test                    # (optional) start/refresh the stack explicitly
+make stop-test                  # tear down just this worktree's headless stack
 ```
 
-Then run `make lint && make test` normally.
+`make start` is now only for **browser use**: it brings up the full dev stack (Traefik,
+nginx, redis, minio, mailpit) and binds host ports, so it remains single-instance — run it
+in one worktree at a time.
 
 ### Pre-PR gate (mandatory)
 
