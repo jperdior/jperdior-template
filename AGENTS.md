@@ -176,10 +176,17 @@ Step 2 — Design (inside the worktree)
   /spec-writing                ← draft spec locally (committed to feat/<slug>, no separate spec PR)
   /pre-implement-spec .ai/specs/{file}.md   ← readiness report; fix gaps before coding
 
-Step 3 — Implement
-  /implement-spec .ai/specs/{file}.md       ← phase by phase, CI gate after each
-  /sync-context-docs                        ← update bounded context AGENTS.md files
-  /open-pr                     ← single PR to main (includes spec + implementation)
+Step 3 — Implement (all on the same feat/<slug> branch, one PR at the end)
+  /implement-spec .ai/specs/{file}.md       ← phase by phase, CI + code-review gate after each
+                                             ← sync-context-docs runs per-phase as part of /implement-spec
+  /open-pr                     ← single PR to main (includes spec + code)
+
+Step 4 — Clean up (after PR merges)
+  Exit worktree                ← or cd to main repo root
+  sudo rm -rf .claude/worktrees/<name>
+  git worktree prune
+  git branch -d feat/<slug>
+  make stop-test               ← tear down the headless test stack
 ```
 
 **Short path (small, already-specified addition where a full spec is overhead):**
@@ -194,7 +201,7 @@ Use `/scaffold-bounded-context`, `/add-command`, `/add-route` directly. Still ru
 | `/spec-writing` | Design | Drafts the spec locally on the feature branch. Does **not** open a spec-only PR. |
 | `/pre-implement-spec` | Audit | Audits the local spec for gaps, missing tests, BC risks. Verdict must be "ready" before coding starts. |
 | `/implement-spec` | Implement | Executes the spec phase by phase; runs the CI gate after each phase. |
-| `/sync-context-docs` | Document | Updates `apps/api/src/<Context>/AGENTS.md` for every context touched by the branch. Run before `/open-pr`. |
+| `/sync-context-docs` | Document | Updates `apps/api/src/<Context>/AGENTS.md` for every context touched by the branch. Run per-phase inside `/implement-spec` before the verification gate. |
 | `/open-pr` | Ship | Opens the implementation PR (spec + code) using the repository PR template. |
 
 Use `/scaffold-bounded-context`, `/add-command`, `/add-route` **directly** only for small, already-specified additions where a full spec would be overhead.

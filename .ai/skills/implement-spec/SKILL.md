@@ -11,58 +11,46 @@ Execute an approved spec under `.ai/specs/{date}-{slug}.md`. Implement phase by 
 
 - The spec exists under `.ai/specs/` on the current `feat/<slug>` branch (committed locally).
 - The spec passed `/pre-implement-spec` with verdict = ready.
-- No container startup needed: `make lint` / `make test` / `make build-web` auto-start a headless, per-worktree, port-free test stack that mounts this worktree's code. Multiple worktrees run the gate in parallel without conflict; `make start` is only for browser use.
-
 If any precondition fails, stop and inform the user.
 
 ## Workflow
 
-Each phase in the spec becomes its own branch and PR, stacked on the previous. Merge in order.
+All phases are implemented on the same `feat/<slug>` branch (created by `/new-feature`). A single PR covers spec + all phases.
 
 ### For each phase:
 
-1. **Create the branch** from the current HEAD (feature base for Phase 0, previous phase's branch for Phase N+1):
-   ```sh
-   git checkout -b feat/{slug}-phase-{N}-{short-title}
-   ```
-
-2. **Read the spec phase**. Identify deliverables, files to touch, tests to add.
-
-3. **Delegate research** to Explore subagents when the phase spans multiple unfamiliar files.
-
-4. **Implement**:
+1. **Read the spec phase**. Identify deliverables, files to touch, tests to add.
+2. **Delegate research** to Explore subagents when the phase spans multiple unfamiliar files.
+3. **Implement**:
    - PHP: follow the bounded-context layout. Use `/scaffold-bounded-context` for new contexts, `/add-command`, `/add-query`, `/add-route` for additions.
    - Frontend: follow the route shape under `apps/web/src/app/` or `apps/admin/src/app/`. Use `/scaffold-nextjs-page`, `/scaffold-shadcn-form`.
    - Migrations: run `make migrate-diff`; review the SQL; commit it.
    - Tests: PHPUnit Functional next to the controller under `apps/api/tests/Functional/`; Vitest + RTL colocated under `apps/web/src/**/__tests__/` or `apps/admin/src/**/__tests__/`.
-
+4. **Run `/sync-context-docs`** — update AGENTS.md for every context touched so far.
 5. **Verification gate**:
    ```sh
    make lint
    make test
    ```
    Every command MUST exit 0. Fix before continuing.
-
 6. **Code review gate**: invoke `/code-review` on the diff. Resolve every Critical and High finding.
-
 7. **Commit**: `feat({context}): {phase title} (spec: {file})`
-
-8. **Push and open the PR**:
-   ```sh
-   git push -u origin feat/{slug}-phase-{N}-{short-title}
-   gh pr create \
-     --title "feat({context}): {phase title}" \
-     --base {previous-branch-or-main} \
-     --body "Phase {N} of spec .ai/specs/{file}."
-   ```
-
-9. **Update the spec changelog**: `| {YYYY-MM-DD} | Phase {N} implemented — {PR URL}. |`
-
-10. **Pause** and confirm with the user before starting the next phase (unless they said "implement all without stopping").
+8. **Update the spec changelog**: `| {YYYY-MM-DD} | Phase {N} implemented. |`
+9. **Pause** and confirm with the user before starting the next phase (unless they said "implement all without stopping").
 
 ### After all phases are done
 
-Report the full stack and merge order. Remind the user to merge in order — GitHub auto-updates each PR's base as the previous one merges.
+1. Push the branch:
+   ```sh
+   git push -u origin $(git rev-parse --abbrev-ref HEAD)
+   ```
+2. Open the single PR via `/open-pr`.
+3. **Clean up after the PR merges** — once the PR is merged to main:
+   - Exit the worktree (`ExitWorktree` tool if available, otherwise `cd` to main repo root).
+   - Delete the worktree: `sudo rm -rf .claude/worktrees/<name>` (Docker may have created root-owned files).
+   - Run `git worktree prune` from the main repo.
+   - Delete the local branch: `git branch -d feat/<slug>`.
+   - Run `make stop-test` (tear down this worktree's headless test stack).
 
 ## Subagent Strategy
 
@@ -111,14 +99,21 @@ Spawn one Plan subagent when:
 End of each phase:
 
 ```
-✅ Phase {N}: {Title}   →  {PR URL}
-   Branch:  feat/{slug}-phase-{N}-{title}  →  {base branch}
+✅ Phase {N}: {Title}
    Files:   {count} touched, {count} tests added
+   Next:    Phase {N+1}: {Title} — proceed?
+```
 
-   Merge order so far:
-   1. {PR URL}  (feat/{slug}-phase-0-…)
-   2. {PR URL}  (feat/{slug}-phase-1-…)
-   …
+After all phases:
 
-   Next: Phase {N+1}: {Title} — proceed?
+```
+✅ All phases complete on branch `feat/<slug>`.
+   Next step: /sync-context-docs → /code-review → /open-pr
+
+   Cleanup after merge:
+   1. Exit worktree
+   2. sudo rm -rf .claude/worktrees/<name>
+   3. git worktree prune
+   4. git branch -d feat/<slug>
+   5. make stop-test
 ```
