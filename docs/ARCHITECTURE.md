@@ -145,26 +145,6 @@ Controller
 
 ---
 
-## Persistence model
-
-Domain aggregates are pure PHP — never annotated with `#[ORM\*]`. Each aggregate has a dedicated `*Model` class in `Infrastructure/Persistence/Doctrine/` that carries the Doctrine **PHP attributes** and holds **plain scalar fields** (no value-object types):
-
-```php
-#[ORM\Entity]
-#[ORM\Table(name: 'users')]
-class UserModel
-{
-    #[ORM\Id]
-    #[ORM\Column(type: Types::STRING, length: 36)]
-    public string $id;          // stores UserId->value, a plain string
-    // …
-}
-```
-
-The repository's `toDomain(UserModel): User` and `applyToModel(User, UserModel)` are the only places that bridge scalars ↔ value objects. Because the persisted fields are primitives, there are **no custom DBAL types** and the PHP 8.4 lazy-ghost hydration problem never arises. (The only XML mapping in the codebase is the third-party Lexik `RefreshToken` entity, which the bundle ships pre-mapped.)
-
----
-
 ## Auth
 
 - **Stateless JWT** (RS256) via `lexik/jwt-authentication-bundle`.
@@ -179,12 +159,9 @@ See [auth.md](auth.md) for the full flow including the frontend cookie strategy.
 
 ## Persistence
 
-- **PostgreSQL 16**. Doctrine 3 with `underscore_number_aware` naming strategy.
-- **UUID v4 primary keys** (generated at the application layer, not the DB).
-- **Persistence Model pattern**. Each aggregate has a `*Model` class in `Infrastructure/Persistence/Doctrine/` with Doctrine PHP attributes and primitive fields. Domain entities carry no ORM annotations — they are framework-agnostic. The repository converts between model and aggregate via `toDomain()` / `toOrm()`.
-- **Migrations** under `apps/api/migrations/`. Generated with `make migrate-diff`, reviewed manually, applied with `make migrate`.
-- **One aggregate root per write transaction.** Use `TransactionInterface` from `shared-kernel-php` when you need to span aggregates (rare).
-- **Read DTOs in queries.** Query handlers return readonly response objects, not hydrated aggregates.
+PostgreSQL 16 with **Persistence Model pattern** — full reference at [persistence.md](persistence.md).
+
+TL;DR: Domain entities are ORM-free. Each aggregate has a `*Model` class in `Infrastructure/Persistence/Doctrine/` with Doctrine PHP attributes and primitive fields. The repository converts via `toDomain()` / `toOrm()`.
 
 ---
 

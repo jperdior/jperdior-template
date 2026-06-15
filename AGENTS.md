@@ -128,8 +128,9 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | User aggregate, JWT, refresh tokens, security.yaml | `apps/api/src/User/AGENTS.md` + `docs/auth.md` |
 | Adding ROLE_* checks | `apps/api/AGENTS.md` → Security |
 | **Persistence** | |
-| New aggregate + `*Model` + repository | `apps/api/AGENTS.md` → Persistence |
-| Encrypted columns, soft deletes, JSON fields | `apps/api/AGENTS.md` → Persistence |
+| Database schema, naming conventions, *Model pattern, repository pattern, migrations | `docs/persistence.md` |
+| New aggregate + `*Model` + repository | `docs/persistence.md` + `apps/api/AGENTS.md` |
+| Encrypted columns, soft deletes, JSON fields | `docs/persistence.md` + `apps/api/AGENTS.md` |
 | **Frontend** | |
 | New page in `apps/web` or `apps/admin` | `apps/web/AGENTS.md` (or `apps/admin/AGENTS.md`) + `.ai/skills/scaffold-nextjs-page/SKILL.md` |
 | Form with validation | `.ai/skills/scaffold-shadcn-form/SKILL.md` + `packages/ui-react/AGENTS.md` |
@@ -138,7 +139,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Shared component in `ui-react` | `packages/ui-react/AGENTS.md` |
 | **Workflow** | |
 | First-time project customization (rename placeholders, add project context) | `.ai/skills/customize-project/SKILL.md` |
-| First-time local setup (hosts, .env.local, stack boot) | `.ai/skills/init/SKILL.md` |
+| First-time local setup (hosts, .env.local, project personalization) | `.ai/skills/init/SKILL.md` |
 | Starting an implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — one `feat/<slug>` worktree covers spec + implementation |
 | Committing and pushing with CI gate | `.ai/skills/check-and-commit/SKILL.md` |
 | **Specs & PR Automation** | |
@@ -161,7 +162,9 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Security audit (OWASP, attack vectors) | `.ai/skills/auto-sec-report/SKILL.md` |
 | **Ops** | |
 | Docker, compose, K8s | `docs/ops.md` + `ops/AGENTS.md` |
-| CI / GitHub Actions | `.github/workflows/` + `docs/ops.md` |
+| CI / GitHub Actions | `.github/workflows/ci.yml` — lint + test + build on every push |
+| | `.github/workflows/release.yml` — release workflow |
+| | `.github/workflows/skills-tiers-lint.yml` — validates skills tiers.json |
 
 ## Core Principles
 
