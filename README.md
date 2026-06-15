@@ -35,16 +35,33 @@ The `User` context is also the **reference implementation**: every layer, naming
 
 The template ships a set of slash commands for Claude Code (and Codex) that already know the conventions of this codebase. After setup, type `/` in Claude Code to see the full list.
 
+**Workflow:**
+- `/init` — bootstrap a fresh clone: check prerequisites, copy `.env.local`, personalize the project
 - `/customize-project` — rename all template placeholders and add your project description to `AGENTS.md` — run once after cloning
-- `/spec-writing` — brainstorm and write a feature spec before any code is written
-- `/new-feature` — create an isolated git worktree + branch from main (called twice: once for the spec, once for the implementation)
-- `/pre-implement-spec` — audit a merged spec for gaps, BC risks, and missing tests before any code is written
+- `/new-feature` — create an isolated git worktree + branch from main for your feature
+- `/spec-writing` — brainstorm and write a feature spec, auto-proceeds to audit
+- `/pre-implement-spec` — audit a spec for gaps, BC risks, and missing tests before coding
+- `/implement-spec` — implement an approved spec phase by phase with CI gate between phases
+- `/code-review` — review a diff or branch against DDD/CQRS/security rules; runs the CI gate
+- `/open-pr` — open a single PR (spec + implementation) from the feature branch
+
+**Backend development:**
 - `/scaffold-bounded-context` — generate the full 4-layer DDD skeleton for a new context
 - `/add-command`, `/add-query`, `/add-route` — add CQRS commands, queries, and HTTP endpoints
+- `/scaffold-doctrine-migration` — generate and review a Doctrine migration
+- `/regenerate-api-client` — regenerate the TypeScript API client from the OpenAPI spec
+
+**Frontend development:**
 - `/scaffold-nextjs-page`, `/scaffold-shadcn-form` — scaffold frontend pages and forms
-- `/implement-spec` — implement an approved spec phase by phase, with CI gate between phases
-- `/parallel-research` — spawn multiple Explore agents in parallel to map unfamiliar code before touching it
-- `/code-review` — review a diff or branch against DDD/CQRS/security rules; runs the CI gate
+- `/integration-tests` — create PHPUnit functional tests and Vitest frontend tests
+
+**Bug fixing:**
+- `/root-cause` — drill from a failing test or production error to the offending change
+- `/fix` — regression test first, then minimal fix, CI gate, auto-create PR
+
+**Support:**
+- `/parallel-research` — spawn multiple agents in parallel to map unfamiliar code before touching it
+- `/sync-context-docs` — update AGENTS.md and cross-cutting docs after implementation
 
 → See [docs/ai-workflow.md](docs/ai-workflow.md) for the full spec-first development workflow.
 
@@ -52,13 +69,15 @@ The template ships a set of slash commands for Claude Code (and Codex) that alre
 
 The recommended flow for any non-trivial feature:
 
-1. `/new-feature spec/<slug>` — create a worktree + branch for the spec
-2. `/spec-writing` — design the feature, produce a spec doc in `.ai/specs/`, open a spec-only PR
-3. `/pre-implement-spec` — audit the merged spec for gaps, BC risks, and missing tests
-4. `/new-feature feat/<slug>` — create a worktree + branch for implementation
-5. `/implement-spec` — implement from the approved spec, phase by phase
-6. `make lint && make test` — mandatory pre-PR gate
-7. Open PR — CI runs PHPStan, cs-fixer, deptrac, tsc, ESLint, PHPUnit, and JS tests
+1. `/new-feature feat/<slug>` — create a worktree + branch from main
+2. `/spec-writing` — design the feature, produce a spec doc in `.ai/specs/` (auto-proceeds to audit)
+3. `/pre-implement-spec` — audit the spec for gaps, BC risks, and missing tests
+4. `/implement-spec` — implement from the approved spec, phase by phase (CI + code-review after each)
+5. `/sync-context-docs` — update AGENTS.md and cross-cutting docs (runs per-phase inside implement-spec)
+6. `/open-pr` — single PR (spec + code) to main
+7. **Clean up** after merge — remove worktree, prune branch
+
+For bug fixes: `/root-cause` → `/fix` → `/auto-create-pr`.
 
 → See [AGENTS.md](AGENTS.md) for the full task router and AI conventions.
 
@@ -108,7 +127,9 @@ cd my-new-project
 sudo make init   # patches /etc/hosts, installs AI skills
 ```
 
-**Before starting the stack**, say **"customize my project"** in Claude Code (or run `/customize-project`) to rename template placeholders and add your project description to `AGENTS.md`.
+Then run `/init` in Claude Code to check prerequisites, copy `.env.local`, and personalize the project. Or say **"customize my project"** to rename template placeholders and add your project description.
+
+No need for `make start` during development — `make test` / `make lint` auto-start a headless per-worktree stack. Use `make start` only when you need browser preview.
 
 ---
 
@@ -118,6 +139,7 @@ sudo make init   # patches /etc/hosts, installs AI skills
 |-------|-------------|
 | [docs/getting-started.md](docs/getting-started.md) | From clone to first endpoint — prerequisites, boot, secrets, daily commands |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | DDD + Hexagonal + CQRS rationale, the four layers, the three buses |
+| [docs/persistence.md](docs/persistence.md) | Database schema, naming conventions, *Model pattern, repository pattern, migrations |
 | [docs/auth.md](docs/auth.md) | JWT flow, refresh rotation, frontend cookie strategy |
 | [docs/adding-a-bounded-context.md](docs/adding-a-bounded-context.md) | Step-by-step guide for adding a new context |
 | [docs/ai-workflow.md](docs/ai-workflow.md) | Spec-first AI-driven development with the `.ai/` harness |
