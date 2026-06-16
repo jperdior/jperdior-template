@@ -12,10 +12,9 @@ Spin up an isolated worktree from `main` so the feature has its own branch and w
 ## Workflow
 
 1. **Get the feature name** from the user's message or ask if not clear enough to derive a branch name.
-2. **Derive the branch name**: `feat/<kebab-case-description>` (max ~40 chars, no special chars except `-`).
-3. **Confirm** the branch name with the user if it was derived (not explicitly given).
-4. **Create the worktree** using `EnterWorktree` with the derived name. This creates `.claude/worktrees/<name>` on a new branch and enters it.
-5. **Report** the branch name, worktree path, and the correct next steps.
+2. **Derive the branch name**: `feat/<kebab-case-description>` (max ~40 chars, no special chars except `-`). **Do not ask for confirmation** — just pick the name and go.
+3. **Create the worktree** using `EnterWorktree` with the derived name. This creates `.claude/worktrees/<name>` on a new branch and enters it.
+4. **Report** the branch name, worktree path, and the correct next steps.
 
 ## Branch naming
 
@@ -29,8 +28,8 @@ Always use lowercase kebab-case. Strip articles (a, an, the). Truncate at 40 cha
 
 ## Rules
 
-- Always branch from `main`.
-- Never create the worktree without confirming the branch name first if it was ambiguous.
+- Always branch from `main`, and **always `git fetch origin` first** so the base ref is current — never branch from a stale `main`.
+- **Never ask for branch name confirmation.** Derive it and go.
 - After entering the worktree, remind the user that `ExitWorktree` (or ending the session) will prompt to keep or discard the branch.
 - Next step is always `/spec-writing` (writes the spec locally), then `/pre-implement-spec` (audit), then `/implement-spec`. Do NOT skip the audit.
 
