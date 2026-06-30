@@ -9,6 +9,13 @@ Spin up an isolated worktree from `main` so the feature has its own branch and w
 
 > **This skill is called once per feature.** The same `feat/<slug>` worktree is used for both spec writing and implementation — no separate spec branch or spec-only PR is needed.
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:using-git-worktrees` — confirms existing worktree isolation before creating a new one; ensures `EnterWorktree` is preferred over raw `git worktree add`.
+
+> If the feature scope is unclear, invoke `superpowers:brainstorming` before creating the worktree to design the approach before branching.
+
 ## Workflow
 
 1. **Get the feature name** from the user's message or ask if not clear enough to derive a branch name.

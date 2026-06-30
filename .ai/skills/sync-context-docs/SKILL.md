@@ -7,6 +7,11 @@ description: Update or create AGENTS.md for every bounded context touched by the
 
 After implementing a feature, update (or create) the `AGENTS.md` for every bounded context the branch touched. This keeps business rules, invariants, and API surface documented in the right place so future agents don't have to re-read all the code.
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:verification-before-completion` — after updating each AGENTS.md, re-read the changed sections and confirm all bounded-context patterns are accurately reflected before committing.
+
 **Run this before `/open-pr` or `/check-and-commit`.** Every doc change on the branch must be committed before opening the PR.
 
 ---

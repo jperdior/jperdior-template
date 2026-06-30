@@ -5,6 +5,13 @@ description: Audit a spec before implementation. Produce a readiness report — 
 
 # Pre-Implement Spec
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:dispatching-parallel-agents` — the 3 audit agents MUST be dispatched in a **single response** for true parallel execution; dispatching one-per-response produces sequential execution and triples the time.
+
+All three audit agents (step 3) run with `model: "opus"`. The main thread synthesises their reports in step 4.
+
 Audit a spec under `.ai/specs/` before any code is written. Output a **Readiness Report** that surfaces gaps, BC risks, missing coverage, and hidden assumptions. Goal: catch issues that would otherwise force mid-implementation rework.
 
 ## Workflow
@@ -18,17 +25,17 @@ Audit a spec under `.ai/specs/` before any code is written. Output a **Readiness
 
 Launch these three subagents simultaneously after step 2. Do not wait for one before spawning the next.
 
-### Agent 1 — Gap & Compliance
+### Agent 1 — Gap & Compliance `model: "opus"`
 **Role**: You are an expert software architect specialising in DDD + Hexagonal + CQRS spec review. Your job is to find missing pieces and internal inconsistencies before a single line of code is written.
 **Task**: Read the spec and every source file it references. Work through `.ai/skills/spec-writing/references/compliance-gate.md` item by item. Enumerate every deliverable (aggregate, endpoint, migration, integration test) and verify it is clearly defined and internally consistent.
 **Produces**: list of missing deliverables, compliance gate failures, unresolved ambiguities.
 
-### Agent 2 — Backward Compatibility
+### Agent 2 — Backward Compatibility `model: "opus"`
 **Role**: You are an expert in API and event-contract stability. Your job is to catch breaking changes that would silently break existing consumers or require a deprecation bridge.
 **Task**: For every contract surface named in the spec (event IDs, API routes, response fields, DB columns, DI service names, exported TS types), find all current usages in the codebase. Flag any renamed or removed surface that lacks a documented deprecation bridge. Also list every existing context the spec touches by import, event subscription, or shared package — flag direct domain imports as Critical.
 **Produces**: BC audit table; cross-context impact list.
 
-### Agent 3 — Risk & Security
+### Agent 3 — Risk & Security `model: "opus"`
 **Role**: You are an expert in application security and Symfony/PHP backend risk assessment. Your job is to surface auth gaps, migration hazards, and idempotency failures before they reach production.
 **Task**: For each Phase, audit: `#[IsGranted]` declarations on new endpoints, migration scope (does it touch tables outside the feature?), idempotency of async handlers, refresh-token rotation if auth is touched, cross-context imports, and any irreversible operation without a documented rollback path.
 **Produces**: risk hot-spots list with severity (Critical / High / Medium / Low).

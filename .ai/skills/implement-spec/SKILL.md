@@ -7,6 +7,18 @@ description: Implement an approved spec from .ai/specs/, phase by phase, with th
 
 Execute an approved spec under `.ai/specs/{date}-{slug}.md`. Implement phase by phase, run the verification gate after each phase, and update the spec's Changelog as you go.
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:subagent-driven-development` — primary orchestration pattern: fresh subagent per implementation task, spec-compliance + code-quality review between tasks.
+- `superpowers:test-driven-development` — enforce Red → Green → Refactor within each phase; no production code before a failing test.
+- `superpowers:verification-before-completion` — run the full gate (`make lint && make test`), read complete output, confirm 0 errors before claiming any phase done.
+
+**Model discipline for subagents:**
+- **Explore agents** → `model: "sonnet"` (focused lookup, minimal reasoning overhead)
+- **Plan agents** → `model: "opus"` (architectural reasoning, cross-context decisions)
+- **Implementation agents** (via `subagent-driven-development`) → `model: "sonnet"`
+
 ## Prerequisites
 
 - The spec exists under `.ai/specs/` on the current `feat/<slug>` branch (committed locally).
@@ -58,7 +70,7 @@ All phases are implemented on the same `feat/<slug>` branch (created by `/new-fe
 
 If the phase touches ≥3 unfamiliar files or spans multiple bounded contexts, spawn Explore subagents **in parallel** before writing a single line. Do not interleave research and implementation.
 
-**Spawn one agent per angle. Each gets a single, focused question.**
+**Spawn one Explore agent per angle with `model: "sonnet"`. Each gets a single, focused question.**
 
 | Angle | Example prompt |
 |-------|----------------|
@@ -71,7 +83,7 @@ If the phase touches ≥3 unfamiliar files or spans multiple bounded contexts, s
 
 Collect all results before opening any file to edit.
 
-### Plan subagent
+### Plan subagent `model: "opus"`
 
 Spawn one Plan subagent when:
 - A phase's design needs more thought than the spec captured.
