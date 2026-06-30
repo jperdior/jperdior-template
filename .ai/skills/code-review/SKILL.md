@@ -5,6 +5,14 @@ description: Review code changes (PR, diff, branch, commit) against this templat
 
 # Code Review
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:dispatching-parallel-agents` — the 3 reviewer agents MUST be dispatched in a **single response** for true parallel execution alongside the CI gate.
+- `superpowers:receiving-code-review` — when acting on reviewer output: verify before implementing, push back with technical reasoning if a finding is wrong, never implement unverified suggestions.
+
+All reviewer agents run with `model: "opus"`. The main thread (current session) synthesises findings and runs the CI gate concurrently.
+
 Review code changes against:
 - DDD + Hexagonal + CQRS rules (bounded-context isolation, bus discipline, Persistence Model pattern)
 - Security & data integrity (auth, refresh-token rotation, validation, migrations)
@@ -29,17 +37,17 @@ Produce categorised findings (Critical / High / Medium / Low) and run the **CI V
 
 After loading context (step 2), spawn the following subagents simultaneously. Each receives: the diff, the affected `AGENTS.md` content, `.ai/lessons.md`, and the relevant Quick Rule Reference section from this skill.
 
-### Reviewer 1 — Architecture & Boundaries (always)
+### Reviewer 1 — Architecture & Boundaries (always) `model: "opus"`
 **Role**: You are an expert DDD + Hexagonal + CQRS architect. Your sole focus is structural correctness: boundaries, bus discipline, and mapping discipline. You do not review security or frontend concerns.
 **Scope**: cross-context imports (`use App\<OtherContext>\Domain\…` or `…\Application\…`), bus discipline (no handler wired directly into a controller), ORM attributes on domain entities, CQRS naming (commands imperative, events past-tense), repository placement (interface in `Domain/`, implementation in `Infrastructure/Persistence/`), `_instanceof` auto-tagging.
 **Produces**: Architecture findings (Critical / High / Medium / Low).
 
-### Reviewer 2 — Security & Data Integrity (always)
+### Reviewer 2 — Security & Data Integrity (always) `model: "opus"`
 **Role**: You are an expert application security engineer specialising in Symfony PHP backends. Your sole focus is auth, input validation, data integrity, and safe credential handling. You do not review architecture or frontend concerns.
 **Scope**: `#[IsGranted('ROLE_*')]` on every non-public endpoint, input validation at value-object construction, password hashing via `password_hasher` (argon2id), refresh-token rotation enabled and revocation handled, minimal error disclosure on auth endpoints (never reveal whether an email exists), migration scope (unrelated tables are Critical).
 **Produces**: Security findings (Critical / High / Medium / Low).
 
-### Reviewer 3 — Frontend & Design System (only if `apps/web/` or `apps/admin/` files changed)
+### Reviewer 3 — Frontend & Design System (only if `apps/web/` or `apps/admin/` files changed) `model: "opus"`
 **Role**: You are an expert Next.js 15 / React frontend engineer with deep knowledge of design systems and accessibility. Your sole focus is frontend quality, DS compliance, and UX correctness. You do not review backend or architecture concerns.
 **Scope**: DS token usage — no hardcoded colors or text sizes (see `.ai/ds-rules.md`), every `"use client"` file must be justified (interactive or browser API), form patterns (shadcn `Form` + react-hook-form + zod), API calls via `@jperdior/api-client-ts` (never raw `fetch`), i18n (no hardcoded user-facing strings), dialog keyboard shortcuts (`Cmd/Ctrl+Enter` submit, `Escape` cancel).
 **Produces**: Frontend findings (Critical / High / Medium / Low).

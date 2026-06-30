@@ -7,6 +7,32 @@ description: Draft or review architectural specs under .ai/specs/. Use when star
 
 Design and review specifications against this template's architecture (DDD + Hexagonal + CQRS, Persistence Model pattern, three Messenger buses, bounded-context isolation enforced by deptrac). Adopt the **staff engineer** persona — flexible about innovation, uncompromising about boundaries.
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:brainstorming` — design first, code never until approved; collaborative dialogue to validate the approach and produce a design doc before writing the spec.
+- `superpowers:writing-plans` — after the spec is finalised, structure it into a concrete implementation plan with bite-sized tasks.
+
+For research-heavy specs (new bounded context, cross-cutting concern), dispatch a benchmark agent before step 5:
+
+**Agent — Open-Source Benchmark** `model: "opus"`
+
+```
+Agent({
+  description: "Spec pattern research",
+  model: "opus",
+  prompt: """
+    You are a staff engineer benchmarking this feature against open-source leaders.
+    Spec path: [path — read it in full].
+    Also read: `.ai/specs/AGENTS.md`, `.ai/lessons.md`, `.ai/skills/spec-writing/references/compliance-gate.md`.
+    Task:
+    1. Compare the proposed design against known patterns in similar PHP/Symfony DDD + Hexagonal + CQRS projects.
+    2. Return: gap analysis, 2-3 alternative designs with trade-offs, any missing compliance-gate items.
+    Do NOT write any code or create any files.
+  """
+})
+```
+
 ## Workflow
 
 1. **Load Context**: read the task description and `.ai/specs/AGENTS.md`. Identify which bounded contexts and packages are affected. Use the root `AGENTS.md` Task Router to find every related guide.

@@ -5,6 +5,54 @@ description: Run an autonomous task end-to-end and ship it as a PR against the d
 
 # Auto Create PR
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:writing-plans` — produces the `PLAN.md` with global constraints, exact file paths, step-by-step TDD cycles, and interface contracts between tasks.
+- `superpowers:subagent-driven-development` — fresh subagent per implementation task, spec-compliance + code-quality review between tasks.
+- `superpowers:verification-before-completion` — must verify the full gate passes before opening the PR.
+
+**Agent — Plan Creation** `model: "opus"`
+
+For non-trivial tasks (>2 files), dispatch a plan agent before step 2:
+
+```
+Agent({
+  description: "PLAN.md creation",
+  model: "opus",
+  prompt: """
+    You are a senior engineer writing an implementation plan. Task: [task description].
+    Read the relevant AGENTS.md files for each bounded context touched.
+    Produce a PLAN.md in .ai/runs/{YYYY-MM-DD}-{slug}/ following the writing-plans format:
+    - Global constraints (PHP version, no cross-context imports, TDD required)
+    - Task list with exact file paths (create / modify / test)
+    - Step-by-step TDD cycle per task (write failing test → run → implement → run → commit)
+    - Interfaces produced/consumed between tasks
+    Do NOT write any code. Write the plan only.
+  """
+})
+```
+
+**Agent — Task Implementation** `model: "sonnet"`
+
+For each implementation task:
+
+```
+Agent({
+  description: "Implement task N",
+  model: "sonnet",
+  prompt: """
+    You are an implementer. Execute exactly Task N from the plan at [plan path].
+    Files to touch: [list from plan].
+    Step 1: Write the failing test at [test path]. Run it and confirm RED.
+    Step 2: Write minimal production code to pass the test. Run it and confirm GREEN.
+    Step 3: Commit with message: [format from plan].
+    Report status: DONE, DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED.
+    Do NOT implement other tasks or refactor beyond what the test requires.
+  """
+})
+```
+
 Execute a user-described task autonomously and open a GitHub PR. Resumable via `auto-continue-pr` if interrupted.
 
 ## Workflow

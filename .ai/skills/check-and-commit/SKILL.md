@@ -7,6 +7,11 @@ description: Verify the branch is ready (lint + test + build green), fix obvious
 
 Take a working branch from "I think it's done" to "committed and pushed with confidence".
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:verification-before-completion` — before every commit, run the full gate, read the complete output, and confirm 0 errors. Never claim "branch is ready" without fresh evidence from the current run.
+
 ## Workflow
 
 1. **Confirm scope**. Run `git status`, `git diff --stat`. If unrelated files are staged or there are surprises, ask the user.

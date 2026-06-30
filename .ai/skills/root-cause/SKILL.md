@@ -5,6 +5,34 @@ description: Drill from a failing test, production error, or user-reported bug t
 
 # Root Cause
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:systematic-debugging` — 4-phase methodology (reproduce → pattern analysis → hypothesis → implement); the Iron Law: no fixes without root cause investigation first.
+
+For complex multi-component failures, dispatch a debugging agent before step 4:
+
+**Agent — Root Cause Analysis** `model: "opus"`
+
+```
+Agent({
+  description: "Root cause analysis",
+  model: "opus",
+  prompt: """
+    You are a senior debugger. Apply systematic-debugging phases 1-3 only — do NOT propose or apply any fix.
+    Evidence:
+    - Failing test / stack trace: [paste output]
+    - Affected files: [list]
+    - Recent git changes: [git log --oneline -10]
+    Task:
+    1. Phase 1 — Reproduce: confirm the failure is deterministic; identify which component boundary it crosses.
+    2. Phase 2 — Pattern analysis: find working examples of the same pattern in the codebase. Read reference implementations completely. List every difference between working and broken.
+    3. Phase 3 — Hypothesis: form ONE specific hypothesis ("X is root cause because Y"). Do not test it yet.
+    Output: root cause statement (file:line), confidence level (HIGH/MEDIUM/LOW), evidence chain.
+  """
+})
+```
+
 Find the root cause of a bug or failing test. Output a precise report identifying the offending change (file:line, commit, PR).
 
 ## Workflow

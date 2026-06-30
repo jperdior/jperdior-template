@@ -5,6 +5,33 @@ description: Implement the minimal fix for a known root cause. Adds a regression
 
 # Fix
 
+## Superpowers Integration
+
+Invoke before starting this workflow:
+- `superpowers:test-driven-development` — the regression test MUST be written first and confirmed RED before any fix is applied; no exceptions ("too simple to test" is not an exception).
+- `superpowers:verification-before-completion` — confirm the full gate passes and the regression test is GREEN before claiming the fix is done.
+
+For multi-file fixes (3+ files changed), dispatch an implementation agent after the failing regression test exists:
+
+**Agent — Minimal Fix** `model: "sonnet"`
+
+```
+Agent({
+  description: "Apply minimal fix",
+  model: "sonnet",
+  prompt: """
+    You are an implementer applying a minimal bug fix. Do NOT refactor anything beyond what the failing test requires.
+    Root cause: [file:line from root-cause report]
+    Failing regression test: [test path and class name] — already confirmed RED.
+    Step 1: Run the regression test and confirm RED output.
+    Step 2: Write the minimal code change at [file:line] to make it pass.
+    Step 3: Run `make test-api ARG='--filter [TestClass]'` and confirm GREEN.
+    Step 4: Run `make lint-api` and confirm 0 errors.
+    Report: exact lines changed + paste the passing test output.
+  """
+})
+```
+
 Take a `root-cause` report and ship the minimal fix.
 
 ## Prerequisites
