@@ -1,6 +1,6 @@
 ---
 name: sync-merged-pr-issues
-description: Reconcile recently merged (and recently closed-without-merge) PRs with GitHub issues — auto-close issues fixed by merged PRs, comment on issues whose PR was closed without merging. Use for post-merge housekeeping.
+description: Reconcile merged (and closed-without-merge) PRs with GitHub issues — auto-close issues fixed by merged PRs, comment on issues whose PR was closed without merging. Use for post-merge housekeeping.
 ---
 
 # Sync Merged PR Issues

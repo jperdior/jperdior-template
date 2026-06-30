@@ -15,15 +15,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
-      - name: Generate changelog
+      - name: Extract release notes from CHANGELOG.md
         id: changelog
-        uses: orhun/git-cliff-action@v3
-        with:
-          config: .cliff.toml
-          args: --latest --strip header
-        continue-on-error: true
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME}"
+          if [ ! -f CHANGELOG.md ]; then
+            echo "::error::CHANGELOG.md not found. Run /auto-update-changelog ${version} before tagging."
+            exit 1
+          fi
+          notes=$(awk -v ver="$version" '
+            $0 ~ "^## \\[" ver "\\]" { found=1; print; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md)
+          if [ -z "$notes" ]; then
+            echo "::error::No section '## [${version}]' found in CHANGELOG.md. Run /auto-update-changelog ${version} before tagging."
+            exit 1
+          fi
+          {
+            echo "content<<CHANGELOG_EOF"
+            echo "$notes"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create release
         uses: softprops/action-gh-release@v2

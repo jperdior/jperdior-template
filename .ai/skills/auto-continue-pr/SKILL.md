@@ -1,6 +1,6 @@
 ---
 name: auto-continue-pr
-description: Resume an in-progress PR previously started by auto-create-pr. Claims the PR, checks it out into an isolated worktree, reads HANDOFF.md, continues from the first unchecked step. Usage - /auto-continue-pr <PR-number>
+description: Resume an in-progress PR started by auto-create-pr. Claims the PR, checks it out into an isolated worktree, reads HANDOFF.md, continues from the first unchecked step. Usage - /auto-continue-pr <PR-number>
 ---
 
 # Auto Continue PR

@@ -13,7 +13,7 @@ Check `.ai/specs/` before modifying an established bounded context. Create or up
 ## Ask First
 
 - Ask before moving a spec to `implemented/` if deployment/completion evidence is incomplete.
-- Ask before renaming legacy spec files.
+- Ask before renaming existing spec files.
 
 ## Never
 

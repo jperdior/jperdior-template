@@ -5,7 +5,7 @@ description: Normalise spec filenames under .ai/specs/ to the {YYYY-MM-DD}-{slug
 
 # Fix Specs
 
-Normalise legacy spec filenames so they all match `{YYYY-MM-DD}-{kebab-case-title}.md`. Update internal cross-references after renames.
+Normalise spec filenames under `.ai/specs/` to match `{YYYY-MM-DD}-{kebab-case-title}.md`. Update internal cross-references after renames.
 
 ## Workflow
 
