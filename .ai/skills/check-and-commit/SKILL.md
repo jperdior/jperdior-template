@@ -33,7 +33,7 @@ Take a working branch from "I think it's done" to "committed and pushed with con
    - Title format: `<type>(<context>): <summary>` (e.g. `feat(note): add CreateNoteController`).
    - Body: brief rationale + spec reference if applicable.
    - Use the project's commit-message conventions (Conventional Commits).
-7. **Commit**. NEVER use `--no-verify` unless the user explicitly asks. NEVER amend a previously-pushed commit unless asked.
+7. **Commit**. NEVER use `--no-verify` unless the user explicitly asks. NEVER amend a pushed commit unless asked.
 8. **Push** if the user asked to push. Otherwise stop after committing.
 
 ## Output
