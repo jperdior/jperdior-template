@@ -80,24 +80,43 @@ make migrate-diff  # generates a Doctrine migration diff
 
 ### Worktree container workflow
 
-`make test`, `make lint`, `make build-web`, `make migrate-diff`, `make gen-api` (and the
-other CLI targets) run against a **headless, per-worktree test stack** that auto-starts on
-first use — you do **not** need `make start`. The stack:
+Gates split by whether they need a live database:
+
+- **Standalone gates — no postgres/api** (`docker compose run --rm --no-deps` in an
+  ephemeral container, reusing only the cached per-worktree volumes):
+  - **PHP static analysis** (`make lint-api`, `make lint-shared-kernel`, `make lint-fix`, and
+    the `make lint` aggregate) — phpstan / php-cs-fixer / deptrac in an ephemeral **api**
+    container. `composer install` is a fast no-op once `api_vendor` is populated;
+    `cache:warmup` recompiles the dev container XML phpstan reads (kernel compilation opens
+    no DB connection).
+  - **Frontend** (`make lint-web`, `make test-web`, `make build-web`) in ephemeral
+    `node:22-alpine` containers, reusing the cached `node_modules` volumes.
+  - This is why a lint-only or JS-only change never pays for the PHP stack.
+- **DB-backed gates — require the headless test stack** (`make test-api`, `make test`,
+  `make migrate-diff`, `make gen-api`, `make migrate`) auto-start a **headless, per-worktree
+  test stack** (postgres + api) on first use — no `make start` needed.
+
+The shared PHP stack (only the DB-backed gates use it):
 
 - is named per worktree (`<project>-test-<worktree-dir>`), so every worktree gets its own
-  isolated containers + volumes (no stale vendor / `.next` across worktrees);
-- publishes **no host ports**, so any number of worktrees run the CI gate in parallel with
+  isolated containers + volumes (no stale vendor across worktrees);
+- publishes **no host ports**, so any number of worktrees run the gate in parallel with
   zero port conflicts;
 - mounts the worktree's code, so it always validates the right tree.
 
 ```bash
-# From anywhere inside the worktree — auto-starts the headless stack on first run:
-make lint && make test          # CI gate, parallel-safe, no `make start` needed
-make up-test                    # (optional) start/refresh the stack explicitly
-make stop-test                  # tear down just this worktree's headless stack
+# From anywhere inside the worktree:
+make lint && make test          # full CI gate, parallel-safe, no `make start` needed
+make test-web                   # JS unit tests only — standalone, no db/api
+make lint-web                   # JS typecheck + ESLint only — standalone, no db/api
+make up-test                    # (optional) start/refresh the PHP stack explicitly
+make stop-test                  # tear down just this worktree's PHP stack
 ```
 
-`make start` is now only for **browser use**: it brings up the full dev stack (Traefik,
+Prefer `/run-gates` over running these by hand — it scopes the gate to the diff and
+dispatches each command as a parallel subagent.
+
+`make start` is only for **browser use**: it brings up the full dev stack (Traefik,
 nginx, redis, minio, mailpit) and binds host ports, so it remains single-instance — run it
 in one worktree at a time.
 
@@ -166,6 +185,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Frontend unit tests (Vitest + RTL, apps/web + apps/admin) | `.ai/skills/integration-tests/SKILL.md` |
 | Run PHP quality locally (PHPStan / cs-fixer / deptrac) | `.ai/skills/lint-php/SKILL.md` |
 | Run JS quality locally (tsc / ESLint) | `.ai/skills/lint-js/SKILL.md` |
+| Running the verification gate (parallel subagents, scoped to diff) | `.ai/skills/run-gates/SKILL.md` |
 | **Bug Fixing** | |
 | Root-cause analysis (failing test, production error, bisect) | `.ai/skills/root-cause/SKILL.md` |
 | Implementing the minimal fix with regression test | `.ai/skills/fix/SKILL.md` |

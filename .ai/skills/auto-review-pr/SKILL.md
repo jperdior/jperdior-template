@@ -17,11 +17,8 @@ Review a PR end-to-end: check it out in a worktree, run the verification gate, r
    git worktree add .claude/worktrees/review-{N} origin/{headRefName}
    cd .claude/worktrees/review-{N}
    ```
-4. **Verification gate**:
-   ```sh
-   make lint && make test && make build-web
-   ```
-   Capture the result of each step. Run lint and test in parallel where possible.
+4. **Verification gate**: invoke `/run-gates`. It scopes gates to the diff and dispatches
+   each as a parallel subagent (lint/build gates standalone, `test-api` on the shared stack).
 5. **Run `/code-review`** on the diff (`git diff origin/{baseRefName}...HEAD`).
 6. **Compose review body** using the Code Review output format.
 7. **Decide verdict**:

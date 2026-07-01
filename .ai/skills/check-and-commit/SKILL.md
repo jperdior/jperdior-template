@@ -15,31 +15,21 @@ Invoke before starting this workflow:
 ## Workflow
 
 1. **Confirm scope**. Run `git status`, `git diff --stat`. If unrelated files are staged or there are surprises, ask the user.
-2. **Run the verification gate** in order:
-   ```sh
-   make lint-api
-   make lint-web
-   make test-api
-   make test-web
-   ```
-3. **If UI changed**, also run:
-   ```sh
-   make build-web
-   ```
-4. **Fix obvious problems**:
+2. **Run the verification gate** — invoke `/run-gates`. It scopes the gates to the diff and dispatches each as a parallel subagent (all lint/build gates standalone, only the PHP test gate `test-api` on the shared stack).
+3. **Fix obvious problems**:
    - Code-style issues → `make lint-fix`
    - Missing OpenAPI annotations → add them
    - Hardcoded strings the i18n linter caught → move to locale files
    - `any` types → narrow them
    - Cross-context import (deptrac fail) → replace with event or public application service
-5. **Re-run the gate**. Every step MUST exit 0.
-6. **Compose the commit**:
+4. **Re-run `/run-gates`**. Every gate MUST report PASS.
+5. **Compose the commit**:
    - One commit per logical change (or one per phase if implementing a spec).
    - Title format: `<type>(<context>): <summary>` (e.g. `feat(note): add CreateNoteController`).
    - Body: brief rationale + spec reference if applicable.
    - Use the project's commit-message conventions (Conventional Commits).
-7. **Commit**. NEVER use `--no-verify` unless the user explicitly asks. NEVER amend a pushed commit unless asked.
-8. **Push** if the user asked to push. Otherwise stop after committing.
+6. **Commit**. NEVER use `--no-verify` unless the user explicitly asks. NEVER amend a pushed commit unless asked.
+7. **Push** if the user asked to push. Otherwise stop after committing.
 
 ## Output
 
