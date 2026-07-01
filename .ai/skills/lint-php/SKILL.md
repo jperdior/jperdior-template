@@ -10,11 +10,15 @@ Run the full PHP lint suite that mirrors the `php-lint` CI job.
 ## CRITICAL: Always run inside Docker containers
 
 **Never** invoke `php`, `vendor/bin/phpstan`, or any PHP binary directly on the host machine.
-All PHP tooling runs inside the `jperdior-api-1` container via `make` targets.
+All PHP tooling runs inside an ephemeral `api` container via `make` targets.
 
 ## Worktree setup
 
-`make lint-api` auto-starts a headless, per-worktree test stack that mounts the worktree's code. No manual stack management is needed — the commands work from anywhere inside the worktree without `make start` or `make stop`.
+`make lint-api` runs **standalone** — no postgres, no shared stack. It's a single
+`docker compose run --rm --no-deps` invocation of the `api` image that mounts the
+worktree's code and reuses the per-worktree cached `api_vendor`/`api_var` volumes, so
+`composer install` is a fast no-op once populated. No manual stack management is needed —
+the command works from anywhere inside the worktree without `make start` or `make up-test`.
 
 ## Scope
 
@@ -39,17 +43,14 @@ This runs PHPStan + php-cs-fixer dry-run + deptrac inside the API container in o
 make lint-api   # includes PHPStan — check output for errors
 ```
 
-Or run only PHPStan via docker exec directly:
-
-```bash
-docker exec jperdior-api-1 php vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M --no-progress
-```
+There is no persistent, named `api` container to `docker exec` into for a standalone
+gate — each `make lint-api` run is a fresh ephemeral container. Isolate a single tool by
+adding a one-off target or by temporarily editing the `lint-api` recipe; don't reach for
+`docker exec <container-name>`, since standalone gates don't have one.
 
 ### 2 — php-cs-fixer (dry-run)
 
-```bash
-docker exec jperdior-api-1 php vendor/bin/php-cs-fixer fix --dry-run --diff
-```
+`make lint-api` includes a `php-cs-fixer fix --dry-run --diff` step.
 
 To auto-fix (only when the user says "fix it"):
 
@@ -59,9 +60,7 @@ make lint-fix
 
 ### 3 — deptrac
 
-```bash
-docker exec jperdior-api-1 php vendor/bin/deptrac analyse --no-progress
-```
+`make lint-api` includes a `deptrac analyse` step.
 
 ## Error handling
 

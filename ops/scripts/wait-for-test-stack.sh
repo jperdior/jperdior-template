@@ -1,7 +1,10 @@
 #!/bin/sh
-# Blocks until the headless test stack (postgres + api + web + admin) has finished
-# installing dependencies, then exits 0. Used by `make up-test` so the CI-gate
-# targets only run once the containers can actually serve `exec`'d commands.
+# Blocks until the headless PHP test stack (postgres + api) has finished installing
+# dependencies, then exits 0. Used by `make up-test` so the PHP CI-gate targets only
+# run once the api container can actually serve `exec`'d commands.
+#
+# The JS workspace gates (lint-web / test-web / build-web) run standalone in ephemeral
+# node containers and need nothing from this stack, so they are not waited on here.
 #
 # Readiness criteria:
 #   api    -> /tmp/stack-ready exists. The api startup command removes this sentinel
@@ -12,8 +15,6 @@
 #             (which then yields the dreaded `exec` Error 137). The sentinel lives
 #             on container-local /tmp and resets each start, so it tracks the
 #             outcome of *this* boot.
-#   web    -> apps/web/node_modules present (pnpm install finished)
-#   admin  -> apps/admin/node_modules present (pnpm install finished)
 #
 # The compose invocation is passed in via the DOCKER_COMPOSE_TEST env var (the
 # Makefile exports all variables), so this script targets the correct per-worktree
@@ -33,8 +34,6 @@ TIMEOUT="${STACK_WAIT_TIMEOUT:-600}"
 # service|ready-check-command (run inside the container via compose exec)
 SERVICES="
 api|test -f /tmp/stack-ready
-web|test -d /repo/apps/web/node_modules
-admin|test -d /repo/apps/admin/node_modules
 "
 
 # Current cumulative RestartCount for a service (0 if the container doesn't exist
@@ -168,4 +167,4 @@ if [ -n "$failed" ]; then
 fi
 
 echo ""
-echo "Test stack ready (deps installed): api, web, admin"
+echo "PHP test stack ready (deps installed): api"
