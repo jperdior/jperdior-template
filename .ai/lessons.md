@@ -57,3 +57,23 @@ Institutional memory of mistakes worth not repeating. One entry per lesson. Writ
 **Why**: the global `services.yaml` imports context-specific files — it doesn't define context internals. This keeps context wiring encapsulated and makes it easy to see what each context wires up.
 
 **How to apply**: when adding a new context, create `src/<Context>/Infrastructure/Symfony/Resources/config/services.yaml` with the alias, then add an `imports:` entry in `config/services.yaml`.
+
+---
+
+## L-008 — HTTP security guards do not apply to console commands
+
+**Don't** assume `#[IsGranted('ROLE_ADMIN')]` on a controller protects the underlying use case from console invocations. The Symfony Security component only fires for HTTP requests; a console command dispatching the same `CommandBus` command bypasses it entirely.
+
+**Why**: an admin-only use case that only checks the caller's role via the HTTP controller's `#[IsGranted]` attribute has no protection at all when invoked from `bin/console` — any console script can call it without restriction. This is intentional for trusted infrastructure scripts (seeders, migrations) but is a gap for anything reachable by an untrusted caller.
+
+**How to apply**: if a use case must enforce a role invariant regardless of caller (HTTP *or* console), add explicit role validation inside the use case itself (inject the repository needed to look up the acting user, check their roles, throw a typed `DomainException`). Do not rely solely on controller-level `#[IsGranted]`.
+
+---
+
+## L-009 — Cross-context `*Model` imports are allowed at the Persistence boundary
+
+Under `<Context>/Infrastructure/Persistence/Doctrine*Repository.php`, a repository MAY import `App\<OtherContext>\Infrastructure\Persistence\Doctrine\*Model::class` for the purpose of QueryBuilder JOIN expressions. The cross-context coupling stays at the Infrastructure layer only — Domain / Application / Presentation cross-context imports remain forbidden (L-003).
+
+**Why**: this avoids per-row or batched follow-up lookups (fetch an ID list, then a second query to resolve display data for each) when a single JOIN can populate a read-model DTO directly. Performance and clarity both win over a chain of N+1-shaped repository calls.
+
+**How to apply**: when adding a JOIN, import the other context's `*Model::class` and add a `skip_violations` entry in `apps/api/deptrac.yaml` listing the repository class and the specific import. Raw-SQL JOINs on table names are also permitted and need **no** `skip_violations` entry — deptrac sees PHP imports, not SQL strings. Prefer raw SQL when the repository is already DBAL-shaped rather than QueryBuilder-shaped.

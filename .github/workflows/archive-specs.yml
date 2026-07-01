@@ -1,0 +1,63 @@
+name: Archive Implemented Specs
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: archive-specs
+
+jobs:
+  archive-specs:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Find specs added in this PR
+        id: find-specs
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          NEW_SPECS=$(git diff --name-only --diff-filter=A "$BASE_SHA" HEAD -- '.ai/specs/*.md' \
+            | grep -v '^\.ai/specs/implemented/' \
+            | grep -v '/AGENTS\.md$' \
+            | grep -v '/CLAUDE\.md$' \
+            || true)
+          echo "specs<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$NEW_SPECS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Archive specs
+        if: steps.find-specs.outputs.specs != ''
+        run: |
+          while IFS= read -r spec; do
+            [ -z "$spec" ] && continue
+            filename=$(basename "$spec")
+            git mv "$spec" ".ai/specs/implemented/$filename"
+            echo "Archived: $spec"
+          done <<< "${{ steps.find-specs.outputs.specs }}"
+
+      # main is protected (PR + 1 approval + required status checks); this workflow's
+      # default GITHUB_TOKEN is not a bypass actor, so it cannot push directly to main
+      # like a naive `git push` would attempt. Open a PR instead — same pattern
+      # /auto-update-changelog uses for its docs-only PRs.
+      - name: Open archival PR
+        if: steps.find-specs.outputs.specs != ''
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(specs): archive implemented specs from PR #${{ github.event.pull_request.number }}"
+          title: "chore(specs): archive implemented specs from PR #${{ github.event.pull_request.number }}"
+          body: |
+            Automated: moves spec(s) implemented by #${{ github.event.pull_request.number }}
+            into `.ai/specs/implemented/`.
+          branch: archive-specs/pr-${{ github.event.pull_request.number }}
+          labels: documentation,skip-qa
+          delete-branch: true
