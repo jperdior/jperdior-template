@@ -41,6 +41,7 @@ services:
       # uses) so lock-guarded endpoints work without a redis dependency.
       LOCK_DSN: flock
     volumes:
+      - ./api/php-dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
       - ../../apps/api:/app/apps/api
       - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
       - composer_cache:/var/cache/composer
