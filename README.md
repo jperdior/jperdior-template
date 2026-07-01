@@ -69,7 +69,7 @@ The template ships a set of slash commands for Claude Code (and Codex) that alre
 
 The recommended flow for any non-trivial feature:
 
-1. `/new-feature feat/<slug>` — create a worktree + branch from main
+1. `/new-feature feat-<slug>` — create a worktree + branch from main
 2. `/spec-writing` — design the feature, produce a spec doc in `.ai/specs/` (auto-proceeds to audit)
 3. `/pre-implement-spec` — audit the spec for gaps, BC risks, and missing tests
 4. `/implement-spec` — implement from the approved spec, phase by phase (CI + code-review after each)

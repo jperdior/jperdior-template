@@ -22,15 +22,17 @@ To filter PHPUnit:
 make test-api ARG="--filter SignUpControllerTest"
 ```
 
-To run a single Vitest file, use `make up-test` first to ensure the headless test stack is running, then exec into the container via the test compose project:
+`make test-web` runs standalone (no postgres/api) — there's no persistent, named `web`/
+`admin` container to exec into for a single file. Run one-off files the same way the
+Makefile does, via an ephemeral container that reuses the cached `node_modules` volume:
 ```sh
-make up-test
-# web
-pnpm -C apps/web exec vitest run src/app/__tests__/smoke.test.tsx
-# admin
-pnpm -C apps/admin exec vitest run src/components/users/__tests__/PaginationControls.test.tsx
+docker compose --env-file .env.local -p <TEST_PROJECT_NAME> \
+  -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compose.test.yml \
+  run --rm --no-deps web \
+  sh -c 'corepack enable && corepack prepare pnpm@11.5.0 --activate && pnpm install --filter "@jperdior/web..." --filter "./packages/*" && pnpm -C apps/web exec vitest run src/app/__tests__/smoke.test.tsx'
 ```
-The test stack mounts the worktree's code automatically — no `make start` needed.
+Substitute `admin` / `apps/admin` for the admin app. `<TEST_PROJECT_NAME>` matches the
+Makefile's derivation (`jperdior-test-<worktree-dirname, with any + sanitized to ->`).
 
 ### Creating new tests
 

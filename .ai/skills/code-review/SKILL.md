@@ -54,20 +54,13 @@ After loading context (step 2), spawn the following subagents simultaneously. Ea
 
 ## CI Verification Gate (MANDATORY)
 
-**NEVER claim "ready to merge" without running every step.**
+**NEVER claim "ready to merge" without running every gate.**
 
-| # | Command | Checks | If it fails |
-|---|---------|--------|-------------|
-| 1 | `make lint-api` | PHPStan + cs-fixer + deptrac | Fix or flag as Critical |
-| 2 | `make lint-web` | tsc + ESLint | Fix or flag as Critical |
-| 3 | `make test-api` | PHPUnit unit + functional | Fix or flag as Critical |
-| 4 | `make test-web` | Vitest (apps/web + apps/admin) | Fix or flag as Critical |
-| 5 | `make build-web` | Production Next.js build | Fix or flag as Critical |
+Invoke `/run-gates`. It scopes the gates to the diff and dispatches each (`lint-api`, `test-api`, `lint-web`, `test-web`, `build-web`) as a parallel subagent — all lint/build gates standalone (no postgres/api), only the PHP test gate (`test-api`) on the shared test stack.
 
 Rules:
-- Run steps 1-2 and 3-4 in parallel to save time.
 - Every failure is a finding, even if "pre-existing on `main`". If it fails on the branch, CI fails. Fix it or flag it.
-- The review output MUST include actual pass/fail evidence.
+- The review output MUST include actual pass/fail evidence from `/run-gates`.
 
 ## Output Format
 

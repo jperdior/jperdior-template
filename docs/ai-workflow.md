@@ -96,7 +96,7 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 | `/new-feature` | Creates an isolated git worktree + branch from `main`. One worktree covers spec + implementation (no separate spec branch or spec PR). |
 | `/spec-writing` | Produces a `.ai/specs/{YYYY-MM-DD}-{slug}.md` with the full spec format. Committed locally, no spec-only PR. Auto-proceeds to `/pre-implement-spec`. |
 | `/pre-implement-spec` | Audits the local spec against the codebase using parallel specialized agents; flags gaps, BC risks, and missing tests; produces a Readiness Report. |
-| `/implement-spec` | Implements an approved spec phase by phase on the same `feat/<slug>` branch. Runs `/sync-context-docs`, CI gate, and `/code-review` per phase. Single PR at the end. |
+| `/implement-spec` | Implements an approved spec phase by phase on the same `feat-<slug>` branch. Runs `/sync-context-docs`, CI gate, and `/code-review` per phase. Single PR at the end. |
 | `/sync-context-docs` | Updates `AGENTS.md` files for every bounded context touched by the branch. Run per-phase inside `/implement-spec`. |
 | `/code-review` | Reviews the current branch diff using parallel specialized reviewer agents (architecture, security, frontend) and runs the CI gate simultaneously. |
 | `/open-pr` | Opens the single GitHub PR for the feature branch (spec + implementation). |
@@ -220,7 +220,7 @@ Short entries get read. Long entries get skipped.
 
 ```sh
 # Step 1 — Setup: create worktree from main
-/new-feature feat/add-notes
+/new-feature feat-add-notes
 
 # Step 2 — Design: write the spec locally, auto-audit
 # (spec-writing creates .ai/specs/{date}-add-notes.md, commits, runs pre-implement-spec)
@@ -235,7 +235,7 @@ Short entries get read. Long entries get skipped.
 #   Exit worktree
 #   sudo rm -rf .claude/worktrees/<name>
 #   git worktree prune
-#   git branch -d feat/add-notes
+#   git branch -d feat-add-notes
 #   make stop-test
 ```
 

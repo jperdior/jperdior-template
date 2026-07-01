@@ -10,9 +10,29 @@ DOCKER_COMPOSE := docker compose --env-file $(ENV_FILE) -p ${PROJECT_NAME} -f ${
 DOCKER_COMPOSE_ASYNC := $(DOCKER_COMPOSE) --profile async
 # Headless CI-gate stack: per-worktree project name + no host ports, so lint/test/build
 # run in any number of worktrees in parallel without `make start`. See docker-compose.test.yml.
-TEST_PROJECT_NAME := $(PROJECT_NAME)-test-$(notdir $(PWD))
+# `tr '+' '-'` guards against worktree dirnames containing `+` (e.g. a stray legacy
+# `feat/<slug>` branch, which some tooling renders as `feat+<slug>` on disk) — `+` is not
+# a valid Docker Compose project-name character.
+TEST_PROJECT_NAME := $(PROJECT_NAME)-test-$(shell echo $(notdir $(PWD)) | tr '+' '-')
 DOCKER_COMPOSE_TEST := docker compose --env-file $(ENV_FILE) -p $(TEST_PROJECT_NAME) -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.test.yml
 EXEC := exec -T
+
+# JS workspace gates run standalone in an ephemeral node container — they need no
+# postgres/api, only the cached per-worktree node_modules volumes. `run --rm --no-deps`
+# reuses those volumes, so `pnpm install` is a fast no-op when already satisfied.
+JS_RUN        := ${DOCKER_COMPOSE_TEST} run --rm --no-deps -T
+WEB_INSTALL   := corepack enable && corepack prepare pnpm@11.5.0 --activate && pnpm install --filter "@jperdior/web..." --filter "./packages/*"
+ADMIN_INSTALL := corepack enable && corepack prepare pnpm@11.5.0 --activate && pnpm install --filter "@jperdior/admin..." --filter "./packages/*"
+
+# PHP static-analysis gates (phpstan / php-cs-fixer / deptrac) likewise run standalone in
+# an ephemeral api container — they need no postgres, only the cached per-worktree
+# api_vendor + api_var volumes. `run --rm --no-deps` overrides the long-running startup
+# command (which would create/migrate the DB) with the gate command. PHP_INSTALL is a fast
+# no-op once api_vendor is populated; cache:warmup recompiles the dev container XML that
+# phpstan's symfony extension reads (kernel compilation needs no DB connection). Only the
+# PHP *test* gates (phpunit) need a live DB, hence `up-test`.
+PHP_RUN       := ${DOCKER_COMPOSE_TEST} run --rm --no-deps -T ${API_CONTAINER}
+PHP_INSTALL   := composer install --no-interaction --no-progress && php bin/console cache:warmup
 
 .EXPORT_ALL_VARIABLES:
 
@@ -65,8 +85,8 @@ restart: stop start ## Restart the stack
 
 # ----- Headless CI-gate stack (parallel-safe, no host ports, per-worktree) -----
 
-up-test: _ensure-volume-mountpoints ## Start the headless test stack (postgres+api+web+admin); installs deps; no host ports
-	@${DOCKER_COMPOSE_TEST} up -d postgres api web admin
+up-test: _ensure-volume-mountpoints ## Start the headless PHP test stack (postgres + api); installs deps; no host ports
+	@${DOCKER_COMPOSE_TEST} up -d postgres api
 	@sh ops/scripts/wait-for-test-stack.sh
 
 stop-test: ## Stop and remove this worktree's headless test stack
@@ -136,45 +156,46 @@ test-unit: up-test ## Run PHP unit tests only
 test-functional: up-test ## Run PHP functional tests only
 	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit --testsuite Functional ${ARG}
 
-test-web: up-test ## Run JS unit tests (web + admin containers)
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web test
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin test
+test-web: _ensure-volume-mountpoints ## Run JS unit tests (web + admin) — standalone, no postgres/api
+	@${JS_RUN} ${WEB_CONTAINER}   sh -c '${WEB_INSTALL} && pnpm -C apps/web test'
+	@${JS_RUN} ${ADMIN_CONTAINER} sh -c '${ADMIN_INSTALL} && pnpm -C apps/admin test'
 
 # ----- Lint / static analysis -----
 
-lint: up-test lint-shared-kernel lint-api lint-web ## Lint everything
+lint: _ensure-volume-mountpoints ## Lint everything — standalone, no postgres/api stack
+	@$(MAKE) lint-shared-kernel lint-api lint-web
 
-lint-shared-kernel: up-test ## PHPStan for packages/shared-kernel-php (runs inside API container)
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpstan analyse -c /app/packages/shared-kernel-php/phpstan.dist.neon --no-progress --memory-limit=512M
+lint-shared-kernel: _ensure-volume-mountpoints ## PHPStan for packages/shared-kernel-php — standalone, no postgres
+	@${PHP_RUN} sh -c '${PHP_INSTALL} && \
+		php vendor/bin/phpstan analyse -c /app/packages/shared-kernel-php/phpstan.dist.neon --no-progress --memory-limit=512M'
 
-lint-api: up-test ## PHPStan + php-cs-fixer dry-run + deptrac (apps/api)
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M ${ARG}
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/php-cs-fixer fix --dry-run --diff
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/deptrac analyse --no-progress
+lint-api: _ensure-volume-mountpoints ## PHPStan + php-cs-fixer dry-run + deptrac (apps/api) — standalone, no postgres
+	@${PHP_RUN} sh -c '${PHP_INSTALL} && \
+		php vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M ${ARG} && \
+		php vendor/bin/php-cs-fixer fix --dry-run --diff && \
+		php vendor/bin/deptrac analyse --no-progress'
 
-lint-fix: up-test ## Fix PHP code style
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/php-cs-fixer fix
+lint-fix: _ensure-volume-mountpoints ## Fix PHP code style — standalone, no postgres
+	@${PHP_RUN} sh -c '${PHP_INSTALL} && php vendor/bin/php-cs-fixer fix'
 
-lint-web: up-test ## Typecheck + ESLint on JS workspaces (runs inside web/admin containers)
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER}   pnpm -r --filter './apps/web' --filter './packages/*' typecheck
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin typecheck
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web lint
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin lint
+lint-web: _ensure-volume-mountpoints ## Typecheck + ESLint on JS workspaces — standalone, no postgres/api
+	@${JS_RUN} ${WEB_CONTAINER}   sh -c '${WEB_INSTALL} && pnpm -r --filter "./apps/web" --filter "./packages/*" typecheck && pnpm -C apps/web lint'
+	@${JS_RUN} ${ADMIN_CONTAINER} sh -c '${ADMIN_INSTALL} && pnpm -C apps/admin typecheck && pnpm -C apps/admin lint'
 
 # ----- Build -----
 
 build-api: up-test ## Build the API for production
 	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} composer install --no-dev --optimize-autoloader
 
-build-web: up-test ## Build web + admin for production (runs inside web/admin containers)
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER}   pnpm -C apps/web build
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${ADMIN_CONTAINER} pnpm -C apps/admin build
+build-web: _ensure-volume-mountpoints ## Build web + admin for production — standalone, no postgres/api
+	@${JS_RUN} ${WEB_CONTAINER}   sh -c '${WEB_INSTALL} && pnpm -C apps/web build'
+	@${JS_RUN} ${ADMIN_CONTAINER} sh -c '${ADMIN_INSTALL} && pnpm -C apps/admin build'
 
 # ----- OpenAPI / TS client -----
 
 gen-api: up-test ## Regenerate TS client from API OpenAPI spec
 	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console nelmio:apidoc:dump --format=json > apps/api/openapi.json
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${WEB_CONTAINER} pnpm -C packages/api-client-ts gen
+	@${JS_RUN} ${WEB_CONTAINER} sh -c '${WEB_INSTALL} && pnpm -C packages/api-client-ts gen'
 
 # ----- JWT keys -----
 

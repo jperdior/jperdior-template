@@ -35,8 +35,12 @@ COPY apps/api/composer.json apps/api/composer.lock* apps/api/symfony.lock* ./app
 COPY packages/shared-kernel-php ./packages/shared-kernel-php
 
 # Install vendor without scripts/auto-scripts (cache:clear needs the source).
-RUN cd apps/api \
-    && composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
+# Cache mount persists the Composer cache across builds so re-installs are fast even
+# when composer.json changes bust the layer cache.
+RUN --mount=type=cache,target=/tmp/composer-cache \
+    cd apps/api \
+    && COMPOSER_CACHE_DIR=/tmp/composer-cache \
+       composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
 
 # Copy source and finalize autoload.
 COPY apps/api/bin ./apps/api/bin
@@ -59,7 +63,10 @@ COPY --from=builder /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 
 # Production php.ini (overridable via volume in dev).
 COPY ops/docker/api/php.ini /usr/local/etc/php/conf.d/zz-app.ini
-COPY ops/docker/api/php-fpm.conf /usr/local/etc/php-fpm.d/zz-app.conf
+# zzz- prefix: must sort after the base image's zz-docker.conf so our pool config
+# (notably `listen`) wins — FPM applies pool .conf includes alphabetically, and
+# zz-app.conf would sort *before* zz-docker.conf and be silently overridden.
+COPY ops/docker/api/php-fpm.conf /usr/local/etc/php-fpm.d/zzz-app.conf
 
 # Composer present in runtime too — dev workflow runs `composer install` inside the container.
 COPY --from=composer /usr/bin/composer /usr/bin/composer

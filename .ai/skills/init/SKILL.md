@@ -43,7 +43,7 @@ Config:
 Ready to work:
   make test               — run tests (auto-starts headless stack)
   make lint               — run quality checks
-  /new-feature feat/<slug>  — create a worktree + branch for your first feature
+  /new-feature feat-<slug>  — create a worktree + branch for your first feature
   /spec-writing             — design your first feature spec-first (recommended)
 
 Need a browser preview?

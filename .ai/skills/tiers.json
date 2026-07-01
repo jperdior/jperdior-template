@@ -24,7 +24,8 @@
         "regenerate-api-client",
         "new-feature",
         "init",
-        "customize-project"
+        "customize-project",
+        "run-gates"
       ]
     },
     "automation": {

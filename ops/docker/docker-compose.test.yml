@@ -6,13 +6,17 @@ name: ${COMPOSE_PROJECT_NAME:-jperdior}
 #
 # Differences from the dev overlay (docker-compose.dev.yml):
 #   - Publishes NO host ports → any number of worktrees run lint/test/build at once.
-#   - No Traefik / nginx / redis / minio / mailpit / rabbitmq — only the four
-#     containers that lint/test/build `exec` into: postgres, api, web, admin.
-#   - Containers idle (`sleep infinity`) instead of running dev servers; targets
-#     `exec` CLIs (phpunit, phpstan, pnpm ...) into them.
+#   - No Traefik / nginx / redis / minio / mailpit / rabbitmq.
+#   - `postgres` + `api` are brought up persistently by `make up-test` (the only
+#     DB-backed gates: test-api, build-api, migrate*, gen-api, jwt-keys, db-create).
+#     `api` idles (`sleep infinity`); DB-backed targets `exec` into it.
+#   - `web` / `admin` are never started persistently — the standalone gates
+#     (lint-web, test-web, build-web, and gen-api's frontend step) run them via
+#     `docker compose run --rm --no-deps`, a fresh ephemeral container per invocation
+#     that reuses the same per-worktree cached node_modules volumes below.
 #   - Per-worktree volumes also eliminate stale vendor / .next cross-worktree caches.
 #
-# Used via the Makefile:  make up-test  ->  docker compose -p <worktree> -f base -f test up -d postgres api web admin
+# Used via the Makefile:  make up-test  ->  docker compose -p <worktree> -f base -f test up -d postgres api
 #
 # Note: uses Compose-spec !reset / !override to neutralize stanzas inherited from the
 # base file (Compose v2.24+ required, same as the dev overlay).
@@ -37,6 +41,7 @@ services:
       # uses) so lock-guarded endpoints work without a redis dependency.
       LOCK_DSN: flock
     volumes:
+      - ./api/php-dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
       - ../../apps/api:/app/apps/api
       - ../../packages/shared-kernel-php:/app/packages/shared-kernel-php
       - composer_cache:/var/cache/composer
@@ -50,12 +55,22 @@ services:
       - sh
       - -c
       - |
+        # /tmp/stack-ready is the readiness sentinel polled by wait-for-test-stack.sh.
+        # Removed at the start of every (re)start and only re-created once startup
+        # fully succeeds, so a crash during composer install / migrations (e.g. a
+        # PHP error) leaves it absent — the wait script then never false-reports
+        # "ready" on a crash-looping container. A file-check on vendor/autoload.php
+        # would be unreliable here: vendor is a persisted named volume, so it
+        # survives a crash and would "pass" on a crash-looping container. /tmp is
+        # container-local (not a volume), so it resets on every container start.
+        rm -f /tmp/stack-ready
         set -e
         mkdir -p var/cache var/log
         composer install --no-interaction --no-progress
         php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction || true
         php bin/console doctrine:database:create --if-not-exists --no-interaction || true
         php bin/console doctrine:migrations:migrate --no-interaction || true
+        touch /tmp/stack-ready
         exec sleep infinity
 
   web:
@@ -90,8 +105,7 @@ services:
     build: !reset
     image: node:22-alpine
     ports: !reset []
-    depends_on: !override
-      web: { condition: service_completed_successfully }
+    depends_on: !reset []
     environment:
       NODE_ENV: development
       CI: "true"

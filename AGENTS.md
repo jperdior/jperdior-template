@@ -1,5 +1,17 @@
 # Agents Guidelines
 
+## INVARIANT — Always refresh main before branching
+
+**Before creating any new branch or worktree (via `/new-feature`, `git checkout -b`, or any other method), you MUST first:**
+
+1. `git fetch origin` — ensure `origin/main` is current.
+2. `git checkout main && git pull origin main` — bring local `main` up to date.
+3. Then branch from the updated `main`.
+
+**Violating this invariant** means the new branch starts from a stale base, which causes avoidable rebase conflicts, duplicate work, and force-push churn. This is a **Critical** error — do not make it.
+
+This rule applies even if you think main hasn't changed. Always fetch first, always verify.
+
 This is a **spec-driven, AI-engineered monorepo template**. PHP 8.4 + Symfony 7.4 API (DDD + Hexagonal + CQRS) plus Next.js 15 frontends, with the AI harness ported from open-mercato.
 
 Leverage the bounded-context system and follow strict naming and coding conventions to keep the system consistent and safe to extend.
@@ -80,26 +92,53 @@ make migrate-diff  # generates a Doctrine migration diff
 
 ### Worktree container workflow
 
-`make test`, `make lint`, `make build-web`, `make migrate-diff`, `make gen-api` (and the
-other CLI targets) run against a **headless, per-worktree test stack** that auto-starts on
-first use — you do **not** need `make start`. The stack:
+Gates split by whether they need a live database:
+
+- **Standalone gates — no postgres/api** (`docker compose run --rm --no-deps` in an
+  ephemeral container, reusing only the cached per-worktree volumes):
+  - **PHP static analysis** (`make lint-api`, `make lint-shared-kernel`, `make lint-fix`, and
+    the `make lint` aggregate) — phpstan / php-cs-fixer / deptrac in an ephemeral **api**
+    container. `composer install` is a fast no-op once `api_vendor` is populated;
+    `cache:warmup` recompiles the dev container XML phpstan reads (kernel compilation opens
+    no DB connection).
+  - **Frontend** (`make lint-web`, `make test-web`, `make build-web`) in ephemeral
+    `node:22-alpine` containers, reusing the cached `node_modules` volumes.
+  - This is why a lint-only or JS-only change never pays for the PHP stack.
+- **DB-backed gates — require the headless test stack** (`make test-api`, `make test`,
+  `make migrate-diff`, `make gen-api`, `make migrate`) auto-start a **headless, per-worktree
+  test stack** (postgres + api) on first use — no `make start` needed.
+
+The shared PHP stack (only the DB-backed gates use it):
 
 - is named per worktree (`<project>-test-<worktree-dir>`), so every worktree gets its own
-  isolated containers + volumes (no stale vendor / `.next` across worktrees);
-- publishes **no host ports**, so any number of worktrees run the CI gate in parallel with
+  isolated containers + volumes (no stale vendor across worktrees);
+- publishes **no host ports**, so any number of worktrees run the gate in parallel with
   zero port conflicts;
 - mounts the worktree's code, so it always validates the right tree.
 
 ```bash
-# From anywhere inside the worktree — auto-starts the headless stack on first run:
-make lint && make test          # CI gate, parallel-safe, no `make start` needed
-make up-test                    # (optional) start/refresh the stack explicitly
-make stop-test                  # tear down just this worktree's headless stack
+# From anywhere inside the worktree:
+make lint && make test          # full CI gate, parallel-safe, no `make start` needed
+make test-web                   # JS unit tests only — standalone, no db/api
+make lint-web                   # JS typecheck + ESLint only — standalone, no db/api
+make up-test                    # (optional) start/refresh the PHP stack explicitly
+make stop-test                  # tear down just this worktree's PHP stack
 ```
 
-`make start` is now only for **browser use**: it brings up the full dev stack (Traefik,
+Prefer `/run-gates` over running these by hand — it scopes the gate to the diff and
+dispatches each command as a parallel subagent.
+
+`make start` is only for **browser use**: it brings up the full dev stack (Traefik,
 nginx, redis, minio, mailpit) and binds host ports, so it remains single-instance — run it
 in one worktree at a time.
+
+### Crash self-diagnosis
+
+When a test-stack container crashes on a PHP error (parse/fatal/autowire), the CI-gate
+output now self-reports the cause within seconds — no more 600s silent timeout. If your
+`make lint-api` or `make test` output shows a `PHP CODE ERROR — NOT OOM` banner, read
+the PHP error above it, fix it, and re-run. Do NOT raise memory limits unless the banner
+says `TRUE OOM` (exit code 137 alone is **not** OOM).
 
 ### Pre-PR gate (mandatory)
 
@@ -141,7 +180,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Workflow** | |
 | First-time project customization (rename placeholders, add project context) | `.ai/skills/customize-project/SKILL.md` |
 | First-time local setup (hosts, .env.local, project personalization) | `.ai/skills/init/SKILL.md` |
-| Starting an implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — one `feat/<slug>` worktree covers spec + implementation |
+| Starting an implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — one `feat-<slug>` worktree covers spec + implementation |
 | Committing and pushing with CI gate | `.ai/skills/check-and-commit/SKILL.md` |
 | **Specs & PR Automation** | |
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
@@ -158,14 +197,17 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Frontend unit tests (Vitest + RTL, apps/web + apps/admin) | `.ai/skills/integration-tests/SKILL.md` |
 | Run PHP quality locally (PHPStan / cs-fixer / deptrac) | `.ai/skills/lint-php/SKILL.md` |
 | Run JS quality locally (tsc / ESLint) | `.ai/skills/lint-js/SKILL.md` |
+| Running the verification gate (parallel subagents, scoped to diff) | `.ai/skills/run-gates/SKILL.md` |
 | **Bug Fixing** | |
 | Root-cause analysis (failing test, production error, bisect) | `.ai/skills/root-cause/SKILL.md` |
 | Implementing the minimal fix with regression test | `.ai/skills/fix/SKILL.md` |
+| Urgent minimal fix to a merged PR (root cause already known) | Hotfix path below — `git checkout -b fix-<slug>` directly from main, no worktree |
 | Security audit (OWASP, attack vectors) | `.ai/skills/auto-sec-report/SKILL.md` |
 | **Ops** | |
 | Docker, compose, K8s | `docs/ops.md` + `ops/AGENTS.md` |
 | CI / GitHub Actions | `.github/workflows/ci.yml` — lint + test + build on every push |
 | | `.github/workflows/release.yml` — release workflow |
+| | `.github/workflows/archive-specs.yml` — archives implemented specs on PR merge |
 | | `.github/workflows/skills-tiers-lint.yml` — validates skills tiers.json |
 
 ## Core Principles
@@ -181,13 +223,13 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 ```
 Step 1 — Create worktree
-  /new-feature feat/<slug>     ← one worktree covers both spec and implementation
+  /new-feature feat-<slug>     ← one worktree covers both spec and implementation
 
 Step 2 — Design (inside the worktree)
-  /spec-writing                ← draft spec locally (committed to feat/<slug>, no separate spec PR)
+  /spec-writing                ← draft spec locally (committed to feat-<slug>, no separate spec PR)
   /pre-implement-spec .ai/specs/{file}.md   ← readiness report; fix gaps before coding
 
-Step 3 — Implement (all on the same feat/<slug> branch, one PR at the end)
+Step 3 — Implement (all on the same feat-<slug> branch, one PR at the end)
   /implement-spec .ai/specs/{file}.md       ← phase by phase, CI + code-review gate after each
                                              ← sync-context-docs runs per-phase as part of /implement-spec
   /open-pr                     ← single PR to main (includes spec + code)
@@ -196,7 +238,7 @@ Step 4 — Clean up (after PR merges)
   Exit worktree                ← or cd to main repo root
   sudo rm -rf .claude/worktrees/<name>
   git worktree prune
-  git branch -d feat/<slug>
+  git branch -d feat-<slug>
   make stop-test               ← tear down the headless test stack
 ```
 
@@ -210,6 +252,30 @@ Step 4 — Clean up (after PR merges)
 ```
 
 Security findings from `/auto-sec-report` can also hand off to `/fix` with the report.
+
+**Hotfix path (urgent fix — root cause already known, change is ≤ 3 files, no spec needed):**
+
+```
+# 1. Ensure main is current
+git fetch origin
+git checkout main && git pull origin main
+
+# 2. Branch directly — no worktree needed for minimal fixes
+git checkout -b fix-<slug>
+
+# 3. Apply the minimal change
+# (edit the affected file(s))
+
+# 4. Run the smallest relevant gate — don't over-validate
+#    Frontend-only:  make build-web
+#    Backend-only:   make lint-api && make test-api ARG="--filter <Context>"
+#    Full:           make lint && make test
+```
+
+Reuses the existing `/fix` and `/root-cause` skills as-is; this path only documents the
+shortcut of skipping the worktree + spec ceremony when the root cause is already known and
+the blast radius is small. For anything touching more than 3 files, more than one bounded
+context, or requiring investigation, use the full Bug-fixing path above instead.
 
 **Short path (small, already-specified addition where a full spec is overhead):**
 
@@ -242,7 +308,7 @@ git push origin v<version>            ← release.yml extracts the `[v<version>]
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
-| `/new-feature` | Setup | Creates a `feat/<slug>` worktree+branch from `main`. Called **once** per feature. |
+| `/new-feature` | Setup | Creates a `feat-<slug>` worktree+branch from `main`. Called **once** per feature. |
 | `/spec-writing` | Design | Drafts the spec locally on the feature branch. Does **not** open a spec-only PR. |
 | `/pre-implement-spec` | Audit | Audits the local spec for gaps, missing tests, BC risks. Verdict must be "ready" before coding starts. |
 | `/implement-spec` | Implement | Executes the spec phase by phase; runs the CI gate after each phase. |

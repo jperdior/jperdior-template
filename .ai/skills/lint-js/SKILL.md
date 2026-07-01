@@ -10,11 +10,15 @@ Run the full JS/TS lint suite that mirrors the `js-lint` CI job.
 ## CRITICAL: Always run inside Docker containers
 
 **Never** invoke `pnpm`, `tsc`, or `eslint` directly on the host machine.
-All JS tooling runs inside the `jperdior-web-1` / `jperdior-admin-1` containers via `make` targets.
+All JS tooling runs inside ephemeral `web` / `admin` containers via `make` targets.
 
 ## Worktree setup
 
-`make lint-web` auto-starts a headless, per-worktree test stack that mounts the worktree's code. No manual stack management is needed — the commands work from anywhere inside the worktree without `make start` or `make stop`.
+`make lint-web` runs **standalone** — no postgres, no api, no shared stack. It's two
+`docker compose run --rm --no-deps` invocations (one per app) that mount the worktree's
+code and reuse the per-worktree cached `node_modules` volumes, so `pnpm install` is a fast
+no-op once populated. No manual stack management is needed — the command works from
+anywhere inside the worktree without `make start` or `make up-test`.
 
 ## Scope
 
@@ -33,19 +37,11 @@ This runs typecheck + ESLint for all apps inside the correct containers.
 
 ## Step-by-step (if you need to isolate a failure)
 
-### TypeScript (all apps + packages)
-
-```bash
-docker exec jperdior-web-1 pnpm -r --filter './apps/web' --filter './packages/*' typecheck
-docker exec jperdior-admin-1 pnpm -C apps/admin typecheck
-```
-
-### ESLint (apps only)
-
-```bash
-docker exec jperdior-web-1 pnpm -C apps/web lint
-docker exec jperdior-admin-1 pnpm -C apps/admin lint
-```
+There is no persistent, named `web`/`admin` container to `docker exec` into for a
+standalone gate — each `make lint-web` run is a fresh ephemeral container per app.
+`make lint-web` already runs typecheck then lint for each app in sequence; isolate a
+failure by reading which of the two `${JS_RUN}` lines in the Makefile's `lint-web` target
+failed, not by exec-ing into a container that no longer persists.
 
 ## Error handling
 
