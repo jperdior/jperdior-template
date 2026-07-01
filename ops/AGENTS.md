@@ -48,6 +48,35 @@ ops/
 - **Dev overlay** uses `!reset` (Compose v2.24+) to neutralize the base `build:` for web/admin so they run as plain `node:22-alpine` with `pnpm dev`. The PHP services keep their build but mount source over `/app`.
 - The Makefile composes `-f base -f dev` for `make start`.
 
+## Test stack crash self-diagnosis
+
+The headless test stack (`wait-for-test-stack.sh`) detects a crash-looping
+container within a few seconds (≈2 restart cycles) instead of hanging for the full
+600s timeout. Readiness is gated on a `/tmp/stack-ready` sentinel the api startup
+writes only after composer install + migrations succeed, so a crashed container is
+never mistaken for "ready" (a `vendor/bin/phpstan` file-check would false-pass
+because vendor is a persisted named volume → the dreaded `exec` Error 137). When a
+service crashes during startup:
+
+1. The crashed container's logs are dumped (last 80 lines).
+2. The root cause is classified:
+   - **TRUE OOM** only when `State.OOMKilled=true`.
+   - **PHP memory_limit exhausted** when the PHP memory exhaustion message appears.
+   - **PHP CODE ERROR** for parse/fatal/autowire errors — **NOT OOM**.
+   - Generic fallback for unexpected exits.
+3. `make lint-api` / `make test` output is self-diagnosing: read the banner,
+   fix the PHP error, re-run. Do NOT raise memory limits unless the banner says
+   `TRUE OOM`. Exit code 137 alone is **not** OOM.
+
+Crash detection is keyed on `RestartCount` (all test services use
+`restart: unless-stopped`), baselined per run so a crash-loop left over from a
+previous `make lint-api` (which does not tear the stack down) is not mistaken for a
+fresh crash — and a container recovering after you fix the error (exactly one
+restart) is not falsely flagged.
+
+This applies to the CI-gate path (`make lint`, `make test`, `make lint-api`,
+etc.) through `make up-test`. The dev stack (`make start`) is not affected.
+
 ## Validation Commands
 
 ```bash

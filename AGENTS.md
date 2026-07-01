@@ -101,6 +101,14 @@ make stop-test                  # tear down just this worktree's headless stack
 nginx, redis, minio, mailpit) and binds host ports, so it remains single-instance — run it
 in one worktree at a time.
 
+### Crash self-diagnosis
+
+When a test-stack container crashes on a PHP error (parse/fatal/autowire), the CI-gate
+output now self-reports the cause within seconds — no more 600s silent timeout. If your
+`make lint-api` or `make test` output shows a `PHP CODE ERROR — NOT OOM` banner, read
+the PHP error above it, fix it, and re-run. Do NOT raise memory limits unless the banner
+says `TRUE OOM` (exit code 137 alone is **not** OOM).
+
 ### Pre-PR gate (mandatory)
 
 Before offering to create a PR or push a branch, **always** run and confirm both pass:
