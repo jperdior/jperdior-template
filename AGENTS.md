@@ -141,7 +141,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Workflow** | |
 | First-time project customization (rename placeholders, add project context) | `.ai/skills/customize-project/SKILL.md` |
 | First-time local setup (hosts, .env.local, project personalization) | `.ai/skills/init/SKILL.md` |
-| Starting an implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — one `feat/<slug>` worktree covers spec + implementation |
+| Starting an implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — one `feat-<slug>` worktree covers spec + implementation |
 | Committing and pushing with CI gate | `.ai/skills/check-and-commit/SKILL.md` |
 | **Specs & PR Automation** | |
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
@@ -181,13 +181,13 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 ```
 Step 1 — Create worktree
-  /new-feature feat/<slug>     ← one worktree covers both spec and implementation
+  /new-feature feat-<slug>     ← one worktree covers both spec and implementation
 
 Step 2 — Design (inside the worktree)
-  /spec-writing                ← draft spec locally (committed to feat/<slug>, no separate spec PR)
+  /spec-writing                ← draft spec locally (committed to feat-<slug>, no separate spec PR)
   /pre-implement-spec .ai/specs/{file}.md   ← readiness report; fix gaps before coding
 
-Step 3 — Implement (all on the same feat/<slug> branch, one PR at the end)
+Step 3 — Implement (all on the same feat-<slug> branch, one PR at the end)
   /implement-spec .ai/specs/{file}.md       ← phase by phase, CI + code-review gate after each
                                              ← sync-context-docs runs per-phase as part of /implement-spec
   /open-pr                     ← single PR to main (includes spec + code)
@@ -196,7 +196,7 @@ Step 4 — Clean up (after PR merges)
   Exit worktree                ← or cd to main repo root
   sudo rm -rf .claude/worktrees/<name>
   git worktree prune
-  git branch -d feat/<slug>
+  git branch -d feat-<slug>
   make stop-test               ← tear down the headless test stack
 ```
 
@@ -242,7 +242,7 @@ git push origin v<version>            ← release.yml extracts the `[v<version>]
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
-| `/new-feature` | Setup | Creates a `feat/<slug>` worktree+branch from `main`. Called **once** per feature. |
+| `/new-feature` | Setup | Creates a `feat-<slug>` worktree+branch from `main`. Called **once** per feature. |
 | `/spec-writing` | Design | Drafts the spec locally on the feature branch. Does **not** open a spec-only PR. |
 | `/pre-implement-spec` | Audit | Audits the local spec for gaps, missing tests, BC risks. Verdict must be "ready" before coding starts. |
 | `/implement-spec` | Implement | Executes the spec phase by phase; runs the CI gate after each phase. |

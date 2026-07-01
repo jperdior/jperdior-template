@@ -21,13 +21,13 @@ Invoke before starting this workflow:
 
 ## Prerequisites
 
-- The spec exists under `.ai/specs/` on the current `feat/<slug>` branch (committed locally).
+- The spec exists under `.ai/specs/` on the current `feat-<slug>` branch (committed locally).
 - The spec passed `/pre-implement-spec` with verdict = ready.
 If any precondition fails, stop and inform the user.
 
 ## Workflow
 
-All phases are implemented on the same `feat/<slug>` branch (created by `/new-feature`). A single PR covers spec + all phases.
+All phases are implemented on the same `feat-<slug>` branch (created by `/new-feature`). A single PR covers spec + all phases.
 
 ### For each phase:
 
@@ -61,7 +61,7 @@ All phases are implemented on the same `feat/<slug>` branch (created by `/new-fe
    - Exit the worktree (`ExitWorktree` tool if available, otherwise `cd` to main repo root).
    - Delete the worktree: `sudo rm -rf .claude/worktrees/<name>` (Docker may have created root-owned files).
    - Run `git worktree prune` from the main repo.
-   - Delete the local branch: `git branch -d feat/<slug>`.
+   - Delete the local branch: `git branch -d feat-<slug>`.
    - Run `make stop-test` (tear down this worktree's headless test stack).
 
 ## Subagent Strategy
@@ -120,13 +120,13 @@ End of each phase:
 After all phases:
 
 ```
-✅ All phases complete on branch `feat/<slug>`.
+✅ All phases complete on branch `feat-<slug>`.
    Next step: /sync-context-docs → /code-review → /open-pr
 
    Cleanup after merge:
    1. Exit worktree
    2. sudo rm -rf .claude/worktrees/<name>
    3. git worktree prune
-   4. git branch -d feat/<slug>
+   4. git branch -d feat-<slug>
    5. make stop-test
 ```

@@ -10,7 +10,10 @@ DOCKER_COMPOSE := docker compose --env-file $(ENV_FILE) -p ${PROJECT_NAME} -f ${
 DOCKER_COMPOSE_ASYNC := $(DOCKER_COMPOSE) --profile async
 # Headless CI-gate stack: per-worktree project name + no host ports, so lint/test/build
 # run in any number of worktrees in parallel without `make start`. See docker-compose.test.yml.
-TEST_PROJECT_NAME := $(PROJECT_NAME)-test-$(notdir $(PWD))
+# `tr '+' '-'` guards against worktree dirnames containing `+` (e.g. a stray legacy
+# `feat/<slug>` branch, which some tooling renders as `feat+<slug>` on disk) — `+` is not
+# a valid Docker Compose project-name character.
+TEST_PROJECT_NAME := $(PROJECT_NAME)-test-$(shell echo $(notdir $(PWD)) | tr '+' '-')
 DOCKER_COMPOSE_TEST := docker compose --env-file $(ENV_FILE) -p $(TEST_PROJECT_NAME) -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.test.yml
 EXEC := exec -T
 

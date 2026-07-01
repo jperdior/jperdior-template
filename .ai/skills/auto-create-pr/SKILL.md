@@ -61,15 +61,15 @@ Execute a user-described task autonomously and open a GitHub PR. Resumable via `
 2. **Create a run folder**: `.ai/runs/{YYYY-MM-DD}-{slug}/` with:
    - `PLAN.md` — task description, file list, step-by-step plan
    - `HANDOFF.md` — current step + open todos (resumable)
-3. **Ensure we're on a feature branch** — check if already inside a `feat/<slug>` worktree (from `/new-feature`):
+3. **Ensure we're on a feature branch** — check if already inside a `feat-<slug>` worktree (from `/new-feature`):
    ```sh
    BRANCH=$(git branch --show-current)
    GIT_DIR=$(cd "$(git rev-parse --git-dir)" && pwd -P)
    GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
-   if [[ "$BRANCH" == feat/* && "$GIT_DIR" != "$GIT_COMMON" ]]; then
-     echo "Already in feat/<slug> worktree — reusing."
+   if [[ "$BRANCH" == feat-* && "$GIT_DIR" != "$GIT_COMMON" ]]; then
+     echo "Already in feat-<slug> worktree — reusing."
    else
-     git worktree add .claude/worktrees/{slug} -b feat/{slug}
+     git worktree add .claude/worktrees/{slug} -b feat-{slug}
      cd .claude/worktrees/{slug}
    fi
    ```
@@ -85,7 +85,7 @@ Execute a user-described task autonomously and open a GitHub PR. Resumable via `
 7. **Commit** in logical chunks (one commit per phase if multi-step).
 8. **Push**:
    ```sh
-   git push -u origin feat/{slug}
+   git push -u origin feat-{slug}
    ```
 9. **Open the PR** with `gh pr create` using a HEREDOC body:
    ```sh
@@ -159,7 +159,7 @@ The user (or a subsequent `auto-continue-pr` invocation) can resume from `HANDOF
 
 ```
 ✅ PR opened: {URL}
-   Branch: feat/{slug}
+   Branch: feat-{slug}
    Worktree: .claude/worktrees/{slug}
    Steps completed: {N}/{M}
    Pipeline label: review

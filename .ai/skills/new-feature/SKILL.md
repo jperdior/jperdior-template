@@ -7,7 +7,7 @@ description: Create an isolated git worktree on a new branch from main and enter
 
 Spin up an isolated worktree from `main` so the feature has its own branch and working tree without touching the main checkout.
 
-> **This skill is called once per feature.** The same `feat/<slug>` worktree is used for both spec writing and implementation — no separate spec branch or spec-only PR is needed.
+> **This skill is called once per feature.** The same `feat-<slug>` worktree is used for both spec writing and implementation — no separate spec branch or spec-only PR is needed.
 
 ## Superpowers Integration
 
@@ -19,19 +19,23 @@ Invoke before starting this workflow:
 ## Workflow
 
 1. **Get the feature name** from the user's message or ask if not clear enough to derive a branch name.
-2. **Derive the branch name**: `feat/<kebab-case-description>` (max ~40 chars, no special chars except `-`). **Do not ask for confirmation** — just pick the name and go.
-3. **Create the worktree** using `EnterWorktree` with the derived name. This creates `.claude/worktrees/<name>` on a new branch and enters it.
-4. **Report** the branch name, worktree path, and the correct next steps.
+2. **Derive the branch name**: `feat-<kebab-case-description>` (max ~40 chars, lowercase alphanumeric + hyphens only — no `/` or `+`, which break Docker Compose project names derived from `$(notdir $(PWD))`). **Do not ask for confirmation** — just pick the name and go.
+3. **Refresh `main` before branching**: run `git fetch origin` so the worktree's base ref is current. `EnterWorktree`'s default `fresh` base ref branches from `origin/<default-branch>` **as of the last fetch** — without this step the new branch can silently start from a stale `main`.
+4. **Create the worktree** using `EnterWorktree` with the derived name. This creates `.claude/worktrees/<name>` on a new branch and enters it.
+5. **No container startup needed**: `make test` / `make lint` / `make build-web` auto-start what each gate actually needs — no `make start` required. (`make start` is only for browser use.)
+6. **Report** the branch name, worktree path, and the correct next steps.
 
 ## Branch naming
 
 | User says | Branch name |
 |-----------|-------------|
-| "campaign bounded context" | `feat/campaign-bounded-context` |
-| "billing feature" | `feat/billing` |
-| "fix the login redirect" | `feat/fix-login-redirect` |
+| "campaign bounded context" | `feat-campaign-bounded-context` |
+| "billing feature" | `feat-billing` |
+| "fix the login redirect" | `feat-fix-login-redirect` |
 
-Always use lowercase kebab-case. Strip articles (a, an, the). Truncate at 40 chars.
+Always use lowercase kebab-case with hyphens (no `/` — it becomes `+` in the worktree
+path, which breaks Docker Compose project names). Strip articles (a, an, the).
+Truncate at 40 chars.
 
 ## Rules
 
@@ -43,8 +47,8 @@ Always use lowercase kebab-case. Strip articles (a, an, the). Truncate at 40 cha
 ## Output
 
 ```
-Worktree ready on branch `feat/<name>`.
-Path: .claude/worktrees/<name>
+Worktree ready on branch `feat-<name>`.
+Path: .claude/worktrees/feat-<name>
 
 Next steps:
 1. /spec-writing                              ← draft spec locally on this branch

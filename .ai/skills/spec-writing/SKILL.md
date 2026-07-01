@@ -41,12 +41,12 @@ Agent({
 4. **Apply Answers**: remove the Open Questions block and fill the skeleton.
 5. **Research**: when relevant, compare against open-source leaders / RFCs / Symfony recipes. Quote evidence.
 6. **Design**: write the Architecture, Data Models, API Contracts sections. For every aggregate, declare which **bounded context** it lives in. For every endpoint, declare which **bus** it dispatches to. For every cross-context need, declare the **domain event** or **public application service** used (NOT a direct import).
-7. **Phasing**: break delivery into testable phases. Each phase ends with `make test` passing and a working app. All phases ship together in a single PR (the spec commits as the first commit, then phases accumulate on the same `feat/<slug>` branch). Define phases at a granularity that is independently reviewable and leaves the app in a valid state at each checkpoint.
+7. **Phasing**: break delivery into testable phases. Each phase ends with `make test` passing and a working app. All phases ship together in a single PR (the spec commits as the first commit, then phases accumulate on the same `feat-<slug>` branch). Define phases at a granularity that is independently reviewable and leaves the app in a valid state at each checkpoint.
 8. **Risks & Impact**: document concrete failure scenarios (severity, affected area, mitigation, residual risk).
 9. **Integration Coverage**: list the PHPUnit Functional tests (API) and Vitest + RTL tests (apps/web, apps/admin) that must exist for the new behaviour.
 10. **Compliance Gate**: apply [references/compliance-gate.md](references/compliance-gate.md).
 11. **Output**: finalise the spec. If any new business rules were introduced, add them to `.ai/business-rules.md`.
-12. **Commit the spec locally** on the current `feat/<slug>` branch:
+12. **Commit the spec locally** on the current `feat-<slug>` branch:
     - `git add .ai/specs/{file} && git commit -m "spec: {title}"`
     - No spec-only PR is opened. The spec travels with the implementation in the same PR.
     - **Auto-proceed** to `/pre-implement-spec .ai/specs/{file}.md` — the audit runs next. If gaps are found, update the spec and re-audit before coding starts.
