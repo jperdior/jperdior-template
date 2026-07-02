@@ -85,7 +85,7 @@ Choose the smallest relevant set for the change:
 
 ```bash
 make lint          # phpstan + cs-fixer + deptrac + tsc + eslint (all inside containers)
-make test          # phpunit (unit + functional) + Vitest (apps/web + apps/admin, all inside containers)
+make test          # phpunit (shared-kernel + unit + functional) + Vitest (packages/auth-server-ts + apps/web + apps/admin, all inside containers)
 make build-web     # production Next.js build (web + admin)
 make migrate-diff  # generates a Doctrine migration diff
 ```
