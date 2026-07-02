@@ -26,7 +26,7 @@ Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context
 - **Never** import another context's `Domain/` or `Application/`. CI `deptrac` enforces this.
 - **Never** add `#[ORM\*]` attributes to domain entities. ORM mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
 - **Never** call `em->find()` from a controller. Use a query.
-- **Never** catch a domain exception in a controller unless transforming it to a specific HTTP status with rationale.
+- **Never** catch a domain exception in a controller. Context-specific HTTP statuses live in the context's `ExceptionStatusMapProvider` (`Presentation/Http/<Context>ExceptionStatusMap.php`); everything else falls back to the Shared `ExceptionListener`'s generic mapping (`DomainException`→409, `InvalidArgumentException`→400).
 - **Never** log credentials, tokens, or password hashes.
 
 ## Validation Commands
@@ -78,7 +78,7 @@ apps/api/
 │   │   │   ├── Bus/{MessengerCommandBus,MessengerQueryBus,MessengerEventBus}.php
 │   │   │   ├── Doctrine/{DoctrineRepository,DoctrineTransaction}.php
 │   │   │   └── Symfony/Resources/config/services.yaml
-│   │   └── Presentation/Http/ExceptionListener.php
+│   │   └── Presentation/Http/{ExceptionListener,ExceptionStatusMapProvider}.php
 │   ├── User/                      ← bounded context: auth
 │   └── <NextContext>/             ← drop a folder, get a context
 └── tests/
@@ -99,9 +99,11 @@ _instanceof:
         tags: [ { name: messenger.message_handler, bus: messenger.bus.query } ]
     Jperdior\SharedKernel\Domain\Bus\Event\DomainEventSubscriber:
         tags: [ { name: messenger.message_handler, bus: messenger.bus.event } ]
+    App\Shared\Presentation\Http\ExceptionStatusMapProvider:
+        tags: [ 'app.exception_status_map' ]
 ```
 
-Adding a new handler = `implements CommandHandler` (or Query/Event). No manual tagging.
+Adding a new handler = `implements CommandHandler` (or Query/Event). No manual tagging. The same applies to exception status maps: `implements ExceptionStatusMapProvider` in a context's Presentation layer and the Shared `ExceptionListener` picks it up (exact exception class → `{status, code, message}`; duplicate class keys across providers fail fast at container build).
 
 ## Repository Wiring Pattern
 

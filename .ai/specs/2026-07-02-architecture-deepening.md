@@ -318,6 +318,7 @@ No new business rules introduced — `.ai/business-rules.md` unchanged.
 
 | Date | Change |
 |------|--------|
+| 2026-07-02 | Phase 1 implemented — `ExceptionStatusMapProvider` + `UserExceptionStatusMap` (3 token entries), TC-06b lock test, reset-password controller catch blocks removed; full PHP suite green (22 tests). |
 | 2026-07-02 | Spec skeleton drafted; open questions pending. |
 | 2026-07-02 | Q1–Q6 answered (all recommendations accepted); full design completed. |
 | 2026-07-02 | `openapi-drift` CI job now invokes `make gen-api` directly (single-author principle applied to generation; user feedback). |
