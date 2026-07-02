@@ -10,108 +10,24 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  PHP_VERSION: "8.4"
-  NODE_VERSION: "22"
-  PNPM_VERSION: "9.15.0"
-
+# Every job invokes the same containerised Makefile targets developers run locally —
+# the Makefile is the single author of the gate commands, so local green ≡ CI green.
 jobs:
   php-lint:
     name: PHP lint (PHPStan + cs-fixer + deptrac)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          coverage: none
-          tools: composer:v2
-      - name: Cache composer
-        uses: actions/cache@v4
-        with:
-          path: ~/.composer/cache
-          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.json') }}
-          restore-keys: composer-${{ runner.os }}-
-      - name: Install (apps/api)
-        run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
-      - name: Install (shared-kernel-php)
-        run: cd packages/shared-kernel-php && composer install --no-interaction --no-progress --prefer-dist
-      - name: PHPStan (apps/api)
-        run: cd apps/api && vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M --no-progress
-      - name: PHPStan (shared-kernel-php)
-        run: cd packages/shared-kernel-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress
-      - name: php-cs-fixer
-        run: cd apps/api && vendor/bin/php-cs-fixer fix --dry-run --diff
-      - name: deptrac (cross-bounded-context guard)
-        run: cd apps/api && vendor/bin/deptrac analyse --no-progress
+      - run: make lint-shared-kernel
+      - run: make lint-api
 
-  php-tests-unit:
-    name: PHP unit tests
+  php-tests:
+    name: PHP tests (Unit + Functional, headless test stack)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          coverage: none
-          tools: composer:v2
-      - name: Install (shared-kernel-php)
-        run: cd packages/shared-kernel-php && composer install --no-interaction --no-progress --prefer-dist
-      - name: Install (apps/api)
-        run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
-      - name: PHPUnit (shared-kernel-php)
-        run: cd packages/shared-kernel-php && vendor/bin/phpunit
-      - name: PHPUnit (apps/api Unit suite)
-        run: cd apps/api && vendor/bin/phpunit --testsuite Unit
-
-  php-tests-functional:
-    name: PHP functional tests (against Postgres)
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: app
-          POSTGRES_USER: app
-          POSTGRES_PASSWORD: app
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U app -d app"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: "postgresql://app:app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
-      APP_ENV: test
-      APP_SECRET: ci-secret
-      JWT_PASSPHRASE: ci-passphrase
-      JWT_SECRET_KEY: "%kernel.project_dir%/config/jwt/private.pem"
-      JWT_PUBLIC_KEY: "%kernel.project_dir%/config/jwt/public.pem"
-      JWT_TTL: "3600"
-      JWT_REFRESH_TTL: "2592000"
-      MESSENGER_TRANSPORT_DSN: "doctrine://default?auto_setup=1"
-      MESSENGER_FAILED_TRANSPORT_DSN: "doctrine://default?queue_name=failed&auto_setup=1"
-      CORS_ALLOW_ORIGIN: "^https?://localhost(:[0-9]+)?$"
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          coverage: none
-          extensions: pdo_pgsql, intl, opcache
-          tools: composer:v2
-      - name: Install (apps/api)
-        run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
-      - name: Generate JWT keypair
-        run: cd apps/api && php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
-      - name: Create + migrate test DB
-        run: |
-          cd apps/api
-          php bin/console doctrine:database:create --env=test --if-not-exists
-          php bin/console doctrine:migrations:migrate --env=test --no-interaction
-      - name: PHPUnit (Functional suite)
-        run: cd apps/api && vendor/bin/phpunit --testsuite Functional
+      - run: make test-shared-kernel
+      - run: make test-api
 
   openapi-drift:
     name: OpenAPI spec + TS client freshness
@@ -128,46 +44,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm -r --filter './apps/*' --filter './packages/*' typecheck
-      - run: pnpm -r --filter './apps/*' lint
+      - run: make lint-web
+
+  js-tests:
+    name: JS unit tests (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make test-web
 
   js-build:
     name: JS production build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm -C apps/web build
-      - run: pnpm -C apps/admin build
-
-  js-tests-unit:
-    name: JS unit tests (Vitest)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm -C packages/auth-server-ts test
-      - run: pnpm -C apps/web test
-      - run: pnpm -C apps/admin test
+      - run: make build-web

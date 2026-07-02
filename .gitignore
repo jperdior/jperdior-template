@@ -40,3 +40,4 @@ Thumbs.db
 # --- Local tooling (created by superpowers / worktree harnesses) ---
 .clone/
 .superpowers/
+**/.phpunit.cache/

@@ -145,7 +145,10 @@ db-reset: up-test ## Drop and recreate the database (DANGEROUS)
 
 # ----- Tests -----
 
-test: up-test test-api test-web ## Run the full test matrix
+test: up-test test-shared-kernel test-api test-web ## Run the full test matrix
+
+test-shared-kernel: _ensure-volume-mountpoints ## PHPUnit for packages/shared-kernel-php — standalone, no postgres
+	@${PHP_RUN} sh -c 'cd /app/packages/shared-kernel-php && composer install --no-interaction --no-progress && php vendor/bin/phpunit'
 
 test-api: up-test ## Run PHP unit + functional tests
 	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit ${ARG}
