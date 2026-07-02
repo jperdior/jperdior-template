@@ -12,6 +12,10 @@
     "./server": {
       "types": "./src/server.ts",
       "default": "./src/server.ts"
+    },
+    "./types": {
+      "types": "./src/types.gen.ts",
+      "default": "./src/types.gen.ts"
     }
   },
   "scripts": {

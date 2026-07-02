@@ -318,6 +318,7 @@ No new business rules introduced — `.ai/business-rules.md` unchanged.
 
 | Date | Change |
 |------|--------|
+| 2026-07-02 | Phase 5 implemented — `.gitignore` entries removed; `gen-api` standalone (empirically verified: nelmio dump needs no DB); `openapi.json` (reviewed: no servers block, no internal URLs) + real `types.gen.ts` committed; `./types` export added; `openapi-drift` CI job calls `make gen-api` + `git diff --exit-code`. |
 | 2026-07-02 | Phase 4 implemented — `@jperdior/auth-server` package (signIn/signOut/middleware factories, next-param sanitisation, clearTokens-on-reject); both apps rewired (8 files), `lib/auth.ts` deleted, inline baseUrls removed; 15 package Vitest tests wired into `make test-web` + CI; `docs/auth.md` cookie paragraph corrected to reality (both tokens HttpOnly SameSite=Lax — the old text described a nonexistent Zustand store). |
 | 2026-07-02 | Phase 3 implemented — four named dialogs over a shared `ConfirmActionDialog` under `apps/admin/src/components/users/dialogs/`; both callers thinned to dialog selection; 5 Vitest cases (TC-09). |
 | 2026-07-02 | Phase 2 implemented — 7 fakes under `tests/Doubles/`, unit tests for `User`, `PasswordRecoveryToken`, VOs, and 3 use cases (33 unit tests, 65ms). TC-01 corrected: the actual event name is `user.account.registered`. |

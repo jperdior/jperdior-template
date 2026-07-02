@@ -58,7 +58,7 @@ Do **not** start any new work until the user has acknowledged the merged state.
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use the closest package/app `AGENTS.md` for local architecture, imports, and validation commands.
-- Re-generate the TS API client (`make gen-api`) after any backend OpenAPI-affecting change.
+- Re-generate the TS API client (`make gen-api`) after any backend OpenAPI-affecting change and commit the regenerated `apps/api/openapi.json` + `packages/api-client-ts/src/types.gen.ts` — CI's `openapi-drift` job fails the PR if they're stale.
 - For **every change** — features, bug fixes, doc edits, skill updates, config tweaks, anything — create a new worktree and branch from main using `.ai/skills/new-feature/SKILL.md` before touching any file. No change, however trivial, is ever committed directly to main. Every branch must land via a PR.
 - **Agentic docs are authoritative, not historical.** Write what the system IS, not how it got there. No "previously / refactor / phase N / fixed in / no longer / legacy / now uses / was added / landed" framing inside `AGENTS.md`, `docs/*.md`, or `SKILL.md` files — that belongs in `.ai/specs/` and `git log`. When a spec is implemented, fold its outcomes into the relevant AGENTS.md/docs as plain present-tense rules; do not carry the spec's "post-refactor" narrative forward.
 
@@ -103,9 +103,14 @@ Gates split by whether they need a live database:
     no DB connection).
   - **Frontend** (`make lint-web`, `make test-web`, `make build-web`) in ephemeral
     `node:22-alpine` containers, reusing the cached `node_modules` volumes.
+  - **OpenAPI regeneration** (`make gen-api`) — `nelmio:apidoc:dump` in an ephemeral **api**
+    container (kernel boot reads routes/attributes, no DB) + `openapi-typescript` in a node
+    container. Regenerates the **committed** `apps/api/openapi.json` and
+    `packages/api-client-ts/src/types.gen.ts`; CI's `openapi-drift` job runs the same target
+    and fails the PR on any diff.
   - This is why a lint-only or JS-only change never pays for the PHP stack.
 - **DB-backed gates — require the headless test stack** (`make test-api`, `make test`,
-  `make migrate-diff`, `make gen-api`, `make migrate`) auto-start a **headless, per-worktree
+  `make migrate-diff`, `make migrate`) auto-start a **headless, per-worktree
   test stack** (postgres + api) on first use — no `make start` needed.
 
 The shared PHP stack (only the DB-backed gates use it):

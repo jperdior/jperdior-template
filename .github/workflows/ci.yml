@@ -113,6 +113,16 @@ jobs:
       - name: PHPUnit (Functional suite)
         run: cd apps/api && vendor/bin/phpunit --testsuite Functional
 
+  openapi-drift:
+    name: OpenAPI spec + TS client freshness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Regenerate via the same target developers use
+        run: make gen-api
+      - name: Fail if committed artifacts are stale
+        run: git diff --exit-code -- apps/api/openapi.json packages/api-client-ts/src/types.gen.ts
+
   js-lint:
     name: JS typecheck + ESLint
     runs-on: ubuntu-latest

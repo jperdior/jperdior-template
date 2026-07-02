@@ -193,8 +193,12 @@ build-web: _ensure-volume-mountpoints ## Build web + admin for production — st
 
 # ----- OpenAPI / TS client -----
 
-gen-api: up-test ## Regenerate TS client from API OpenAPI spec
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console nelmio:apidoc:dump --format=json > apps/api/openapi.json
+# The dump boots the kernel to read routes/attributes — no DB connection. If a future
+# bundle makes it require one, change the dependency back to `up-test` and use
+# `${DOCKER_COMPOSE_TEST} ${EXEC}` — the CI openapi-drift job inherits either path.
+# tmp+mv keeps the committed openapi.json intact if the dump fails midway.
+gen-api: _ensure-volume-mountpoints ## Regenerate committed openapi.json + TS client types — standalone, no postgres/api
+	@${PHP_RUN} sh -c '${PHP_INSTALL} && php bin/console nelmio:apidoc:dump --format=json > openapi.json.tmp && mv openapi.json.tmp openapi.json'
 	@${JS_RUN} ${WEB_CONTAINER} sh -c '${WEB_INSTALL} && pnpm -C packages/api-client-ts gen'
 
 # ----- JWT keys -----
