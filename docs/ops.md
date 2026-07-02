@@ -14,15 +14,10 @@ ops/
 │   ├── nginx/api.conf           Nginx config: php-fpm upstream, /api/doc, CORS
 │   ├── docker-compose.base.yml  Production-shaped base
 │   └── docker-compose.dev.yml   Dev overlay: source mounts, pnpm dev, exposed ports
-├── k8s/
-│   ├── Chart.yaml
-│   ├── values.yaml              Defaults; override per environment
-│   └── templates/               Deployments, Services, ConfigMaps, Ingress
-└── ci/scripts/
-    ├── install.sh               composer install + pnpm install for all workspaces
-    ├── lint.sh                  PHPStan + cs-fixer + deptrac + tsc + ESLint
-    ├── test.sh                  PHPUnit + pnpm test
-    └── build.sh                 Production Composer + Next.js standalone builds
+└── k8s/
+    ├── Chart.yaml
+    ├── values.yaml              Defaults; override per environment
+    └── templates/               Deployments, Services, ConfigMaps, Ingress
 ```
 
 ---
@@ -184,18 +179,20 @@ helm upgrade my-project ops/k8s -f my-values.yaml --atomic
 
 ## CI
 
-`.github/workflows/` calls the scripts in `ops/ci/scripts/`:
+`.github/workflows/ci.yml` invokes the same containerised Makefile targets developers run locally — the Makefile is the single author of the gate commands:
 
-| Script | What it runs |
-|--------|-------------|
-| `install.sh` | `composer install` for every PHP workspace + `pnpm install` |
-| `lint.sh` | PHPStan (level 8) + php-cs-fixer + deptrac + tsc + ESLint |
-| `test.sh` | PHPUnit (unit + functional) + `pnpm test` |
-| `build.sh` | Production `composer install --no-dev` + Next.js `pnpm build` |
+| CI job | Make target(s) | What it runs |
+|--------|----------------|-------------|
+| `php-lint` | `lint-shared-kernel`, `lint-api` | PHPStan + php-cs-fixer + deptrac |
+| `php-tests` | `test-shared-kernel`, `test-api` | PHPUnit (shared kernel + Unit + Functional against the headless test stack) |
+| `openapi-drift` | `gen-api` | Regenerates `openapi.json` + `types.gen.ts`; fails on diff |
+| `js-lint` | `lint-web` | tsc + ESLint (apps + packages) |
+| `js-tests` | `test-web` | Vitest (packages/auth-server-ts + apps/web + apps/admin) |
+| `js-build` | `build-web` | Production Next.js builds |
 
-Frontend unit tests (Vitest + React Testing Library, `apps/web` and `apps/admin`) run inside `test.sh` via `pnpm test`. See `.ai/skills/integration-tests/SKILL.md` for the testing layers and how to add a new test.
+See `.ai/skills/integration-tests/SKILL.md` for the testing layers and how to add a new test.
 
-Every PR must pass lint + test before merge. The `make lint` and `make test` targets replicate these checks locally so you never push a red build.
+Every PR must pass all jobs before merge. Because CI calls the make targets, local `make lint && make test` green means CI green — the two cannot drift.
 
 ---
 

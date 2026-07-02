@@ -37,6 +37,7 @@ The Symfony Mailer DSN comes from `MAILER_DSN`. In dev this defaults to `smtp://
 ## Never
 
 - Never import another context's `Domain/`/`Application/` (e.g. `App\<OtherContext>\Domain\…`). Communicate via events.
+- Never catch domain exceptions in controllers — context-specific statuses live in `Presentation/Http/UserExceptionStatusMap.php` (token failures: 404 not-found / 422 expired / 422 already-used, with fixed messages); everything else falls back to the Shared `ExceptionListener` (`DomainException`→409 `CONFLICT`).
 - Never store plaintext passwords. The aggregate only knows `HashedPassword`.
 - Never log `PlainPassword` or any password-shaped string.
 - Never return the password hash from any endpoint.
@@ -83,6 +84,7 @@ Infrastructure/
 Presentation/
 └── Http/{SignUpController, MeController, UserSelfResetPasswordController,
         ForgotPasswordController, ResetPasswordWithTokenController,
+        UserExceptionStatusMap,   (ExceptionStatusMapProvider — token-failure statuses)
         Dto/{SignUpRequest, SelfResetPasswordRequest, ForgotPasswordRequest, ResetPasswordWithTokenRequest}, ...}.php
 ```
 
@@ -110,6 +112,8 @@ limit becomes effectively global.
 
 ## Tests
 
+- `tests/Unit/User/Domain/` — aggregate + value-object unit tests (no framework, no DB; run in ms)
+- `tests/Unit/User/Application/` — use-case tests through the port interfaces, using the fakes in `tests/Doubles/` (`InMemoryUserRepository`, `InMemoryPasswordRecoveryTokenRepository`, `FakePasswordHasher`, `SpyEventBus`, `SpyRefreshTokenRevoker`, `SpyPasswordRecoveryEmailSender`, `NullTransaction`) plus the shared kernel's `FrozenClock`
 - `tests/Functional/User/Presentation/Http/SignUp/` — sign-up cases
 - `tests/Functional/User/Presentation/Http/RequestPasswordRecovery/` — 4 cases
 - `tests/Functional/User/Presentation/Http/ResetPasswordWithToken/` — 6 cases incl. `ItRevokesAllRefreshTokensAfterResetTest`

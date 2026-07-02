@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Button } from '@jperdior/ui-react';
 import { apiClient } from '@jperdior/api-client-ts/server';
-import { clearTokens, isAuthenticated } from '@/lib/auth'; // clearTokens used by signOut action
+import { clearTokens, isAuthenticated } from '@jperdior/auth-server'; // clearTokens used by signOut action
 
 async function signOut() {
   'use server';

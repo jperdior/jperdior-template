@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Button } from '@jperdior/ui-react';
-import { isAuthenticated, clearTokens } from '@/lib/auth';
+import { isAuthenticated, clearTokens } from '@jperdior/auth-server';
 
 async function signOut() {
   'use server';

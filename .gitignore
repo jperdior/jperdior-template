@@ -20,10 +20,6 @@ node_modules/
 **/.eslintcache
 **/.deptrac.cache
 
-# --- Generated artefacts ---
-apps/*/openapi.json
-packages/api-client-ts/src/types.gen.ts
-
 # --- Docker ---
 ops/docker/.env
 
@@ -44,3 +40,4 @@ Thumbs.db
 # --- Local tooling (created by superpowers / worktree harnesses) ---
 .clone/
 .superpowers/
+**/.phpunit.cache/

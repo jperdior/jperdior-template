@@ -1,7 +1,8 @@
 'use server';
 
 import { z } from 'zod';
-import { createApiClient, ApiError } from '@jperdior/api-client-ts';
+import { ApiError } from '@jperdior/api-client-ts';
+import { apiClient } from '@jperdior/api-client-ts/server';
 
 const schema = z
   .object({
@@ -32,7 +33,7 @@ export async function resetPasswordWithTokenAction(
     return { error: 'Invalid request. Please request a new password reset.' };
   }
 
-  const client = createApiClient({ baseUrl: process.env.INTERNAL_API_URL ?? 'http://nginx:80' });
+  const client = apiClient();
 
   try {
     await client.resetPasswordWithToken(parsed.data.token, parsed.data.newPassword);

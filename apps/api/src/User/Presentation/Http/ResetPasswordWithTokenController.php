@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace App\User\Presentation\Http;
 
 use App\User\Application\Command\ResetPasswordWithToken\ResetPasswordWithTokenCommand;
-use App\User\Domain\Exception\PasswordRecoveryTokenAlreadyUsed;
-use App\User\Domain\Exception\PasswordRecoveryTokenExpired;
-use App\User\Domain\Exception\PasswordRecoveryTokenNotFound;
 use App\User\Presentation\Http\Dto\ResetPasswordWithTokenRequest;
 use Jperdior\SharedKernel\Domain\Bus\Command\CommandBus;
 use OpenApi\Attributes as OA;
@@ -55,27 +52,11 @@ final class ResetPasswordWithTokenController
             );
         }
 
-        try {
-            $this->commandBus->dispatch(new ResetPasswordWithTokenCommand(
-                token: $payload->token,
-                newPassword: $payload->newPassword,
-            ));
-        } catch (PasswordRecoveryTokenNotFound) {
-            return new JsonResponse(
-                ['code' => 'password_recovery_token_not_found', 'message' => 'Token not found.'],
-                404,
-            );
-        } catch (PasswordRecoveryTokenExpired) {
-            return new JsonResponse(
-                ['code' => 'password_recovery_token_expired', 'message' => 'Token expired.'],
-                422,
-            );
-        } catch (PasswordRecoveryTokenAlreadyUsed) {
-            return new JsonResponse(
-                ['code' => 'password_recovery_token_already_used', 'message' => 'Token already used.'],
-                422,
-            );
-        }
+        // Token failures are mapped to 404/422 by the ExceptionListener via UserExceptionStatusMap.
+        $this->commandBus->dispatch(new ResetPasswordWithTokenCommand(
+            token: $payload->token,
+            newPassword: $payload->newPassword,
+        ));
 
         return new JsonResponse(null, 204);
     }

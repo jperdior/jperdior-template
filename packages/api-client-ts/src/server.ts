@@ -46,4 +46,7 @@ export function apiClient(): ApiClient {
 export const ACCESS_TOKEN_COOKIE  = ACCESS_COOKIE;
 export const REFRESH_TOKEN_COOKIE = REFRESH_COOKIE;
 
+/** Canonical server-side API base URL — the single source of the env fallback chain. */
+export const API_BASE_URL = baseUrl;
+
 export type { ApiClient, ApiClientConfig, CurrentUser, UserSummary } from './apiClient';

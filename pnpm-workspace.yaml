@@ -3,3 +3,4 @@ packages:
   - "apps/admin"
   - "packages/ui-react"
   - "packages/api-client-ts"
+  - "packages/auth-server-ts"
