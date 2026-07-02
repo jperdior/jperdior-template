@@ -82,8 +82,9 @@ apps/api/
 │   ├── User/                      ← bounded context: auth
 │   └── <NextContext>/             ← drop a folder, get a context
 └── tests/
-    ├── Unit/
-    ├── Functional/
+    ├── Unit/                          ← aggregate/VO/use-case tests; fast, no DB
+    ├── Doubles/                       ← in-memory/fake adapters for the domain ports (test-only; never wired into prod DI)
+    ├── Functional/                    ← full-stack HTTP tests against Postgres
     └── bootstrap.php
 ```
 

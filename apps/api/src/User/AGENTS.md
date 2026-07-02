@@ -112,6 +112,8 @@ limit becomes effectively global.
 
 ## Tests
 
+- `tests/Unit/User/Domain/` — aggregate + value-object unit tests (no framework, no DB; run in ms)
+- `tests/Unit/User/Application/` — use-case tests through the port interfaces, using the fakes in `tests/Doubles/` (`InMemoryUserRepository`, `InMemoryPasswordRecoveryTokenRepository`, `FakePasswordHasher`, `SpyEventBus`, `SpyRefreshTokenRevoker`, `SpyPasswordRecoveryEmailSender`, `NullTransaction`) plus the shared kernel's `FrozenClock`
 - `tests/Functional/User/Presentation/Http/SignUp/` — sign-up cases
 - `tests/Functional/User/Presentation/Http/RequestPasswordRecovery/` — 4 cases
 - `tests/Functional/User/Presentation/Http/ResetPasswordWithToken/` — 6 cases incl. `ItRevokesAllRefreshTokensAfterResetTest`

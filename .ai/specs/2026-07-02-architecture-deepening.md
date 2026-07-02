@@ -272,7 +272,7 @@ Undo: phases 1–4 revert cleanly commit-by-commit; phases 5 and 6 have **couple
 
 | Test ID | Type | Path | Asserts |
 |---------|------|------|---------|
-| TC-01 | PHPUnit Unit | `apps/api/tests/Unit/User/Domain/UserTest.php` | register emits `user.account.created` (via `pullDomainEvents`); changePassword; softDelete/restore; role invariants |
+| TC-01 | PHPUnit Unit | `apps/api/tests/Unit/User/Domain/UserTest.php` | register emits `user.account.registered` (via `pullDomainEvents`); changePassword; softDelete/restore; role invariants |
 | TC-02 | PHPUnit Unit | `apps/api/tests/Unit/User/Domain/PasswordRecoveryTokenTest.php` | validate happy path; expired; already-used |
 | TC-03 | PHPUnit Unit | `apps/api/tests/Unit/User/Domain/ValueObject/*Test.php` | `Email`/`PlainPassword`/`Role`/`UserId` reject invalid input at construction |
 | TC-04 | PHPUnit Unit | `apps/api/tests/Unit/User/Application/SignUpUseCaseTest.php` | creates user via fakes; event published to `SpyEventBus`; duplicate email throws `UserAlreadyExists` |
@@ -318,6 +318,7 @@ No new business rules introduced — `.ai/business-rules.md` unchanged.
 
 | Date | Change |
 |------|--------|
+| 2026-07-02 | Phase 2 implemented — 7 fakes under `tests/Doubles/`, unit tests for `User`, `PasswordRecoveryToken`, VOs, and 3 use cases (33 unit tests, 65ms). TC-01 corrected: the actual event name is `user.account.registered`. |
 | 2026-07-02 | Phase 1 implemented — `ExceptionStatusMapProvider` + `UserExceptionStatusMap` (3 token entries), TC-06b lock test, reset-password controller catch blocks removed; full PHP suite green (22 tests). |
 | 2026-07-02 | Spec skeleton drafted; open questions pending. |
 | 2026-07-02 | Q1–Q6 answered (all recommendations accepted); full design completed. |
