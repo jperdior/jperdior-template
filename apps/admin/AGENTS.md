@@ -41,6 +41,14 @@ src/
 │   └── (admin)/                     ← gated route group
 │       ├── layout.tsx               ← isAuthenticated() + me().roles.includes('ROLE_ADMIN')
 │       └── users/page.tsx           ← /api/admin/users
+├── components/users/
+│   ├── dialogs/                     ← EditRoles / ForceReset / DeleteUser / RestoreUser confirm dialogs;
+│   │                                   ConfirmActionDialog owns pending + error + close-on-success,
+│   │                                   the named dialogs configure it, callers only pick which one is open
+│   ├── UserActionsMenu.tsx          ← list-row menu (3 dialogs)
+│   ├── UserDetailActions.tsx        ← detail-page actions (4 dialogs, adds Restore)
+│   ├── CreateUserDialog.tsx
+│   └── PaginationControls.tsx
 ├── lib/auth.ts                      ← persistTokens / clearTokens / isAuthenticated
 └── middleware.ts                    ← redirect to /login when no cookies
 ```

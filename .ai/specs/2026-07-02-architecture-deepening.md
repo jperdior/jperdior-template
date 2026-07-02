@@ -203,7 +203,7 @@ apps/admin/src/components/users/dialogs/
 └── __tests__/
 ```
 
-Each dialog owns its open-state trigger contract: `{ user, open, onOpenChange, action }` where `action` is the existing Server Action from `users/actions.ts`. `UserActionsMenu.tsx` keeps offering its three dialogs; `UserDetailActions.tsx` offers all four (the Restore asymmetry is current behaviour and stays). Both callers keep only menu/button chrome. No visual or behavioural change.
+Each dialog owns its open-state trigger contract: `{ user, open, onClose, action }` where `action` is the existing Server Action from `users/actions.ts`; the shared internal `ConfirmActionDialog` owns pending state, error display, close-on-success, and the ds-rules `Cmd/Ctrl+Enter` confirm shortcut. `UserActionsMenu.tsx` keeps offering its three dialogs; `UserDetailActions.tsx` offers all four (the Restore asymmetry is current behaviour and stays). Both callers keep only menu/button chrome. No visual or behavioural change.
 
 ### Item 7 — CI gate single author
 
@@ -318,6 +318,7 @@ No new business rules introduced — `.ai/business-rules.md` unchanged.
 
 | Date | Change |
 |------|--------|
+| 2026-07-02 | Phase 3 implemented — four named dialogs over a shared `ConfirmActionDialog` under `apps/admin/src/components/users/dialogs/`; both callers thinned to dialog selection; 5 Vitest cases (TC-09). |
 | 2026-07-02 | Phase 2 implemented — 7 fakes under `tests/Doubles/`, unit tests for `User`, `PasswordRecoveryToken`, VOs, and 3 use cases (33 unit tests, 65ms). TC-01 corrected: the actual event name is `user.account.registered`. |
 | 2026-07-02 | Phase 1 implemented — `ExceptionStatusMapProvider` + `UserExceptionStatusMap` (3 token entries), TC-06b lock test, reset-password controller catch blocks removed; full PHP suite green (22 tests). |
 | 2026-07-02 | Spec skeleton drafted; open questions pending. |
