@@ -142,7 +142,7 @@ Doc sync for this phase: `apps/web/AGENTS.md`, `apps/admin/AGENTS.md` (auth sect
 - `make gen-api` becomes a **standalone gate** (ephemeral `docker compose run --rm --no-deps` api container, like `lint-api`): `nelmio:apidoc:dump` boots the kernel and reads routes/attributes — expected DB-free. Empirically verified during implementation; if the dump does need the DB, fall back to the current `up-test` dependency (Makefile-only change; the CI job installs runner-native either way).
 - `apps/api/openapi.json` is committed (**reviewed for internal URLs / server blocks before the first commit**); `packages/api-client-ts/src/types.gen.ts` is generated and committed (the file does not exist today).
 - Add the missing `./types` entry to `packages/api-client-ts` `package.json` `exports`, making the `@jperdior/api-client-ts/types` claim in its AGENTS.md true.
-- New CI job `openapi-drift`: setup-php + composer install (apps/api) → `php bin/console nelmio:apidoc:dump --format=json > apps/api/openapi.json` → pnpm install → `pnpm -C packages/api-client-ts gen` → `git diff --exit-code -- apps/api/openapi.json packages/api-client-ts/src/types.gen.ts`.
+- New CI job `openapi-drift`: `make gen-api` → `git diff --exit-code -- apps/api/openapi.json packages/api-client-ts/src/types.gen.ts`. The job calls the **same make target developers run after modifying the API** (root AGENTS.md already mandates `make gen-api` after any OpenAPI-affecting change) — generation stays single-authored per Item 7's principle, and if the standalone dump ever falls back to the `up-test`-backed path, CI inherits it automatically through the target.
 - **Non-goal**: rewriting `apiClient.ts`'s handwritten interfaces to consume `types.gen.ts`. The gate makes drift visible; migrating consumers to generated types is a follow-up spec.
 - Rollback coupling: the committed artifacts and the `openapi-drift` job revert **together** (a partial revert leaves the gate red or vacuous).
 
@@ -255,7 +255,7 @@ All phases land on this branch; one PR. Each phase ends with `make lint && make 
 | Risk | Severity | Affected area | Mitigation | Residual |
 |------|----------|---------------|------------|----------|
 | Error response bodies drift when the catch blocks move to the listener | High | API error contract | Map carries status + `code` + fixed `message` verbatim; only the 3 token exceptions get entries; 3 existing tests + new TC-06b lock the contract | Low |
-| `nelmio:apidoc:dump` needs a DB connection after all | Medium | Phase 5 | Fall back to `up-test`-backed `gen-api`; CI job installs runner-native either way | Low |
+| `nelmio:apidoc:dump` needs a DB connection after all | Medium | Phase 5 | Fall back to `up-test`-backed `gen-api`; the `openapi-drift` job calls the make target, so it inherits the fallback unchanged | Low |
 | Next.js rejects the adapter exports | Low | Phase 4 | Async-wrapper is the **primary** pattern (not a fallback); type exports are erased and allowed | Negligible |
 | `next`-param hardening breaks a legitimate absolute-URL redirect | Low | sign-in UX | Deliberate change; middleware only ever writes relative paths into `next`; TC-07c covers accepted/rejected shapes | Negligible |
 | Admin defensive `clearTokens()` on authorize-reject lost in the move | Medium | shared-browser session hygiene | Factory calls `clearTokens()` on authorize failure; TC-07b asserts pre-existing cookies are cleared | Negligible |
@@ -320,4 +320,5 @@ No new business rules introduced — `.ai/business-rules.md` unchanged.
 |------|--------|
 | 2026-07-02 | Spec skeleton drafted; open questions pending. |
 | 2026-07-02 | Q1–Q6 answered (all recommendations accepted); full design completed. |
+| 2026-07-02 | `openapi-drift` CI job now invokes `make gen-api` directly (single-author principle applied to generation; user feedback). |
 | 2026-07-02 | Revised per pre-implementation audit: corrected the catch-block premise (only reset-password controller has them; no map entries for `UserAlreadyExists`/`CannotDeleteSelf`), added `message` to the map interface with exact-class/fail-fast semantics, added `.gitignore` removal + artifact review to Phase 5, added `SpyEventBus`/fixed `NullTransaction`/reused `FrozenClock`, specified package plumbing + workspace + Makefile coverage, enumerated all 8 `lib/auth` importers + `LoginState` alias, preserved admin `clearTokens()` on reject, hardened `next` (deliberate change), documented CI job rename map + branch protection, deleted entire `ops/ci/scripts/`, documented coupled reverts and the 404/422 token-oracle rationale. |
