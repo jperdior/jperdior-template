@@ -7,7 +7,7 @@ Next.js 16 admin back-office. Same stack as `apps/web` (App Router, RSC by defau
 - Server Components by default. Mark `'use client'` only when a file needs interactivity, browser APIs, state, or event handlers.
 - Use `apiClient()` from `@jperdior/api-client-ts/server` in Server Components and Server Actions. It reads tokens from cookies and auto-refreshes.
 - Enforce `ROLE_ADMIN` **both** server-side in the API (via `#[IsGranted('ROLE_ADMIN')]`) **and** in the `(admin)` layout (via `apiClient().me()` check). Two gates is correct here — the API is authoritative, the layout is UX.
-- Reject non-admin logins in the `login` Server Action *before* persisting cookies. Keeps admin cookies out of non-admin browsers.
+- Reject non-admin logins *before* persisting cookies — the login adapter passes `authorize: (me) => me.roles.includes('ROLE_ADMIN') || <error>` to `createSignInAction` from `@jperdior/auth-server`; rejection also clears pre-existing session cookies.
 - Use DS tokens; never hardcoded shades. See `.ai/ds-rules.md`.
 
 ## Never
@@ -49,16 +49,15 @@ src/
 │   ├── UserDetailActions.tsx        ← detail-page actions (4 dialogs, adds Restore)
 │   ├── CreateUserDialog.tsx
 │   └── PaginationControls.tsx
-├── lib/auth.ts                      ← persistTokens / clearTokens / isAuthenticated
-└── middleware.ts                    ← redirect to /login when no cookies
+└── middleware.ts                    ← createAuthMiddleware adapter (public: / and /login)
 ```
 
 ## Cookie Strategy
 
-Identical to `apps/web`:
+Identical to `apps/web` (both come from `@jperdior/auth-server`):
 - Access token  → cookie `at` (HttpOnly, SameSite=Lax)
 - Refresh token → cookie `rt` (HttpOnly, SameSite=Lax)
-- Login refuses to persist cookies if `me().roles` doesn't include `ROLE_ADMIN`.
+- Login refuses to persist cookies if `me().roles` doesn't include `ROLE_ADMIN` (the `authorize` config), and clears any stale session cookies on rejection.
 - Sign-out clears both cookies (Server Action on the layout).
 
 ## Differences from `apps/web`

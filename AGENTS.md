@@ -338,6 +338,7 @@ packages/
   shared-kernel-php/   Pure-PHP DDD primitives (AggregateRoot, Bus interfaces, ValueObjects)
   ui-react/            Shared shadcn/ui components
   api-client-ts/       Generated TS client + fetch wrapper (refresh-token aware)
+  auth-server-ts/      Session module for the Next.js apps (sign-in/out factories, middleware factory, token cookies)
 ops/
   docker/     Per-service Dockerfiles + compose
   k8s/        Helm chart skeleton

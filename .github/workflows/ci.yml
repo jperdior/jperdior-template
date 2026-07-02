@@ -158,5 +158,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile=false
+      - run: pnpm -C packages/auth-server-ts test
       - run: pnpm -C apps/web test
       - run: pnpm -C apps/admin test

@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-import { createApiClient } from '@jperdior/api-client-ts';
+import { apiClient } from '@jperdior/api-client-ts/server';
 
 const schema = z.object({ email: z.string().email() });
 
@@ -14,7 +14,7 @@ export async function forgotPasswordAction(
   const parsed = schema.safeParse({ email: formData.get('email') });
   if (!parsed.success) return { error: 'Please enter a valid email address.' };
 
-  const client = createApiClient({ baseUrl: process.env.INTERNAL_API_URL ?? 'http://nginx:80' });
+  const client = apiClient();
 
   try {
     await client.forgotPassword(parsed.data.email);

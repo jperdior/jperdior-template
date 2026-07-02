@@ -14,6 +14,7 @@ Next.js 16 public app (App Router, RSC by default). Consumes the API via `@jperd
 ## Never
 
 - **Never** use raw `fetch` in app code. Use `apiClient()` from `@jperdior/api-client-ts/server`.
+- **Never** hand-roll session handling. Sign-in/out, route guarding, and token cookies come from `@jperdior/auth-server` (`createSignInAction`, `createSignOutAction`, `createAuthMiddleware`, `persistTokens`/`clearTokens`/`isAuthenticated`).
 - **Never** store tokens in `localStorage`. They're HTTP-only cookies, written by `persistTokens()`.
 - **Never** import server-only code (`next/headers`, `@jperdior/api-client-ts/server`) inside `'use client'` files. TypeScript will warn but check.
 - **Never** hard-code colors / sizes — use the DS preset tokens.
@@ -44,8 +45,7 @@ src/
 │   └── (app)/                       ← authenticated route group
 │       ├── layout.tsx               ← guards via cookies; shows nav + sign-out
 │       └── dashboard/page.tsx       ← post-login landing
-├── lib/auth.ts                      ← persistTokens / clearTokens / isAuthenticated
-└── middleware.ts                    ← redirect to /login when no cookies
+└── middleware.ts                    ← createAuthMiddleware adapter (public paths + reset-password prefix)
 vitest.config.ts                     ← Vitest + jsdom config
 vitest.setup.ts                      ← jest-dom matchers + next/link & next/navigation mocks
 tailwind.config.ts
@@ -54,10 +54,10 @@ next.config.ts
 
 ## Cookie Strategy
 
-- Access token  → cookie `at` (HttpOnly, SameSite=Lax)
-- Refresh token → cookie `rt` (HttpOnly, SameSite=Lax)
+- Access token  → cookie `at` (HttpOnly, SameSite=Lax); Refresh token → cookie `rt` (same). Names are canonical in `@jperdior/api-client-ts/server`; session helpers come from `@jperdior/auth-server`.
 - `apiClient()` from the server entry auto-refreshes on 401 by hitting `/auth/refresh` with the `rt` cookie value, persisting the new pair via `cookies().set(...)`.
-- Sign-out clears both cookies (Server Action on the layout).
+- Sign-in is `createSignInAction({ postSignInRedirect })` — the web adapter passes the `mustResetPassword → /reset-password` rule. The `next` redirect param only honours relative paths.
+- Sign-out clears both cookies (Server Action on the layout, `clearTokens()`).
 
 ## Adding a New Route
 

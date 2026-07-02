@@ -63,7 +63,7 @@ packages/auth-server-ts/
     └── __tests__/
 ```
 
-Also: add `packages/auth-server-ts` to `pnpm-workspace.yaml`, and extend the Makefile so the standalone JS gates cover it — `lint-web` adds `pnpm -C packages/auth-server-ts typecheck`, `test-web` adds `pnpm -C packages/auth-server-ts test` (root `pnpm -r` typecheck in CI's `js-lint` already picks it up via the `./packages/*` filter).
+Also: add `packages/auth-server-ts` to `pnpm-workspace.yaml`, and extend the Makefile so the standalone JS gates cover it — `test-web` adds `pnpm -C packages/auth-server-ts test`; typecheck coverage needs no Makefile change because `lint-web` and CI's `js-lint` already run `pnpm -r --filter "./packages/*" typecheck`, which picks the new package up via the workspace.
 
 Public interface:
 
@@ -130,7 +130,7 @@ export const config = { matcher: [...] };                 // stays static per Ne
 | admin | `app/(admin)/layout.tsx` | `isAuthenticated`, `clearTokens` (sign-out) |
 | admin | `middleware.ts` | becomes `createAuthMiddleware` adapter |
 
-The signup / forgot-password / reset-password actions stop constructing `createApiClient({ baseUrl: ... })` inline and use `apiClient()` from `@jperdior/api-client-ts/server` (works unauthenticated), removing every scattered baseUrl fallback. `server.ts` itself (refresh protocol, rotation handling) is **untouched**.
+The signup / forgot-password / reset-password actions stop constructing `createApiClient({ baseUrl: ... })` inline and use `apiClient()` from `@jperdior/api-client-ts/server` (works unauthenticated), removing every scattered baseUrl fallback. The sign-in factory's authenticated `me()` call cannot use `apiClient()` (the fresh token is deliberately not persisted yet), so `server.ts` additionally **exports its baseUrl resolution as `API_BASE_URL`** — one source of truth for the env fallback chain; the refresh protocol and rotation handling in `server.ts` are behaviourally untouched.
 
 Sign-in ordering note: web currently persists cookies **before** the `me()` check; the factory persists **after**. Outcome-equivalent for the user (cookies are set in both paths before redirect); the admin path is unchanged. `mustResetPassword` remains a UX redirect, not a hard gate — pre-existing, documented here so nobody mistakes the refactor for enforcement.
 
@@ -318,6 +318,7 @@ No new business rules introduced — `.ai/business-rules.md` unchanged.
 
 | Date | Change |
 |------|--------|
+| 2026-07-02 | Phase 4 implemented — `@jperdior/auth-server` package (signIn/signOut/middleware factories, next-param sanitisation, clearTokens-on-reject); both apps rewired (8 files), `lib/auth.ts` deleted, inline baseUrls removed; 15 package Vitest tests wired into `make test-web` + CI; `docs/auth.md` cookie paragraph corrected to reality (both tokens HttpOnly SameSite=Lax — the old text described a nonexistent Zustand store). |
 | 2026-07-02 | Phase 3 implemented — four named dialogs over a shared `ConfirmActionDialog` under `apps/admin/src/components/users/dialogs/`; both callers thinned to dialog selection; 5 Vitest cases (TC-09). |
 | 2026-07-02 | Phase 2 implemented — 7 fakes under `tests/Doubles/`, unit tests for `User`, `PasswordRecoveryToken`, VOs, and 3 use cases (33 unit tests, 65ms). TC-01 corrected: the actual event name is `user.account.registered`. |
 | 2026-07-02 | Phase 1 implemented — `ExceptionStatusMapProvider` + `UserExceptionStatusMap` (3 token entries), TC-06b lock test, reset-password controller catch blocks removed; full PHP suite green (22 tests). |

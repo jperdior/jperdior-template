@@ -3,7 +3,7 @@ import path from 'node:path';
 
 const config: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@jperdior/ui-react', '@jperdior/api-client-ts'],
+  transpilePackages: ['@jperdior/ui-react', '@jperdior/api-client-ts', '@jperdior/auth-server'],
   typedRoutes: true,
   output: 'standalone',
   // Trace workspace symlinks so the standalone output bundles `packages/*`.

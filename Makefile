@@ -156,8 +156,8 @@ test-unit: up-test ## Run PHP unit tests only
 test-functional: up-test ## Run PHP functional tests only
 	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit --testsuite Functional ${ARG}
 
-test-web: _ensure-volume-mountpoints ## Run JS unit tests (web + admin) — standalone, no postgres/api
-	@${JS_RUN} ${WEB_CONTAINER}   sh -c '${WEB_INSTALL} && pnpm -C apps/web test'
+test-web: _ensure-volume-mountpoints ## Run JS unit tests (packages + web + admin) — standalone, no postgres/api
+	@${JS_RUN} ${WEB_CONTAINER}   sh -c '${WEB_INSTALL} && pnpm -C packages/auth-server-ts test && pnpm -C apps/web test'
 	@${JS_RUN} ${ADMIN_CONTAINER} sh -c '${ADMIN_INSTALL} && pnpm -C apps/admin test'
 
 # ----- Lint / static analysis -----

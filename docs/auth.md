@@ -19,11 +19,11 @@ The downside of pure JWT is revocation: a signed token is valid until it expires
 
 HS256 uses the same key to sign and verify. Any service that can verify tokens can also forge them. RS256 uses a private key to sign and a public key to verify. You can distribute the public key to multiple services (read models, edge functions) without giving them forgery capability. Future-proofing for a microservices split costs nothing now.
 
-### Why in-memory access token + HttpOnly cookie for refresh token?
+### Why HttpOnly cookies for both tokens?
 
-`localStorage` is readable by any JavaScript on the page, including injected scripts from third-party ads, analytics, or XSS. An access token in `localStorage` is one XSS away from exfiltration.
+`localStorage` is readable by any JavaScript on the page, including injected scripts from third-party ads, analytics, or XSS. A token in `localStorage` is one XSS away from exfiltration.
 
-The frontend keeps the access token in a Zustand store (memory only). On page reload it's gone — the app immediately calls `/auth/refresh` to get a new one. The refresh token lives in an `HttpOnly` cookie: unreadable from JavaScript, sent automatically by the browser, protected by `SameSite=Strict`. The Next.js middleware calls `/auth/refresh` server-side and sets the new cookie before the page renders — no flash of unauthenticated content.
+The frontends never see tokens in JavaScript. Both the access token (`at`) and the refresh token (`rt`) live in `HttpOnly`, `SameSite=Lax` cookies (`Secure` in production), written by `@jperdior/auth-server`'s `persistTokens()` during sign-in. Server Components and Server Actions call the API through `apiClient()` from `@jperdior/api-client-ts/server`, which reads the access-token cookie and, on a 401, calls `/auth/refresh` with the refresh-token cookie and persists the rotated pair. The Next.js middleware (built with `createAuthMiddleware` from `@jperdior/auth-server`) only checks cookie presence for route protection — token validation stays server-side in the API.
 
 ---
 
