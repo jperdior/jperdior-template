@@ -145,7 +145,10 @@ db-reset: up-test ## Drop and recreate the database (DANGEROUS)
 
 # ----- Tests -----
 
-test: up-test test-api test-web ## Run the full test matrix
+test: up-test test-shared-kernel test-api test-web ## Run the full test matrix
+
+test-shared-kernel: _ensure-volume-mountpoints ## PHPUnit for packages/shared-kernel-php — standalone, no postgres
+	@${PHP_RUN} sh -c 'cd /app/packages/shared-kernel-php && composer install --no-interaction --no-progress && php vendor/bin/phpunit'
 
 test-api: up-test ## Run PHP unit + functional tests
 	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit ${ARG}
@@ -156,8 +159,8 @@ test-unit: up-test ## Run PHP unit tests only
 test-functional: up-test ## Run PHP functional tests only
 	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php vendor/bin/phpunit --testsuite Functional ${ARG}
 
-test-web: _ensure-volume-mountpoints ## Run JS unit tests (web + admin) — standalone, no postgres/api
-	@${JS_RUN} ${WEB_CONTAINER}   sh -c '${WEB_INSTALL} && pnpm -C apps/web test'
+test-web: _ensure-volume-mountpoints ## Run JS unit tests (packages + web + admin) — standalone, no postgres/api
+	@${JS_RUN} ${WEB_CONTAINER}   sh -c '${WEB_INSTALL} && pnpm -C packages/auth-server-ts test && pnpm -C apps/web test'
 	@${JS_RUN} ${ADMIN_CONTAINER} sh -c '${ADMIN_INSTALL} && pnpm -C apps/admin test'
 
 # ----- Lint / static analysis -----
@@ -193,8 +196,12 @@ build-web: _ensure-volume-mountpoints ## Build web + admin for production — st
 
 # ----- OpenAPI / TS client -----
 
-gen-api: up-test ## Regenerate TS client from API OpenAPI spec
-	@${DOCKER_COMPOSE_TEST} ${EXEC} ${API_CONTAINER} php bin/console nelmio:apidoc:dump --format=json > apps/api/openapi.json
+# The dump boots the kernel to read routes/attributes — no DB connection. If a future
+# bundle makes it require one, change the dependency back to `up-test` and use
+# `${DOCKER_COMPOSE_TEST} ${EXEC}` — the CI openapi-drift job inherits either path.
+# tmp+mv keeps the committed openapi.json intact if the dump fails midway.
+gen-api: _ensure-volume-mountpoints ## Regenerate committed openapi.json + TS client types — standalone, no postgres/api
+	@${PHP_RUN} sh -c '${PHP_INSTALL} && php bin/console nelmio:apidoc:dump --format=json > openapi.json.tmp && mv openapi.json.tmp openapi.json'
 	@${JS_RUN} ${WEB_CONTAINER} sh -c '${WEB_INSTALL} && pnpm -C packages/api-client-ts gen'
 
 # ----- JWT keys -----

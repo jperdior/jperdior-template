@@ -38,9 +38,9 @@ ops/
 │   ├── Chart.yaml
 │   ├── values.yaml
 │   └── templates/   skeleton Helm chart (api+nginx pod, worker, web, admin, ingress)
-└── ci/
-    └── scripts/     install.sh, lint.sh, test.sh, build.sh — referenced from .github/workflows
 ```
+
+CI lives in `.github/workflows/ci.yml` and invokes the root Makefile targets directly — there are no separate CI scripts.
 
 ## Compose Patterns
 
@@ -86,9 +86,6 @@ docker compose -f ops/docker/docker-compose.base.yml -f ops/docker/docker-compos
 
 # Test a build without starting:
 docker compose -f ops/docker/docker-compose.base.yml build api
-
-# Lint shell scripts:
-shellcheck ops/ci/scripts/*.sh
 ```
 
 ## K8s Note

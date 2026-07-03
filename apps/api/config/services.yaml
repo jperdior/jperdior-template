@@ -21,6 +21,8 @@ services:
         Jperdior\SharedKernel\Domain\Bus\Event\DomainEventSubscriber:
             tags:
                 - { name: messenger.message_handler, bus: messenger.bus.event }
+        App\Shared\Presentation\Http\ExceptionStatusMapProvider:
+            tags: [ 'app.exception_status_map' ]
 
     App\:
         resource: '../src/'

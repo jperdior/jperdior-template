@@ -2,12 +2,13 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Button } from '@jperdior/ui-react';
-import { isAuthenticated, clearTokens } from '@/lib/auth';
+import { createSignOutAction, isAuthenticated } from '@jperdior/auth-server';
+
+const doSignOut = createSignOutAction();
 
 async function signOut() {
   'use server';
-  await clearTokens();
-  redirect('/login');
+  await doSignOut();
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {

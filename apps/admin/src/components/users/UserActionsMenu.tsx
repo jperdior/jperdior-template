@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import type { UserSummary } from '@jperdior/api-client-ts';
-import {
-  Button,
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-  Spinner,
-} from '@jperdior/ui-react';
-import { deleteUser, forcePasswordReset, updateUserRoles, type ActionState } from '@/app/(admin)/users/actions';
+import { Button } from '@jperdior/ui-react';
+import { deleteUser, forcePasswordReset, updateUserRoles } from '@/app/(admin)/users/actions';
+import { DeleteUserDialog } from './dialogs/DeleteUserDialog';
+import { EditRolesDialog } from './dialogs/EditRolesDialog';
+import { ForceResetDialog } from './dialogs/ForceResetDialog';
 
 interface Props {
   user: UserSummary;
@@ -19,26 +18,17 @@ type ActiveDialog = 'editRoles' | 'forceReset' | 'delete' | null;
 export function UserActionsMenu({ user }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | undefined>();
 
   const isAdmin = user.roles.includes('ROLE_ADMIN');
 
   function close() {
     setActiveDialog(null);
     setMenuOpen(false);
-    setError(undefined);
   }
 
-  function handleAction(action: () => Promise<ActionState>) {
-    startTransition(async () => {
-      const result = await action();
-      if (result.error) {
-        setError(result.error);
-      } else {
-        close();
-      }
-    });
+  function openDialog(dialog: Exclude<ActiveDialog, null>) {
+    setMenuOpen(false);
+    setActiveDialog(dialog);
   }
 
   return (
@@ -60,19 +50,19 @@ export function UserActionsMenu({ user }: Props) {
             </Link>
             <button
               className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
-              onClick={() => { setMenuOpen(false); setActiveDialog('editRoles'); }}
+              onClick={() => openDialog('editRoles')}
             >
               {isAdmin ? 'Demote from Admin' : 'Promote to Admin'}
             </button>
             <button
               className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
-              onClick={() => { setMenuOpen(false); setActiveDialog('forceReset'); }}
+              onClick={() => openDialog('forceReset')}
             >
               Force Password Reset
             </button>
             <button
               className="block w-full px-4 py-2 text-left text-sm text-destructive hover:bg-accent"
-              onClick={() => { setMenuOpen(false); setActiveDialog('delete'); }}
+              onClick={() => openDialog('delete')}
             >
               Delete
             </button>
@@ -80,79 +70,9 @@ export function UserActionsMenu({ user }: Props) {
         </>
       )}
 
-      {/* Edit Roles Dialog */}
-      <Dialog open={activeDialog === 'editRoles'} onOpenChange={(o) => !o && close()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{isAdmin ? 'Demote from Admin' : 'Promote to Admin'}</DialogTitle>
-            <DialogDescription>
-              {isAdmin
-                ? `Remove ROLE_ADMIN from ${user.email}?`
-                : `Grant ROLE_ADMIN to ${user.email}?`}
-            </DialogDescription>
-          </DialogHeader>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <DialogFooter>
-            <Button variant="ghost" onClick={close} disabled={isPending}>Cancel</Button>
-            <Button
-              disabled={isPending}
-              onClick={() =>
-                handleAction(() =>
-                  updateUserRoles(
-                    user.id,
-                    isAdmin
-                      ? user.roles.filter((r) => r !== 'ROLE_ADMIN')
-                      : [...user.roles, 'ROLE_ADMIN'],
-                  ),
-                )
-              }
-            >
-              {isPending && <Spinner />}
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Force Reset Dialog */}
-      <Dialog open={activeDialog === 'forceReset'} onOpenChange={(o) => !o && close()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Force Password Reset</DialogTitle>
-            <DialogDescription>
-              {user.email} will be required to set a new password on next login.
-            </DialogDescription>
-          </DialogHeader>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <DialogFooter>
-            <Button variant="ghost" onClick={close} disabled={isPending}>Cancel</Button>
-            <Button disabled={isPending} onClick={() => handleAction(() => forcePasswordReset(user.id))}>
-              {isPending && <Spinner />}
-              Force Reset
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <Dialog open={activeDialog === 'delete'} onOpenChange={(o) => !o && close()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
-            <DialogDescription>
-              Soft-delete {user.email}? The user will be hidden but can be restored.
-            </DialogDescription>
-          </DialogHeader>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <DialogFooter>
-            <Button variant="ghost" onClick={close} disabled={isPending}>Cancel</Button>
-            <Button variant="destructive" disabled={isPending} onClick={() => handleAction(() => deleteUser(user.id))}>
-              {isPending && <Spinner />}
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditRolesDialog user={user} open={activeDialog === 'editRoles'} onClose={close} action={updateUserRoles} />
+      <ForceResetDialog user={user} open={activeDialog === 'forceReset'} onClose={close} action={forcePasswordReset} />
+      <DeleteUserDialog user={user} open={activeDialog === 'delete'} onClose={close} action={deleteUser} />
     </div>
   );
 }

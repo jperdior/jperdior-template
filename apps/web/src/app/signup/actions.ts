@@ -2,8 +2,8 @@
 
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { createApiClient } from '@jperdior/api-client-ts';
-import { persistTokens } from '@/lib/auth';
+import { apiClient } from '@jperdior/api-client-ts/server';
+import { persistTokens } from '@jperdior/auth-server';
 
 const schema = z.object({
   email:    z.string().email(),
@@ -19,7 +19,7 @@ export async function signUpAction(_prev: SignUpState, formData: FormData): Prom
   });
   if (!parsed.success) return { error: 'Email is invalid or password is too short.' };
 
-  const client = createApiClient({ baseUrl: process.env.INTERNAL_API_URL ?? 'http://api:8080' });
+  const client = apiClient();
 
   try {
     await client.signUp(parsed.data);
@@ -29,6 +29,8 @@ export async function signUpAction(_prev: SignUpState, formData: FormData): Prom
     if (error instanceof Error && error.message.includes('already exists')) {
       return { error: 'An account with this email already exists.' };
     }
+    // The user only sees the generic message — the real cause must reach the server log.
+    console.error('signUpAction failed:', error);
     return { error: 'Could not create account.' };
   }
 

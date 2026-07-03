@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@jperdior/ui-react';
-import { isAuthenticated } from '@/lib/auth';
+import { isAuthenticated } from '@jperdior/auth-server';
 
 export default async function AdminLandingPage() {
   if (await isAuthenticated()) redirect('/dashboard');

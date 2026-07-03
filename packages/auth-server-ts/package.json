@@ -1,0 +1,32 @@
+{
+  "name": "@jperdior/auth-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "echo 'auth-server is source-consumed; nothing to build.'"
+  },
+  "dependencies": {
+    "@jperdior/api-client-ts": "workspace:*",
+    "zod": "^3.23.8"
+  },
+  "peerDependencies": {
+    "next": "^16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "next": "16.2.6",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.8"
+  }
+}

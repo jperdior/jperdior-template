@@ -15,19 +15,35 @@ use DateTimeImmutable;
 
 final class UserFixture
 {
+    private const DEFAULT_PASSWORD = 'secretpass';
+
     public function __construct(
         private readonly UserRepository $repository,
         private readonly PasswordHasherInterface $hasher,
     ) {
     }
 
-    public function createOne(string $email = 'user@example.com', string $password = 'secretpass'): User
+    public function createOne(string $email = 'user@example.com', string $password = self::DEFAULT_PASSWORD): User
     {
         $user = User::register(
             UserId::random(),
             new Email($email),
             $this->hasher->hash(new PlainPassword($password)),
             [Role::USER],
+            new DateTimeImmutable(),
+        );
+        $this->repository->save($user);
+
+        return $user;
+    }
+
+    public function createAdmin(string $email = 'admin@example.com', string $password = self::DEFAULT_PASSWORD): User
+    {
+        $user = User::register(
+            UserId::random(),
+            new Email($email),
+            $this->hasher->hash(new PlainPassword($password)),
+            [Role::USER, Role::ADMIN],
             new DateTimeImmutable(),
         );
         $this->repository->save($user);
