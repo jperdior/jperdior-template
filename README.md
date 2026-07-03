@@ -22,7 +22,7 @@ The `.ai/` harness is the other main thing: specs, skills, and review gates that
 Most projects need user accounts. Rather than building that from scratch every time, this template ships a complete `User` context you can use as-is or extend:
 
 - **Auth** — sign-up, login, JWT access token + refresh token rotation, httponly cookie strategy on the frontend
-- **Roles** — `ROLE_USER` (default) and `ROLE_ADMIN`; promote via `make seed-admin`
+- **Roles** — `ROLE_USER` (default) and `ROLE_ADMIN`; a dev admin (`admin@example.com` / `!pw4template`) is auto-seeded on first boot, or promote any user via `make seed-admin`
 - **Admin user management** — full CRUD in the admin panel: create, list (paginated, includes soft-deleted), detail, role update, soft delete, restore, force password reset
 - **Password reset gate** — web app redirects to `/reset-password` when the flag is set; clears on next login
 - **Admin panel** — Next.js admin at `admin.localhost` with a user list, action menus, and a detail page
@@ -130,6 +130,8 @@ sudo make init   # patches /etc/hosts, installs AI skills
 Then run `/init` in Claude Code to check prerequisites, copy `.env.local`, and personalize the project. Or say **"customize my project"** to rename template placeholders and add your project description.
 
 No need for `make start` during development — `make test` / `make lint` auto-start a headless per-worktree stack. Use `make start` only when you need browser preview.
+
+Once the stack is up, sign into the admin panel at `admin.localhost` with the auto-seeded dev admin — **`admin@example.com` / `!pw4template`** (dev-only; the seeder refuses to run in `prod` — change it before deploying). See [docs/getting-started.md §6](docs/getting-started.md) for details.
 
 ---
 

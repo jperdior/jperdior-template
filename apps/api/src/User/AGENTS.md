@@ -16,7 +16,9 @@ Owns: authentication, account lifecycle, password hashing, role assignment, pass
 | `/api/me` | GET | `IS_AUTHENTICATED_FULLY` | Current user payload. |
 | `/api/admin/users` | GET | `ROLE_ADMIN` | Paginated list of every user. |
 
-CLI: `app:user:promote-admin <email>` grants `ROLE_ADMIN`.
+CLI:
+- `app:user:promote-admin <email>` grants `ROLE_ADMIN` (user must exist).
+- `app:user:seed-admin [email] [password]` create-or-promote an admin, idempotent; defaults `admin@example.com` / `!pw4template`. **Dev/test only — refuses to run in `prod`.** Invoked on first dev boot from `apps/api/bin/start`.
 
 ### Password recovery — flow at a glance
 
@@ -69,6 +71,7 @@ Application/
 ├── Command/RequestPasswordRecovery/{...Command,...CommandHandler,...UseCase}.php
 ├── Command/ResetPasswordWithToken/{...Command,...CommandHandler,...UseCase}.php   (wraps body in TransactionInterface for PESSIMISTIC_WRITE)
 ├── Command/PromoteToAdmin/{PromoteToAdminCommand,PromoteToAdminCommandHandler}.php
+├── Command/EnsureAdmin/{EnsureAdminCommand,EnsureAdminCommandHandler,EnsureAdminUseCase}.php   (idempotent create-or-promote; backs the dev seeder)
 └── Query/GetCurrentUser/{GetCurrentUserQuery,GetCurrentUserQueryHandler,CurrentUserResponse}.php
 
 Infrastructure/
@@ -77,7 +80,8 @@ Infrastructure/
 ├── Persistence/Doctrine/{UserModel,PasswordRecoveryTokenModel}.php
 ├── Symfony/SymfonyPasswordHasher.php
 ├── Symfony/Security/{SecurityUser,UserProvider}.php
-├── Symfony/Console/PromoteAdminCommand.php
+├── Symfony/Console/PromoteAdminCommand.php    (app:user:promote-admin)
+├── Symfony/Console/SeedAdminCommand.php        (app:user:seed-admin — dev-only, dispatches EnsureAdminCommand)
 ├── Security/{RefreshToken,GesdinetRefreshTokenRevoker}.php
 └── Mail/SymfonyPasswordRecoveryEmailSender.php   (catches TransportException, logs $e->getMessage())
 
