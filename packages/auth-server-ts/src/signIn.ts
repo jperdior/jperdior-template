@@ -28,9 +28,13 @@ export interface SignInConfig {
   defaultRedirect?: string;
 }
 
-/** Only same-origin relative paths are honoured; '//' is protocol-relative, i.e. absolute. */
+/**
+ * Only same-origin relative paths are honoured. '//' is protocol-relative (absolute), and
+ * backslashes are rejected outright — browsers normalise '\' to '/' for http(s) URLs, so
+ * '/\evil.tld' would otherwise resolve to '//evil.tld'.
+ */
 function sanitizeNext(next: string | undefined, fallback: string): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) {
+  if (!next || !next.startsWith('/') || next.startsWith('//') || next.includes('\\')) {
     return fallback;
   }
 
@@ -92,7 +96,9 @@ export function createSignInAction(config: SignInConfig = {}) {
     }
 
     await persistTokens(token, refreshToken);
-    redirect(config.postSignInRedirect?.(me, next) ?? next);
+    // The hook's return value goes through the same sanitiser — this module owns redirect
+    // safety; callers never have to reason about it.
+    redirect(config.postSignInRedirect ? sanitizeNext(config.postSignInRedirect(me, next), defaultRedirect) : next);
 
     return {};
   };

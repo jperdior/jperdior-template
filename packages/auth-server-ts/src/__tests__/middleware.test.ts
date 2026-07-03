@@ -33,6 +33,15 @@ describe('createAuthMiddleware', () => {
     expect(res.headers.get('location')).toBe('http://app.local/login?next=%2Fdashboard');
   });
 
+  it('preserves the original query string inside next without leaking it onto the login URL', () => {
+    const res = middleware(request('/dashboard?tab=billing&page=2'));
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe(
+      'http://app.local/login?next=%2Fdashboard%3Ftab%3Dbilling%26page%3D2',
+    );
+  });
+
   it('lets requests through with the access-token cookie (name parity with api-client)', () => {
     const res = middleware(request('/dashboard', `${ACCESS_TOKEN_COOKIE}=tok`));
 

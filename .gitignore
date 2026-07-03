@@ -41,3 +41,4 @@ Thumbs.db
 .clone/
 .superpowers/
 **/.phpunit.cache/
+apps/api/openapi.json.tmp

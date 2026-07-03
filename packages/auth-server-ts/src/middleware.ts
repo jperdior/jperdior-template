@@ -34,7 +34,10 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig) {
     if (!req.cookies.has(ACCESS_COOKIE) && !req.cookies.has(REFRESH_COOKIE)) {
       const url = req.nextUrl.clone();
       url.pathname = loginPath;
-      url.searchParams.set('next', pathname);
+      // Drop the protected page's own query params from the login URL, but keep them
+      // inside `next` so the post-login redirect restores the full destination.
+      url.search = '';
+      url.searchParams.set('next', pathname + req.nextUrl.search);
 
       return NextResponse.redirect(url);
     }

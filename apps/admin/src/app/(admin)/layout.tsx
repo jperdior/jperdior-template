@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Button } from '@jperdior/ui-react';
 import { apiClient } from '@jperdior/api-client-ts/server';
-import { clearTokens, isAuthenticated } from '@jperdior/auth-server'; // clearTokens used by signOut action
+import { createSignOutAction, isAuthenticated } from '@jperdior/auth-server';
+
+const doSignOut = createSignOutAction();
 
 async function signOut() {
   'use server';
-  await clearTokens();
-  redirect('/login');
+  await doSignOut();
 }
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

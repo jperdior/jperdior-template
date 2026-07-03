@@ -106,6 +106,26 @@ describe('createSignInAction', () => {
     expect(redirectSpy).toHaveBeenLastCalledWith('/dashboard');
   });
 
+  it('rejects backslash next values (browsers normalise \\ to / for http schemes)', async () => {
+    const signIn = createSignInAction();
+
+    await signIn({}, fd({ email: 'jane@example.com', password: 'password123', next: '/\\evil.tld' }));
+    expect(redirectSpy).toHaveBeenLastCalledWith('/dashboard');
+
+    await signIn({}, fd({ email: 'jane@example.com', password: 'password123', next: '\\/evil.tld' }));
+    expect(redirectSpy).toHaveBeenLastCalledWith('/dashboard');
+  });
+
+  it('sanitises the postSignInRedirect return value too', async () => {
+    const signIn = createSignInAction({
+      postSignInRedirect: () => 'https://evil.tld/phish',
+    });
+
+    await signIn({}, fd({ email: 'jane@example.com', password: 'password123' }));
+
+    expect(redirectSpy).toHaveBeenLastCalledWith('/dashboard');
+  });
+
   it('applies the postSignInRedirect rule', async () => {
     me.mockResolvedValue({ ...aUser, mustResetPassword: true });
     const signIn = createSignInAction({
