@@ -190,6 +190,8 @@ helm upgrade my-project ops/k8s -f my-values.yaml --atomic
 | `js-tests` | `test-web` | Vitest (packages/auth-server-ts + apps/web + apps/admin) |
 | `js-build` | `build-web` | Production Next.js builds |
 
+A `changes` job (dorny/paths-filter) runs first and each job above gates on it with a job-level `if:`, so only the areas a PR touches actually run: a backend-only PR skips the JS jobs, a frontend-only PR skips the PHP jobs, and a docs-/spec-only PR skips the whole matrix. Skipped jobs report a "skipped" conclusion, which GitHub counts as a **passing** required check — so filtering never leaves a required check stuck "Expected". Shared infra (`.github/workflows/ci.yml`, `Makefile`, `ops/docker/**`, lockfiles) is listed under **both** areas, so touching it re-runs everything. Never convert these to a top-level `on.pull_request.paths` filter — that would leave required checks unreported and block merges.
+
 See `.ai/skills/integration-tests/SKILL.md` for the testing layers and how to add a new test.
 
 Every PR must pass all jobs before merge. Because CI calls the make targets, local `make lint && make test` green means CI green — the two cannot drift.

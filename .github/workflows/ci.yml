@@ -10,11 +10,64 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read
+
 # Every job invokes the same containerised Makefile targets developers run locally —
 # the Makefile is the single author of the gate commands, so local green ≡ CI green.
+#
+# Path filtering: the `changes` job detects which parts of the monorepo a PR touches, and
+# every downstream job runs only when its area changed. Jobs gate on a JOB-LEVEL `if:`,
+# never a top-level `on.pull_request.paths` filter — a top-level filter leaves the whole
+# workflow untriggered, so a *required* check stays "Expected" forever and blocks the merge,
+# whereas a job skipped by `if:` reports a "skipped" conclusion that GitHub counts as a
+# passing required check. So a docs- or spec-only PR skips the entire matrix and still merges.
+#
+# Shared infra (this workflow, the Makefile, Docker) is listed in BOTH the php and js areas
+# so a change there re-runs everything — nothing that can affect a build is silently skipped.
+
 jobs:
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      php: ${{ steps.filter.outputs.php }}
+      js: ${{ steps.filter.outputs.js }}
+      openapi: ${{ steps.filter.outputs.openapi }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            php:
+              - '.github/workflows/ci.yml'
+              - 'Makefile'
+              - 'ops/docker/**'
+              - 'apps/api/**'
+              - 'packages/shared-kernel-php/**'
+            js:
+              - '.github/workflows/ci.yml'
+              - 'Makefile'
+              - 'ops/docker/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'apps/web/**'
+              - 'apps/admin/**'
+              - 'packages/ui-react/**'
+              - 'packages/api-client-ts/**'
+              - 'packages/auth-server-ts/**'
+            openapi:
+              - '.github/workflows/ci.yml'
+              - 'Makefile'
+              - 'apps/api/**'
+              - 'packages/api-client-ts/**'
+
   php-lint:
     name: PHP lint (PHPStan + cs-fixer + deptrac)
+    needs: changes
+    if: ${{ needs.changes.outputs.php == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +76,8 @@ jobs:
 
   php-tests:
     name: PHP tests (Unit + Functional, headless test stack)
+    needs: changes
+    if: ${{ needs.changes.outputs.php == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +86,8 @@ jobs:
 
   openapi-drift:
     name: OpenAPI spec + TS client freshness
+    needs: changes
+    if: ${{ needs.changes.outputs.openapi == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +98,8 @@ jobs:
 
   js-lint:
     name: JS typecheck + ESLint
+    needs: changes
+    if: ${{ needs.changes.outputs.js == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +107,8 @@ jobs:
 
   js-tests:
     name: JS unit tests (Vitest)
+    needs: changes
+    if: ${{ needs.changes.outputs.js == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,6 +116,8 @@ jobs:
 
   js-build:
     name: JS production build
+    needs: changes
+    if: ${{ needs.changes.outputs.js == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
