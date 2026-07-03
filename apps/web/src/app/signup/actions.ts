@@ -29,6 +29,8 @@ export async function signUpAction(_prev: SignUpState, formData: FormData): Prom
     if (error instanceof Error && error.message.includes('already exists')) {
       return { error: 'An account with this email already exists.' };
     }
+    // The user only sees the generic message — the real cause must reach the server log.
+    console.error('signUpAction failed:', error);
     return { error: 'Could not create account.' };
   }
 

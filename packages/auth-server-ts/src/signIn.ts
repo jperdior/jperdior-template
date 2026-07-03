@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { createApiClient, type CurrentUser } from '@jperdior/api-client-ts';
+import { createApiClient, UnauthorizedError, type CurrentUser } from '@jperdior/api-client-ts';
 import { API_BASE_URL } from '@jperdior/api-client-ts/server';
 import { clearTokens, persistTokens } from './cookies';
 
@@ -59,7 +59,12 @@ export function createSignInAction(config: SignInConfig = {}) {
       });
       token = auth.token;
       refreshToken = auth.refresh_token;
-    } catch {
+    } catch (error) {
+      // A wrong password (401) is expected; anything else (500, network, DNS) must be
+      // visible in the server log — the user only ever sees the generic message.
+      if (!(error instanceof UnauthorizedError)) {
+        console.error('signIn: login request failed:', error);
+      }
       return { error: 'Invalid credentials.' };
     }
 
@@ -69,7 +74,8 @@ export function createSignInAction(config: SignInConfig = {}) {
       // apiClient() can't serve this call: it reads the cookie jar, and the fresh token
       // is deliberately not persisted yet (authorize runs first).
       me = await createApiClient({ baseUrl: API_BASE_URL, getAccessToken: () => token }).me();
-    } catch {
+    } catch (error) {
+      console.error('signIn: me() request failed:', error);
       me = null;
     }
 

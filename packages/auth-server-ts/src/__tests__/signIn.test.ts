@@ -24,9 +24,10 @@ vi.mock('next/navigation', () => ({
 
 const login = vi.fn();
 const me = vi.fn();
-vi.mock('@jperdior/api-client-ts', () => ({
-  createApiClient: () => ({ login, me }),
-}));
+vi.mock('@jperdior/api-client-ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@jperdior/api-client-ts')>();
+  return { ...actual, createApiClient: () => ({ login, me }) };
+});
 
 import { createSignInAction, createSignOutAction } from '../index';
 

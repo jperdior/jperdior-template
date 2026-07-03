@@ -43,6 +43,7 @@ export async function resetPasswordWithTokenAction(
       if (e.status === 422) return { error: 'This password reset link has expired or has already been used.' };
       if (e.status === 429) return { error: 'Too many attempts. Please wait a moment and try again.' };
     }
+    console.error('resetPasswordWithTokenAction failed:', e);
     return { error: 'Failed to reset your password. Please try again.' };
   }
 

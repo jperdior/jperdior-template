@@ -18,8 +18,10 @@ export async function forgotPasswordAction(
 
   try {
     await client.forgotPassword(parsed.data.email);
-  } catch {
-    // Always render success regardless of outcome to prevent user enumeration (BR-U05).
+  } catch (error) {
+    // Always render success regardless of outcome to prevent user enumeration (BR-U05) —
+    // but the failure itself must be visible in the server log.
+    console.error('forgotPasswordAction failed (204 still rendered per BR-U05):', error);
   }
 
   return { sent: true };
