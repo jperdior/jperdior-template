@@ -7,6 +7,21 @@ const ACCESS_COOKIE  = 'at';
 const baseUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://api:8080';
 
 /**
+ * Best-effort cleanup of a dead session's cookies. Cookie writes are only
+ * allowed in Server Actions and Route Handlers — in Server Components this is
+ * a no-op, and the next mutation clears them. Without this, a browser holding
+ * an expired access token and a revoked refresh token looks signed-in forever
+ * while every call fails.
+ */
+async function clearDeadSessionCookies(): Promise<void> {
+  try {
+    const jar = await cookies();
+    jar.delete(ACCESS_COOKIE);
+    jar.delete(REFRESH_COOKIE);
+  } catch { /* no-op in Server Components */ }
+}
+
+/**
  * Server-side ApiClient for Next.js Server Components and Server Actions.
  *
  * Reads the access token from a cookie. On 401 attempts to refresh via the refresh-token
@@ -16,6 +31,7 @@ const baseUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL 
 export function apiClient(): ApiClient {
   return createApiClient({
     baseUrl,
+    onUnauthorized: clearDeadSessionCookies,
     async getAccessToken() {
       const jar = await cookies();
       return jar.get(ACCESS_COOKIE)?.value ?? null;

@@ -4,7 +4,8 @@ export interface ApiClientConfig {
   baseUrl: string;
   getAccessToken?: () => string | null | Promise<string | null>;
   refresh?:        () => Promise<string | null>;
-  onUnauthorized?: () => void;
+  /** Called when a token-bearing request 401s and the refresh also fails — the session is dead. */
+  onUnauthorized?: () => void | Promise<void>;
 }
 
 export interface CurrentUser {
@@ -84,13 +85,19 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     let response = await fetch(url, init);
 
     // One automatic refresh attempt on 401 when a refresh function is configured.
-    if (response.status === 401 && config.refresh && options.auth !== false) {
+    if (response.status === 401 && config.refresh && options.auth !== false && headers.Authorization) {
       const newToken = await config.refresh().catch(() => null);
       if (newToken) {
         headers.Authorization = `Bearer ${newToken}`;
         response = await fetch(url, init);
       } else {
-        config.onUnauthorized?.();
+        // The session is dead (expired access token, revoked/absent refresh
+        // token). Signal it, then retry once anonymously: public endpoints
+        // degrade to logged-out content instead of crashing the page, and
+        // protected endpoints 401 again and throw UnauthorizedError as before.
+        await config.onUnauthorized?.();
+        delete headers.Authorization;
+        response = await fetch(url, init);
       }
     }
 

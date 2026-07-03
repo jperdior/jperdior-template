@@ -9,10 +9,16 @@ import { loginAction, type LoginState } from './actions';
 export function LoginForm() {
   const search = useSearchParams();
   const next   = search.get('next') ?? '/dashboard';
+  const sessionExpired = search.get('reason') === 'expired';
   const [state, formAction, isPending] = useActionState<LoginState, FormData>(loginAction, {});
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      {sessionExpired && (
+        <p className="rounded border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-foreground">
+          Your session has expired. Please sign in again.
+        </p>
+      )}
       <input type="hidden" name="next" value={next} />
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
