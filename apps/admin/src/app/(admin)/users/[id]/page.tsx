@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, unstable_rethrow } from 'next/navigation';
 import Link from 'next/link';
 import { apiClient } from '@jperdior/api-client-ts/server';
 import { Button, Card, CardContent, CardHeader, CardTitle, PageBody, PageHeader } from '@jperdior/ui-react';
@@ -10,7 +10,9 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   let user;
   try {
     user = await apiClient().adminGetUser(id);
-  } catch {
+  } catch (e) {
+    // A dead session redirects to login; only genuine lookup failures 404.
+    unstable_rethrow(e);
     notFound();
   }
 

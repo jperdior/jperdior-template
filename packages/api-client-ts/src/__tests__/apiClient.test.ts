@@ -73,6 +73,29 @@ describe('request — dead sessions (expired access token, failed refresh)', () 
     expect(onUnauthorized).not.toHaveBeenCalled();
   });
 
+  it('propagates a throwing onUnauthorized (e.g. a redirect) without an anonymous retry', async () => {
+    // The server handler short-circuits a dead session by throwing a control-flow
+    // signal (Next.js redirect). That must propagate — never be swallowed by the
+    // anonymous fallback — so the app lands on the login page instead of running
+    // a second, pointless request.
+    const fetchMock = vi.fn(async () => jsonResponse(401, { code: 401, message: 'Expired JWT Token' }));
+    vi.stubGlobal('fetch', fetchMock);
+    const redirectSignal = new Error('NEXT_REDIRECT');
+    const onUnauthorized = vi.fn(() => { throw redirectSignal; });
+
+    const client = createApiClient({
+      baseUrl: 'http://api.test',
+      getAccessToken: () => 'expired-token',
+      refresh: async () => null,
+      onUnauthorized,
+    });
+
+    await expect(client.me()).rejects.toBe(redirectSignal);
+    expect(onUnauthorized).toHaveBeenCalledOnce();
+    // Only the original token-bearing request ran; no anonymous retry.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('does not attempt refresh or fallback for requests that never carried a token', async () => {
     const fetchMock = vi.fn(async () => jsonResponse(401, { code: 401, message: 'Bad credentials' }));
     vi.stubGlobal('fetch', fetchMock);

@@ -1,6 +1,6 @@
 'use server';
 
-import { redirect } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
 import { apiClient } from '@jperdior/api-client-ts/server';
 
 export type ResetPasswordState = { error?: string };
@@ -18,6 +18,8 @@ export async function resetPasswordAction(
   try {
     await apiClient().selfResetPassword(newPassword);
   } catch (e) {
+    // A dead session redirects to login (control-flow signal) — let it through.
+    unstable_rethrow(e);
     return { error: (e as { message?: string } | null)?.message ?? 'Failed to reset password.' };
   }
 

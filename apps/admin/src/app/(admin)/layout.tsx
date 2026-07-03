@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
 import { Button } from '@jperdior/ui-react';
 import { apiClient } from '@jperdior/api-client-ts/server';
 import { createSignOutAction, isAuthenticated } from '@jperdior/auth-server';
@@ -22,7 +22,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     if (!me.roles.includes('ROLE_ADMIN')) {
       redirect('/login?error=admin-required');
     }
-  } catch {
+  } catch (e) {
+    // Let control-flow signals through: the role-required redirect above, and a
+    // dead-session redirect to /login?reason=expired from apiClient().
+    unstable_rethrow(e);
     redirect('/login');
   }
 

@@ -56,6 +56,7 @@ next.config.ts
 
 - Access token  → cookie `at` (HttpOnly, SameSite=Lax); Refresh token → cookie `rt` (same). Names are canonical in `@jperdior/api-client-ts/server`; session helpers come from `@jperdior/auth-server`.
 - `apiClient()` from the server entry auto-refreshes on 401 by hitting `/auth/refresh` with the `rt` cookie value, persisting the new pair via `cookies().set(...)`.
+- **Dead session (expired access + revoked/expired refresh) is handled globally**: `apiClient()` clears the `at`/`rt` cookies and `redirect()`s to `/login?reason=expired`. Pages and Server Actions do **not** handle this themselves — just call `apiClient()`. The one requirement: a `catch` around an `apiClient()` call must `unstable_rethrow(e)` (from `next/navigation`) first, or it will swallow the redirect and turn an expired session into a stray form error.
 - Sign-in is `createSignInAction({ postSignInRedirect })` — the web adapter passes the `mustResetPassword → /reset-password` rule. The `next` redirect param only honours relative paths.
 - Sign-out clears both cookies (Server Action on the layout, `clearTokens()`).
 

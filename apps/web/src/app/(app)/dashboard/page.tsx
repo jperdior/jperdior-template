@@ -1,19 +1,12 @@
-import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@jperdior/ui-react';
 import { apiClient } from '@jperdior/api-client-ts/server';
-import { UnauthorizedError, type CurrentUser } from '@jperdior/api-client-ts';
 
 export default async function DashboardPage() {
   // The middleware only checks cookie presence; a dead session (expired access
-  // token + revoked refresh token) reaches this page and must go back to
-  // login instead of crashing the render.
-  let user: CurrentUser;
-  try {
-    user = await apiClient().me();
-  } catch (e) {
-    if (e instanceof UnauthorizedError) redirect('/login?reason=expired&next=/dashboard');
-    throw e;
-  }
+  // token + revoked refresh token) reaches this page. `apiClient()` handles it
+  // globally — on a dead session it clears the cookies and redirects to
+  // /login?reason=expired — so there is nothing to catch here.
+  const user = await apiClient().me();
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">

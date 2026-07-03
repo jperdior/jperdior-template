@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@jperdior/ui-react';
 import { apiClient } from '@jperdior/api-client-ts/server';
 import { ResetPasswordForm } from './ResetPasswordForm';
@@ -8,7 +8,10 @@ export default async function ResetPasswordPage() {
   try {
     const me = await apiClient().me();
     mustReset = me.mustResetPassword;
-  } catch {
+  } catch (e) {
+    // A dead session already redirects to /login?reason=expired; preserve that
+    // instead of collapsing it to a bare /login.
+    unstable_rethrow(e);
     redirect('/login');
   }
 

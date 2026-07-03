@@ -4,7 +4,12 @@ export interface ApiClientConfig {
   baseUrl: string;
   getAccessToken?: () => string | null | Promise<string | null>;
   refresh?:        () => Promise<string | null>;
-  /** Called when a token-bearing request 401s and the refresh also fails — the session is dead. */
+  /**
+   * Called when a token-bearing request 401s and the refresh also fails — the
+   * session is dead. Handlers may intentionally throw a control-flow signal
+   * (e.g. Next.js `redirect()`) to short-circuit the request; that is respected
+   * and propagated, so this callback is deliberately not wrapped in a catch.
+   */
   onUnauthorized?: () => void | Promise<void>;
 }
 
@@ -92,9 +97,11 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
         response = await fetch(url, init);
       } else {
         // The session is dead (expired access token, revoked/absent refresh
-        // token). Signal it, then retry once anonymously: public endpoints
-        // degrade to logged-out content instead of crashing the page, and
-        // protected endpoints 401 again and throw UnauthorizedError as before.
+        // token). Signal it — the handler may short-circuit by throwing a
+        // control-flow signal (e.g. a redirect). If it returns normally, retry
+        // once anonymously: public endpoints degrade to logged-out content
+        // instead of crashing the page, and protected endpoints 401 again and
+        // throw UnauthorizedError as before.
         await config.onUnauthorized?.();
         delete headers.Authorization;
         response = await fetch(url, init);

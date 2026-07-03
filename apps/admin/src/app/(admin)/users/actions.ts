@@ -1,11 +1,15 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { unstable_rethrow } from 'next/navigation';
 import { apiClient } from '@jperdior/api-client-ts/server';
 
 export type ActionState = { error?: string; success?: boolean };
 
 function errMsg(e: unknown): string {
+  // A dead session makes `apiClient()` redirect to login; that surfaces here as
+  // a Next.js control-flow signal which must propagate, not become a form error.
+  unstable_rethrow(e);
   return (e as { message?: string } | null)?.message ?? 'Something went wrong.';
 }
 
