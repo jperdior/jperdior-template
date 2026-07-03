@@ -103,14 +103,31 @@ The Swagger UI is at `http://api.localhost/api/doc`.
 
 ---
 
-## 6. Create the first admin
+## 6. The first admin
+
+On the **first dev boot** the API auto-seeds a known admin so you can open the admin panel
+immediately — no signup needed:
+
+| Field | Value |
+|-------|-------|
+| Email | `admin@example.com` |
+| Password | `!pw4template` |
+
+Sign in at `http://admin.localhost` with those credentials. The seed runs on every dev boot
+(`APP_ENV=dev`) via `apps/api/bin/start`; it's idempotent (create-or-promote) and **refuses to
+run in `prod`** — a known-password admin must never ship. **Change or remove these credentials
+before deploying anything real** (see *What to change for a real project*).
+
+To seed a different dev admin, or to promote your own signed-up user:
 
 ```bash
-# Sign up via the API (or the web app), then promote:
+# Create-or-promote any dev admin (idempotent):
+make api-shell
+php bin/console app:user:seed-admin you@example.com 'your-password'
+
+# Promote an existing user to ROLE_ADMIN (user must already exist):
 make seed-admin EMAIL=me@example.com
 ```
-
-`seed-admin` runs `app:user:promote-admin` inside the `api` container. The user must exist first. After promotion, `http://admin.localhost` is accessible with those credentials.
 
 ---
 
@@ -232,3 +249,4 @@ The full list is in `.env.dist`. Key variables:
 4. **Set real secrets** — `APP_SECRET`, `JWT_PASSPHRASE`, Postgres credentials — in `.env.local` and in your deployment environment.
 5. **Add your first bounded context** beyond `User`. The AI harness will scaffold it.
 6. **Remove example content** — the `User` context is the reference; keep it. Any placeholder routes are yours to delete.
+7. **Drop the dev admin seed** — the first-boot `app:user:seed-admin` line in `apps/api/bin/start` and the `admin@example.com` / `!pw4template` credentials are for local exploration only. It already refuses to run when `APP_ENV=prod`, but remove the line (or change the credentials) once you have a real admin-provisioning flow.

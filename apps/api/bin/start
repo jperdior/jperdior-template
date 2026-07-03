@@ -21,4 +21,11 @@ php bin/console cache:warmup || true
 php bin/console doctrine:database:create --if-not-exists --no-interaction || true
 php bin/console doctrine:migrations:migrate --no-interaction || true
 
+# Dev only: seed a known admin (admin@example.com / !pw4template) so a fresh clone can
+# reach the admin panel immediately. Idempotent (create-or-promote) and refuses to run in
+# prod — never blocks boot.
+if [ "${APP_ENV:-prod}" = "dev" ]; then
+  php bin/console app:user:seed-admin || true
+fi
+
 exec php-fpm --nodaemonize
