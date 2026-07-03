@@ -59,6 +59,7 @@ Identical to `apps/web` (both come from `@jperdior/auth-server`):
 - Refresh token → cookie `rt` (HttpOnly, SameSite=Lax)
 - Login refuses to persist cookies if `me().roles` doesn't include `ROLE_ADMIN` (the `authorize` config), and clears any stale session cookies on rejection.
 - Sign-out clears both cookies (Server Action on the layout).
+- **Dead session is handled globally**: `apiClient()` clears the `at`/`rt` cookies and `redirect()`s to `/login?reason=expired`. Pages and Server Actions don't handle it — but any `catch` around an `apiClient()` call must `unstable_rethrow(e)` (from `next/navigation`) first, or it will swallow the redirect (turning it into a `notFound()`, a bare `/login`, or a form error).
 
 ## Differences from `apps/web`
 

@@ -19,10 +19,12 @@
     }
   },
   "scripts": {
-    "gen":       "openapi-typescript ../../apps/api/openapi.json -o src/types.gen.ts",
+    "gen": "openapi-typescript ../../apps/api/openapi.json -o src/types.gen.ts",
     "typecheck": "tsc --noEmit",
-    "lint":      "eslint . --max-warnings=0",
-    "build":     "echo 'api-client-ts is source-consumed; nothing to build.'"
+    "lint": "eslint . --max-warnings=0",
+    "build": "echo 'api-client-ts is source-consumed; nothing to build.'",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -33,6 +35,7 @@
     "next": "^16.0.0",
     "openapi-typescript": "^7.4.4",
     "typescript": "^5.6.0",
-    "eslint": "^9.13.0"
+    "eslint": "^9.13.0",
+    "vitest": "^2.1.8"
   }
 }
