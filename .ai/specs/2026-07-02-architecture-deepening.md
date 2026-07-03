@@ -286,6 +286,7 @@ Undo: phases 1–4 revert cleanly commit-by-commit; phases 5 and 6 have **couple
 | TC-08 | Vitest | `packages/auth-server-ts/src/__tests__/middleware.test.ts` | public paths/prefixes pass; missing cookies redirect to login with `next` param |
 | TC-09 | Vitest + RTL | `apps/admin/src/components/users/dialogs/__tests__/*.test.tsx` | each dialog renders and confirm invokes its action |
 | TC-10 | CI | `.github/workflows/ci.yml` `openapi-drift` job | regenerated `openapi.json` + `types.gen.ts` produce no diff |
+| TC-11 | PHPUnit Unit | `apps/api/tests/Unit/Shared/Presentation/Http/ExceptionListenerTest.php` | provider map wins (status/code/message from the map); exact-class lookup (no subclass match); generic `DomainException`→409 fallback preserved; duplicate class key across providers fails fast |
 
 ## Backward Compatibility
 
@@ -318,6 +319,7 @@ No new business rules introduced — `.ai/business-rules.md` unchanged.
 
 | Date | Change |
 |------|--------|
+| 2026-07-03 | Post-review fixes (manual dev-stack testing + CodeRabbit): nginx no longer forwards an empty `X-Forwarded-Host` to PHP (pre-existing 500 on every Server-Action call through `http://nginx:80` — one-line `if_not_empty`); all swallowing action catches now `console.error` the real cause server-side (expected 401s excluded, BR-U05 contract kept); `sanitizeNext` also rejects backslashes and re-sanitises the `postSignInRedirect` return value; middleware keeps the protected page's query string inside `next` instead of leaking it onto the login URL; both layouts sign out via `createSignOutAction` — which until then had shipped without a consumer (Phase 4 left layouts on hand-rolled `clearTokens` + `redirect`). |
 | 2026-07-03 | Phase 6 implemented — every CI job invokes Makefile targets (`php-lint`→lint-shared-kernel+lint-api, merged `php-tests`→test-shared-kernel+test-api, `js-lint`/`js-tests`/`js-build`→lint-web/test-web/build-web); new `test-shared-kernel` target closes a coverage gap (its PHPUnit suite previously ran only in CI); `ops/ci/scripts/` deleted; docs synced. Branch-protection rename map for the repo admin: `php-tests-unit` + `php-tests-functional` → `php-tests`, `js-tests-unit` → `js-tests`; new required checks `openapi-drift`. CI wall-clock measured on the PR run. |
 | 2026-07-02 | Phase 5 implemented — `.gitignore` entries removed; `gen-api` standalone (empirically verified: nelmio dump needs no DB); `openapi.json` (reviewed: no servers block, no internal URLs) + real `types.gen.ts` committed; `./types` export added; `openapi-drift` CI job calls `make gen-api` + `git diff --exit-code`. |
 | 2026-07-02 | Phase 4 implemented — `@jperdior/auth-server` package (signIn/signOut/middleware factories, next-param sanitisation, clearTokens-on-reject); both apps rewired (8 files), `lib/auth.ts` deleted, inline baseUrls removed; 15 package Vitest tests wired into `make test-web` + CI; `docs/auth.md` cookie paragraph corrected to reality (both tokens HttpOnly SameSite=Lax — the old text described a nonexistent Zustand store). |
