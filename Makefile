@@ -19,10 +19,13 @@ EXEC := exec -T
 
 # JS workspace gates run standalone in an ephemeral node container — they need no
 # postgres/api, only the cached per-worktree node_modules volumes. `run --rm --no-deps`
-# reuses those volumes, so `pnpm install` is a fast no-op when already satisfied.
+# reuses those volumes. js-workspace-install.sh skips `pnpm install` (and its slow
+# lockfile supply-chain verification) when the lockfile is unchanged, and the persisted
+# corepack_cache volume avoids re-downloading pnpm — so an unchanged tree pays only
+# container startup, not a full reinstall, on every lint/test/build.
 JS_RUN        := ${DOCKER_COMPOSE_TEST} run --rm --no-deps -T
-WEB_INSTALL   := corepack enable && corepack prepare pnpm@11.5.0 --activate && pnpm install --filter "@jperdior/web..." --filter "./packages/*"
-ADMIN_INSTALL := corepack enable && corepack prepare pnpm@11.5.0 --activate && pnpm install --filter "@jperdior/admin..." --filter "./packages/*"
+WEB_INSTALL   := sh /repo/ops/ci/scripts/js-workspace-install.sh web
+ADMIN_INSTALL := sh /repo/ops/ci/scripts/js-workspace-install.sh admin
 
 # PHP static-analysis gates (phpstan / php-cs-fixer / deptrac) likewise run standalone in
 # an ephemeral api container — they need no postgres, only the cached per-worktree
