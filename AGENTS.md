@@ -1,16 +1,19 @@
 # Agents Guidelines
 
-## INVARIANT — Always refresh main before branching
+## INVARIANT — Refresh main FIRST, before anything else
 
-**Before creating any new branch or worktree (via `/new-feature`, `git checkout -b`, or any other method), you MUST first:**
+**At the very start of every session, before ANY research, file reading, code search, answering questions about the codebase, branching, or writing code — you MUST first bring `main` up to date:**
 
 1. `git fetch origin` — ensure `origin/main` is current.
-2. `git checkout main && git pull origin main` — bring local `main` up to date.
-3. Then branch from the updated `main`.
+2. `git checkout main && git pull origin main` (fast-forward) — bring local `main` up to date.
 
-**Violating this invariant** means the new branch starts from a stale base, which causes avoidable rebase conflicts, duplicate work, and force-push churn. This is a **Critical** error — do not make it.
+Only then read files, search, branch, or plan. When you then branch for feature work, branch from this updated `main`.
 
-This rule applies even if you think main hasn't changed. Always fetch first, always verify.
+**Why this comes before research, not just before branching:** a stale working tree makes you draw false conclusions — you will report that a file, feature, or piece of infrastructure "doesn't exist" when it exists on `origin/main` and your local tree is simply behind. Searching a stale tree is worse than not searching, because it produces confident, wrong answers.
+
+**Violating this invariant** also means any new branch starts from a stale base, causing avoidable rebase conflicts, duplicate work, and force-push churn. This is a **Critical** error — do not make it.
+
+This rule applies even if you think main hasn't changed. Always fetch first, always verify. Do not trust the git-status snapshot in the session prompt — it is a point-in-time snapshot and does not reflect `origin`.
 
 This is a **spec-driven, AI-engineered monorepo template**. PHP 8.4 + Symfony 7.4 API (DDD + Hexagonal + CQRS) plus Next.js 15 frontends, with the AI harness ported from open-mercato.
 
