@@ -3,6 +3,9 @@ import path from 'node:path';
 
 const config: NextConfig = {
   reactStrictMode: true,
+  experimental: {
+    turbopackFileSystemCacheForDev: false,
+  },
   transpilePackages: ['@jperdior/ui-react', '@jperdior/api-client-ts', '@jperdior/auth-server'],
   typedRoutes: true,
   output: 'standalone',

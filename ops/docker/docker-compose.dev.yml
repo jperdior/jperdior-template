@@ -127,6 +127,7 @@ services:
       - web_node_modules:/repo/node_modules
       - web_next_cache:/repo/apps/web/.next
       - pnpm_store:/repo/.pnpm-store
+      - corepack_cache:/root/.cache/node/corepack
       - web_app_node_modules:/repo/apps/web/node_modules
       - api_client_ts_node_modules:/repo/packages/api-client-ts/node_modules
       - ui_react_node_modules:/repo/packages/ui-react/node_modules
@@ -138,7 +139,7 @@ services:
       - |
         set -e
         corepack enable
-        corepack prepare pnpm@11.5.0 --activate
+        corepack prepare pnpm@9.15.0 --activate
         pnpm install --filter "@jperdior/web..." --filter "./packages/*"
         exec pnpm -C apps/web dev
     labels:
@@ -162,6 +163,7 @@ services:
       - admin_node_modules:/repo/node_modules
       - admin_next_cache:/repo/apps/admin/.next
       - pnpm_store:/repo/.pnpm-store
+      - corepack_cache:/root/.cache/node/corepack
       - admin_app_node_modules:/repo/apps/admin/node_modules
       - api_client_ts_node_modules:/repo/packages/api-client-ts/node_modules
       - ui_react_node_modules:/repo/packages/ui-react/node_modules
@@ -173,7 +175,7 @@ services:
       - |
         set -e
         corepack enable
-        corepack prepare pnpm@11.5.0 --activate
+        corepack prepare pnpm@9.15.0 --activate
         pnpm install --filter "@jperdior/admin..."
         exec pnpm -C apps/admin dev
     labels:
@@ -197,3 +199,4 @@ volumes:
   api_client_ts_node_modules:
   ui_react_node_modules:
   pnpm_store:
+  corepack_cache:
