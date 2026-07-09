@@ -118,58 +118,6 @@ Rules:
 | Medium | Convention, suboptimal pattern, missing best practice | Should fix |
 | Low | Style, nit | Nice to have |
 
-## Quick Rule Reference
+## Rules & Lessons
 
-### Architecture (Critical)
-
-- NO `use App\<OtherContext>\Domain\…` or `…\Application\…` in another context.
-- Controllers dispatch through `CommandBus` / `QueryBus`. Handlers MUST NOT be wired directly into controllers.
-- Domain entities MUST NOT carry Doctrine attributes; ORM mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
-- Repository interfaces in `Domain/`, Doctrine implementations in `Infrastructure/Persistence/`, aliased in `config/services.yaml`.
-
-### Security (Critical)
-
-- Inputs validated at value-object construction (`UserId::fromString()`, `Email::fromString()`).
-- Passwords hashed with Symfony `password_hasher` (argon2id).
-- Auth endpoints return minimal errors — never reveal whether an email exists.
-- Refresh-token rotation MUST be enabled; reuse of a revoked refresh token MUST log the user out and emit a security event.
-- Every protected endpoint declares `#[IsGranted('ROLE_*')]` or equivalent.
-
-### CQRS (High)
-
-- Commands are imperative (`SignUp`, `ResetPassword`); events are past tense (`UserRegistered`).
-- Queries return read DTOs, never entities.
-- Async commands are idempotent.
-- `_instanceof` auto-tags handlers; never tag manually.
-
-### Naming & Structure (High/Medium)
-
-- Aggregates: PascalCase singular (`User`, `Order`).
-- Tables: snake_case plural (`users`, `orders`).
-- Columns: snake_case (`created_at`, `owner_id`).
-- UUID PKs; explicit FKs; standard columns `id`, `created_at`, `updated_at`, `deleted_at` where applicable.
-- PHP files: `declare(strict_types=1);` at top.
-- DTOs / value objects / queries / responses: `final readonly`.
-- `DateTimeImmutable` everywhere in domain code.
-
-### Frontend (Medium/High)
-
-- Forms use shadcn `Form` + react-hook-form + zod.
-- Server Components by default; every `"use client"` MUST be justified (interactive, uses browser API, …).
-- API calls via `@jperdior/api-client-ts` — never raw `fetch`.
-- DS tokens (see `.ai/ds-rules.md`); no hardcoded status colors, no arbitrary text sizes.
-- Every dialog supports `Cmd/Ctrl+Enter` submit and `Escape` cancel.
-
-### Migrations (Critical)
-
-- Generated migrations MUST be reviewed for unrelated churn before commit.
-- Migrations that touch tables outside the feature scope are flagged Critical.
-- New entity fields MUST come with a migration in the same PR.
-
-## Lessons
-
-Check `.ai/lessons.md` against the diff before approving:
-- L-001: No Doctrine attributes on domain entities.
-- L-002: Controllers must dispatch through the bus.
-- L-003: No cross-context imports.
-- L-005: Refresh-token rotation is mandatory.
+Apply rules from root `AGENTS.md` → **Conventions** and the relevant context `AGENTS.md`. Check `.ai/lessons.md` against the diff before approving.

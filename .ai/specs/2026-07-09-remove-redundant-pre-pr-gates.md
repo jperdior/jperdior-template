@@ -91,3 +91,4 @@ N/A — documentation-only change; no PHPUnit or Vitest tests apply.
 |------|--------|
 | 2026-07-09 | Spec drafted. |
 | 2026-07-09 | All phases implemented: AGENTS.md pre-PR gate rephrased to conditional; open-pr superpowers gate hint removed; check-and-commit skip note added. |
+| 2026-07-09 | Extended scope: removed ~135 lines of bloat across 4 lifecycle skill files (code-review Quick Rule Reference, implement-spec model discipline + Subagent Strategy + When Things Go Wrong, spec-writing Quick Rules + Agent block, new-feature branch naming table + Rules). |
