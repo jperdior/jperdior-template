@@ -13,25 +13,7 @@ Invoke before starting this workflow:
 - `superpowers:brainstorming` — design first, code never until approved; collaborative dialogue to validate the approach and produce a design doc before writing the spec.
 - `superpowers:writing-plans` — after the spec is finalised, structure it into a concrete implementation plan with bite-sized tasks.
 
-For research-heavy specs (new bounded context, cross-cutting concern), dispatch a benchmark agent before step 5:
-
-**Agent — Open-Source Benchmark** `model: "opus"`
-
-```
-Agent({
-  description: "Spec pattern research",
-  model: "opus",
-  prompt: """
-    You are a staff engineer benchmarking this feature against open-source leaders.
-    Spec path: [path — read it in full].
-    Also read: `.ai/specs/AGENTS.md`, `.ai/lessons.md`, `.ai/skills/spec-writing/references/compliance-gate.md`.
-    Task:
-    1. Compare the proposed design against known patterns in similar PHP/Symfony DDD + Hexagonal + CQRS projects.
-    2. Return: gap analysis, 2-3 alternative designs with trade-offs, any missing compliance-gate items.
-    Do NOT write any code or create any files.
-  """
-})
-```
+For research-heavy specs (new bounded context, cross-cutting concern), spawn an Explore agent before step 5 to benchmark the design against known PHP/Symfony DDD + Hexagonal + CQRS patterns — return gap analysis and 2-3 alternative designs with trade-offs.
 
 ## Workflow
 
@@ -96,18 +78,6 @@ See [references/spec-checklist.md](references/spec-checklist.md).
 8. **Auth & RBAC**: does every protected endpoint declare its `ROLE_*` requirement?
 9. **Frontend boundary**: for UI work, is the Server/Client component boundary explicit? Are `"use client"` files justified? Does the spec describe loading / error / empty states?
 10. **API contract field alignment**: every endpoint with a request or response body must include an explicit JSON example — not just a DTO class name. The PHP DTO constructor property name (e.g., `$password`) is the exact JSON key that `#[MapRequestPayload]` deserializes, and the TypeScript client must use that exact key. A spec that only names the DTO class without showing the JSON shape is a **High** finding — it guarantees a field-name mismatch between backend and frontend.
-
-## Quick Rules
-
-- **Singular naming** for aggregates, commands, events, queries (`User`, `Order`, not `Users`, `Orders` for the class names — table names ARE plural though).
-- **Event IDs**: `<context>.<aggregate>.<action_past_tense>` (e.g. `user.account.created`).
-- **No cross-context ORM relationships** — use FK IDs only.
-- **No `any`** in TypeScript; **`declare(strict_types=1);`** in every PHP file.
-- **`final readonly`** for value objects, DTOs, queries, responses.
-- **`DateTimeImmutable`** everywhere in domain code.
-- **Domain entities carry no ORM attributes.** Doctrine mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
-- **Forms** use shadcn `Form` + react-hook-form + zod.
-- **Frontend** consumes the API via `@jperdior/api-client-ts` — never raw `fetch`.
 
 ## Reference Materials
 

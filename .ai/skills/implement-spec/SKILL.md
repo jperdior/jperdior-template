@@ -14,11 +14,6 @@ Invoke before starting this workflow:
 - `superpowers:test-driven-development` — enforce Red → Green → Refactor within each phase; no production code before a failing test.
 - `superpowers:verification-before-completion` — run the full gate via `/run-gates`, read complete output, confirm 0 errors before claiming any phase done.
 
-**Model discipline for subagents:**
-- **Explore agents** → `model: "sonnet"` (focused lookup, minimal reasoning overhead)
-- **Plan agents** → `model: "opus"` (architectural reasoning, cross-context decisions)
-- **Implementation agents** (via `subagent-driven-development`) → `model: "sonnet"`
-
 ## Prerequisites
 
 - The spec exists under `.ai/specs/` on the current `feat-<slug>` branch (committed locally).
@@ -63,46 +58,13 @@ All phases are implemented on the same `feat-<slug>` branch (created by `/new-fe
 
 ## Subagent Strategy
 
-### When to spawn — before writing any code for a phase
-
-If the phase touches ≥3 unfamiliar files or spans multiple bounded contexts, spawn Explore subagents **in parallel** before writing a single line. Do not interleave research and implementation.
-
-**Spawn one Explore agent per angle with `model: "sonnet"`. Each gets a single, focused question.**
-
-| Angle | Example prompt |
-|-------|----------------|
-| Call sites | "Find every place in `apps/api/src/` that calls `OrderRepository` (not via an interface). List `file:line` only." |
-| Controller dependencies | "List every controller that dispatches `CreateOrder` or any Order-related command. File paths and class names only." |
-| Test coverage | "List all PHPUnit test files that import or instantiate `OrderCommandHandler`. File paths only." |
-| Event subscribers | "Find all classes that listen to the `order.order.created` event ID. Return class name and file path." |
-| Migration scope | "List every table referenced in `apps/api/src/Order/Infrastructure/Persistence/` ORM mappings. Table names only." |
-| Frontend dependencies | "Find all TypeScript files that import from `@jperdior/api-client-ts` and call an order-related endpoint. File and endpoint." |
-
-Collect all results before opening any file to edit.
-
-### Plan subagent `model: "opus"`
-
-Spawn one Plan subagent when:
-- A phase's design needs more thought than the spec captured.
-- The phase touches ≥3 bounded contexts.
-- A migration's scope is unclear from the ORM mappings alone.
-
-### Rules
-
-- Do NOT spawn subagents for single-file edits — the overhead isn't worth it.
-- Do NOT delegate code generation to subagents — all writes happen in the main agent to ensure consistency.
-- Run all research agents before starting implementation, not interleaved with it.
+If a phase touches ≥3 unfamiliar files or spans multiple bounded contexts, spawn one Explore agent per angle (call sites, test coverage, event subscribers, migration scope, frontend dependencies) **in parallel before writing a single line**. Collect all results first. Do NOT spawn for single-file edits. Do NOT delegate code generation — all writes happen in the main agent.
 
 ## When Things Go Wrong
 
-| Symptom | Action |
-|---------|--------|
-| `make test` fails on the current phase | If simple: fix the code or test directly. If the root cause is unclear or spans multiple files, use `/root-cause` to drill down, then `/fix` to ship with a regression test. |
-| `make lint` reports a deptrac violation | A cross-context import slipped in. Replace with a domain event or public application service. |
-| `make migrate-diff` produces unrelated SQL | Investigate snapshot drift — don't commit unrelated churn. |
-| Phase delivery doesn't match the spec's promise | Update the spec FIRST; then code to the updated promise. |
-| Spec proves wrong mid-implementation | Stop. Update the spec. Re-run `/pre-implement-spec`. Resume. |
-| A subtle bug is discovered (passes tests but wrong behaviour) | Use `/root-cause` to find the offending change, then `/fix` to ship a regression test + fix. Review the fix with `/code-review`. |
+- **`make test` fails** — fix directly, or use `/root-cause` → `/fix` if the cause spans files.
+- **deptrac violation** — replace the direct import with a domain event or public application service.
+- **Spec wrong mid-implementation** — stop, update the spec, re-run `/pre-implement-spec`, resume.
 
 ## Output
 

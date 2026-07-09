@@ -27,22 +27,7 @@ Invoke before starting this workflow:
 
 ## Branch naming
 
-| User says | Branch name |
-|-----------|-------------|
-| "campaign bounded context" | `feat-campaign-bounded-context` |
-| "billing feature" | `feat-billing` |
-| "fix the login redirect" | `feat-fix-login-redirect` |
-
-Always use lowercase kebab-case with hyphens (no `/` — it becomes `+` in the worktree
-path, which breaks Docker Compose project names). Strip articles (a, an, the).
-Truncate at 40 chars.
-
-## Rules
-
-- Always branch from `main`, and **always `git fetch origin` first** so the base ref is current — never branch from a stale `main`.
-- **Never ask for branch name confirmation.** Derive it and go.
-- After entering the worktree, remind the user that `ExitWorktree` (or ending the session) will prompt to keep or discard the branch.
-- Next step is always `/spec-writing` (writes the spec locally), then `/pre-implement-spec` (audit), then `/implement-spec`. Do NOT skip the audit.
+`feat-<kebab-case>` — max 40 chars, lowercase, hyphens only (no `/` — it breaks Docker Compose project names). Strip articles. Derive and go; never ask for confirmation.
 
 ## Output
 

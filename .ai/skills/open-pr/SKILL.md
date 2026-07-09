@@ -11,7 +11,6 @@ Open a PR for the work already on the current branch (the branch must have commi
 
 Invoke before starting this workflow:
 - `superpowers:finishing-a-development-branch` — structured branch-completion flow: verify tests → detect environment → present 4 options (merge locally, push+PR, keep, discard). Can replace steps 1-4 of this skill.
-- `superpowers:verification-before-completion` — run `/run-gates`, read complete output, confirm 0 errors before opening the PR.
 
 ## Workflow
 
