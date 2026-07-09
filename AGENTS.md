@@ -148,9 +148,11 @@ output now self-reports the cause within seconds — no more 600s silent timeout
 the PHP error above it, fix it, and re-run. Do NOT raise memory limits unless the banner
 says `TRUE OOM` (exit code 137 alone is **not** OOM).
 
-### Pre-PR gate (mandatory)
+### Pre-PR gate
 
-Before offering to create a PR or push a branch, **always** run and confirm both pass:
+Only needed when the branch was **not** built via `/implement-spec`. If you used `/implement-spec`, the last phase's `/run-gates` already covers this — do not re-run gates before opening the PR.
+
+For hotfix and short-path branches (no `/implement-spec`), run and confirm both pass before opening the PR:
 
 ```bash
 make lint && make test
@@ -332,7 +334,7 @@ Use `/scaffold-bounded-context`, `/add-command`, `/add-route` **directly** only 
 1. **Spec-first** for non-trivial tasks (3+ steps or architectural decisions). Check `.ai/specs/` first. Skip for small fixes.
 2. **Subagent strategy**: use subagents for research / parallel analysis. One task per subagent. Keeps main context clean. Use `/parallel-research` for structured multi-angle codebase exploration before implementing in unfamiliar territory.
 3. **Self-improvement**: after corrections, update `.ai/lessons.md` or the relevant AGENTS.md.
-4. **Verification**: run `make lint && make test`. Ask: "Would a staff engineer approve this?"
+4. **Verification**: run `/run-gates` after each phase (implement-spec does this automatically). Gates are already green by the time you open the PR — no re-run needed. Ask: "Would a staff engineer approve this?"
 5. **Elegance check**: for non-trivial changes, pause and ask "is there a more elegant way?"
 
 ## Monorepo Structure

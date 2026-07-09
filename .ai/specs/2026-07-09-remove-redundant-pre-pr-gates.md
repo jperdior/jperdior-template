@@ -90,3 +90,4 @@ N/A — documentation-only change; no PHPUnit or Vitest tests apply.
 | Date | Change |
 |------|--------|
 | 2026-07-09 | Spec drafted. |
+| 2026-07-09 | All phases implemented: AGENTS.md pre-PR gate rephrased to conditional; open-pr superpowers gate hint removed; check-and-commit skip note added. |

@@ -14,6 +14,8 @@ Invoke before starting this workflow:
 
 ## Workflow
 
+> **In an `/implement-spec` flow?** If the last phase's `/run-gates` just passed, skip steps 2–4 (gate run) and go straight to step 5 (compose the commit). Gates are already green.
+
 1. **Confirm scope**. Run `git status`, `git diff --stat`. If unrelated files are staged or there are surprises, ask the user.
 2. **Run the verification gate** — invoke `/run-gates`. It scopes the gates to the diff and dispatches each as a parallel subagent (all lint/build gates standalone, only the PHP test gate `test-api` on the shared stack).
 3. **Fix obvious problems**:
