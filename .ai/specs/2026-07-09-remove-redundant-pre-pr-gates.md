@@ -26,9 +26,9 @@ Runs 2 and 3 add minutes of wall-clock time without adding any safety, because t
 
 **Three targeted edits to harness documents. No PHP/TS code changes.**
 
-1. **`AGENTS.md`** — remove the "Pre-PR gate (mandatory)" sub-section (lines 151-159); update the Short-path paragraph to remove the `make lint && make test` mandate; update the Core Principles "Verification" bullet to say "run `/run-gates` after each phase — gates are already green by the time you open the PR."
-2. **`open-pr/SKILL.md`** — remove `superpowers:verification-before-completion` from the Superpowers Integration block (it implies re-running gates, which are already green from the last phase).
-3. **`check-and-commit/SKILL.md`** — add a note at the top of the Workflow section clarifying that when invoked after `/implement-spec` (gates already passed for the last phase), steps 2–4 (gate run) may be skipped and you proceed directly to composing the commit.
+1. **`AGENTS.md`** — rephrase the "Pre-PR gate (mandatory)" sub-section (lines 151-159) to a conditional: "Only needed if the branch was NOT built via `/implement-spec`. If you used `/implement-spec`, the last phase's `/run-gates` already covers this." Do NOT remove the short-path gate note (line 290) — that flow has no phase gates. Keep the Core Principles "Verification" bullet but add the same conditional framing.
+2. **`open-pr/SKILL.md`** — remove `superpowers:verification-before-completion` from the Superpowers Integration block (it implies re-running gates, which are already green after the last implement-spec phase).
+3. **`check-and-commit/SKILL.md`** — add a note at the top of the Workflow section: "If you are in an `/implement-spec` flow and the last phase gate passed, skip steps 2–4 (gate run) and proceed directly to composing the commit."
 
 ## Architecture
 
@@ -49,7 +49,7 @@ N/A — no HTTP endpoints touched.
 
 | Phase | Goal | Deliverable |
 |-------|------|-------------|
-| 0 | Remove mandatory pre-PR gate from `AGENTS.md` | Updated `AGENTS.md` — three locations patched |
+| 0 | Rephrase pre-PR gate in `AGENTS.md` to a conditional (implement-spec flow only) | Updated `AGENTS.md` — pre-PR gate section + Core Principles rephrased; short-path note preserved |
 | 1 | Remove gate hint from `open-pr/SKILL.md` | Updated `open-pr/SKILL.md` |
 | 2 | Add "skip-if-post-implement-spec" note to `check-and-commit/SKILL.md` | Updated `check-and-commit/SKILL.md` |
 
@@ -59,7 +59,7 @@ All three phases are harness-file edits only. No `make test` run is needed; the 
 
 | Risk | Severity | Affected area | Mitigation | Residual |
 |------|----------|---------------|------------|----------|
-| Hotfix / short-path branches that skip `/implement-spec` now have no enforced gate before PR | Medium | Hotfix path, short-path | Short-path note in AGENTS.md still tells devs to run `/run-gates`; hotfix path section is unchanged | Low — CI on GitHub catches any failure |
+| Short-path branches that skip `/implement-spec` now have no enforced gate before PR | Low | Short-path | Short-path gate note in `AGENTS.md` line 290 is preserved unchanged; hotfix path is unchanged | Low — CI on GitHub catches any failure |
 | Developer forgets to run gates entirely on a non-implement-spec branch | Low | Any manual branch | CI catches failures; `check-and-commit` still runs gates when invoked standalone | Acceptable |
 
 ## Integration Coverage
