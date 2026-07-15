@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\User\Presentation\Http\SignUp;
 
-final class ItRejectsInvalidEmailTest extends SignUpControllerTestCase
+final class ItRejectsInvalidEmailTest extends BaseSignUpTest
 {
     protected function act(): void
     {

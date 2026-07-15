@@ -9,7 +9,7 @@ use App\User\Domain\PasswordHasherInterface;
 use App\User\Domain\PlainPassword;
 use App\User\Domain\User;
 
-final class ItResetsPasswordAndMarksTokenUsedTest extends ResetPasswordWithTokenControllerTestCase
+final class ItResetsPasswordAndMarksTokenUsedTest extends BaseResetPasswordWithTokenTest
 {
     private User $user;
     private string $plainToken;

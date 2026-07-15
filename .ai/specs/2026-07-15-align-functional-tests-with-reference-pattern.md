@@ -53,6 +53,18 @@ abstract class FunctionalTestCase extends WebTestCase
 
 Because `testExecution()` is `final`, no subclass can add a second `#[Test]` method path through the base — every functional test is exactly one AAA case.
 
+### Test discovery: `It*Test` scenarios, `Base*Test` bases
+
+Naming the abstract bases `Base<UseCase>Test` makes them match PHPUnit's default `*Test.php` collection, and PHPUnit 11 emits a "class is abstract" **runner warning** for each — which it treats as a non-zero exit (independent of `failOnWarning`), breaking the gate. Since every concrete scenario is named `It…Test` and every base `Base…Test`, the Functional test-suite is scoped to `prefix="It"`:
+
+```xml
+<testsuite name="Functional">
+    <directory prefix="It" suffix="Test.php">tests/Functional</directory>
+</testsuite>
+```
+
+PHPUnit then collects only the concrete `It*Test` scenarios and never instantiates the abstract bases or `FunctionalTestCase`. This makes the "scenarios are `It…Test`" convention **load-bearing**: a functional test not prefixed `It` is silently not collected — Phase 3 docs state this explicitly.
+
 ### Per-use-case base classes
 
 Each use-case directory gets an abstract `Base<UseCase>Test extends FunctionalTestCase` that:
@@ -215,3 +227,4 @@ This change **is** test infrastructure — its own acceptance criterion is that 
 |------|--------|
 | 2026-07-15 | Spec drafted. |
 | 2026-07-15 | Pre-implement audit applied: corrected doc diagnosis; added handler-test AAA guidance; added `MeRequiresAuthTest`→`ItRequiresAuthTest`, `SeedAdmin` 1:1 mapping, direct-extender `ItRejectsSelfDeletionTest` and idempotency-double-run callouts; expanded Phase 3 doc list (`scaffold-bounded-context`, `docs/adding-a-bounded-context.md`, `User/AGENTS.md`, stale `--filter`); added coverage-preservation gate. |
+| 2026-07-15 | Phases 1+2 implemented (combined — abstract `arrange/act/assert` makes them interdependent; the two direct-extenders must convert in the same commit). Added `prefix="It"` Functional test-suite scoping to suppress abstract-base runner warnings. `make lint-api` clean; `make test-api` green — 58 tests / 128 assertions (21 functional), no coverage lost, grep gate passes. |

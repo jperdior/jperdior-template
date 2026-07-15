@@ -6,7 +6,7 @@ namespace App\Tests\Functional\User\Presentation\Http\RequestPasswordRecovery;
 
 use App\User\Domain\User;
 
-final class ItIssuesTokenForKnownUserTest extends RequestPasswordRecoveryControllerTestCase
+final class ItIssuesTokenForKnownUserTest extends BaseRequestPasswordRecoveryTest
 {
     private User $user;
 

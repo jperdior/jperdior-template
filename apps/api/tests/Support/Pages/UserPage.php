@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Functional\Support\Page;
+namespace App\Tests\Support\Pages;
 
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -68,6 +68,16 @@ final class UserPage
             server: ['CONTENT_TYPE' => 'application/json'],
             content: json_encode(['token' => $token, 'newPassword' => $newPassword], \JSON_THROW_ON_ERROR),
         );
+    }
+
+    public function adminDeleteUser(string $userId, ?string $token = null): void
+    {
+        $url = $this->router->generate('api_admin_delete_user', ['id' => $userId]);
+        $server = [];
+        if (null !== $token) {
+            $server['HTTP_AUTHORIZATION'] = 'Bearer '.$token;
+        }
+        $this->client->request('DELETE', $url, server: $server);
     }
 
     public function getStatusCode(): int

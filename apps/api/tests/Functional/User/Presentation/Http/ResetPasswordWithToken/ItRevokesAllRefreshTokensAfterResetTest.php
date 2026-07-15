@@ -8,7 +8,7 @@ use App\User\Domain\User;
 use App\User\Infrastructure\Security\RefreshToken;
 use DateTime;
 
-final class ItRevokesAllRefreshTokensAfterResetTest extends ResetPasswordWithTokenControllerTestCase
+final class ItRevokesAllRefreshTokensAfterResetTest extends BaseResetPasswordWithTokenTest
 {
     private User $user;
     private string $plainToken;

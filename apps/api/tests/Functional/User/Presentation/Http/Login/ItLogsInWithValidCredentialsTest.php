@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\User\Presentation\Http\Login;
 
-final class ItLogsInWithValidCredentialsTest extends LoginControllerTestCase
+final class ItLogsInWithValidCredentialsTest extends BaseLoginTest
 {
     protected function arrange(): void
     {

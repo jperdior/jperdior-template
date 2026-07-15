@@ -7,7 +7,7 @@ namespace App\Tests\Functional\User\Presentation\Http\RequestPasswordRecovery;
 use App\User\Domain\User;
 use App\User\Infrastructure\Persistence\Doctrine\PasswordRecoveryTokenModel;
 
-final class ItSupersedesPriorUnusedTokensTest extends RequestPasswordRecoveryControllerTestCase
+final class ItSupersedesPriorUnusedTokensTest extends BaseRequestPasswordRecoveryTest
 {
     private User $user;
 

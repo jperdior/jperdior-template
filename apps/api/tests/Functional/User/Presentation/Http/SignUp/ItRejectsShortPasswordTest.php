@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\User\Presentation\Http\SignUp;
 
-final class ItRejectsShortPasswordTest extends SignUpControllerTestCase
+final class ItRejectsShortPasswordTest extends BaseSignUpTest
 {
     protected function act(): void
     {
