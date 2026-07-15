@@ -219,7 +219,14 @@ This change **is** test infrastructure — its own acceptance criterion is that 
 
 ## Final Compliance Report
 
-(Filled in at the end. See `references/compliance-gate.md`.)
+- [x] **Boundary integrity** — test-only + docs change; no `src/**` touched, no cross-context imports introduced.
+- [x] **Bus discipline** — unchanged; controllers still dispatch through the bus. Handler-test guidance dispatches via `CommandBus`/`QueryBus`.
+- [x] **Mapping discipline** — no ORM attributes touched.
+- [x] **No public-contract change** — no routes/events/response fields/DB columns altered. Test class renames are internal (`App\Tests\**`).
+- [x] **Coverage preserved** — Functional suite unchanged at 21 scenarios; full suite 58 tests / 128 assertions; every assertion kept verbatim (idempotency double-run + admin-delete 3 assertions).
+- [x] **AAA enforced** — `FunctionalTestCase` owns `final #[Test] testExecution()` + abstract `arrange/act/assert`; grep gate confirms it is the only test entry point.
+- [x] **Docs synced** — all 9 stale docs/skills updated to present-tense one-class-per-case guidance; stale `--filter` examples replaced; `implemented/` specs left untouched.
+- [x] **Gates green** — `make lint-api` (phpstan/cs-fixer/deptrac) clean; `make test-api` green.
 
 ## Changelog
 
@@ -228,3 +235,4 @@ This change **is** test infrastructure — its own acceptance criterion is that 
 | 2026-07-15 | Spec drafted. |
 | 2026-07-15 | Pre-implement audit applied: corrected doc diagnosis; added handler-test AAA guidance; added `MeRequiresAuthTest`→`ItRequiresAuthTest`, `SeedAdmin` 1:1 mapping, direct-extender `ItRejectsSelfDeletionTest` and idempotency-double-run callouts; expanded Phase 3 doc list (`scaffold-bounded-context`, `docs/adding-a-bounded-context.md`, `User/AGENTS.md`, stale `--filter`); added coverage-preservation gate. |
 | 2026-07-15 | Phases 1+2 implemented (combined — abstract `arrange/act/assert` makes them interdependent; the two direct-extenders must convert in the same commit). Added `prefix="It"` Functional test-suite scoping to suppress abstract-base runner warnings. `make lint-api` clean; `make test-api` green — 58 tests / 128 assertions (21 functional), no coverage lost, grep gate passes. |
+| 2026-07-15 | Phase 3 implemented: synced 9 docs/skills (`integration-tests`, `add-command`, `add-query`, `add-route`, `scaffold-bounded-context`, `apps/api/AGENTS.md`, `apps/api/src/User/AGENTS.md`, `.ai/qa/AGENTS.md`, `docs/adding-a-bounded-context.md`) to one-class-per-case + AAA + `Support/{Fixtures,Pages}` + handler-test-via-bus; replaced stale `--filter`/`ControllerTest` references. Final Compliance Report completed. |

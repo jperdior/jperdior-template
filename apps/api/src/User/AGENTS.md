@@ -118,12 +118,13 @@ limit becomes effectively global.
 
 - `tests/Unit/User/Domain/` — aggregate + value-object unit tests (no framework, no DB; run in ms)
 - `tests/Unit/User/Application/` — use-case tests through the port interfaces, using the fakes in `tests/Doubles/` (`InMemoryUserRepository`, `InMemoryPasswordRecoveryTokenRepository`, `FakePasswordHasher`, `SpyEventBus`, `SpyRefreshTokenRevoker`, `SpyPasswordRecoveryEmailSender`, `NullTransaction`) plus the shared kernel's `FrozenClock`
-- `tests/Functional/User/Presentation/Http/SignUp/` — sign-up cases
+- `tests/Functional/User/Presentation/Http/SignUp/` — sign-up cases (`BaseSignUpTest` + `It*Test`)
 - `tests/Functional/User/Presentation/Http/RequestPasswordRecovery/` — 4 cases
 - `tests/Functional/User/Presentation/Http/ResetPasswordWithToken/` — 6 cases incl. `ItRevokesAllRefreshTokensAfterResetTest`
-- `tests/Functional/Support/Fixture/PasswordRecoveryTokenFixture.php` (`issueFor`, `issueExpiredFor`, `issueUsedFor`, `countForUser`)
+- `tests/Functional/User/Infrastructure/Console/SeedAdmin/` — admin-seeder cases (`BaseSeedAdminTest` + `It*Test`)
+- `tests/Support/Fixtures/PasswordRecoveryTokenFixture.php` (`issueFor`, `issueExpiredFor`, `issueUsedFor`, `countForUser`); HTTP via `tests/Support/Pages/UserPage.php`
 
-Add a `<Verb>CommandHandlerTest.php` whenever you add a new Application command.
+Each functional scenario is one `It<Scenario>Test` extending a `Base<UseCase>Test`, in AAA form (`arrange/act/assert`). Add a new scenario class per behaviour.
 
 ## Validation Commands
 

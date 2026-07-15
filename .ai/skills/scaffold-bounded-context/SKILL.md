@@ -55,7 +55,7 @@ apps/api/src/<Context>/
    ```
 7. **Generate the first migration**: `make migrate-diff`. Review the SQL.
 8. **Generate the AGENTS.md** at `apps/api/src/<Context>/AGENTS.md` using `/create-agents-md`.
-9. **Generate the first test**: `apps/api/tests/Functional/<Context>/<Aggregate>Test.php` (smoke test for the Create endpoint).
+9. **Generate the first test**: one class per scenario under `apps/api/tests/Functional/<Context>/Presentation/Http/Create<Aggregate>/` — an abstract `BaseCreate<Aggregate>Test` (shared `setUp()` + default `arrange()`) plus a `final ItCreates<Aggregate>Test` in AAA form (`arrange/act/assert`, enforced by `FunctionalTestCase`). Name every scenario `It<Scenario>Test`; only `It*Test` classes are collected by the Functional suite.
 
 ## Rules
 

@@ -237,11 +237,19 @@ The handler is tagged automatically via the `_instanceof` block in `config/servi
 
 ### 9. Write functional tests
 
+One class per scenario, named `It<Scenario>Test`, extending a per-use-case `Base<UseCase>Test`:
+
 ```
-tests/Functional/<Context>/Presentation/Http/Create<Aggregate>ControllerTest.php
+tests/Functional/<Context>/Presentation/Http/Create<Aggregate>/BaseCreate<Aggregate>Test.php   ← abstract: shared setUp + default arrange()
+tests/Functional/<Context>/Presentation/Http/Create<Aggregate>/ItCreates<Aggregate>Test.php     ← final: one scenario
 ```
 
-Use `FunctionalTestCase` as the base. Tests run in transactional rollback — no data bleeds between cases. Mirror the structure in `tests/Functional/User/`.
+`Base<UseCase>Test` extends `FunctionalTestCase`, which owns the enforced Arrange-Act-Assert
+contract (`final #[Test] testExecution()` → `arrange()/act()/assert()`, all abstract) and wraps
+each test in a rolled-back DB transaction — no data bleeds between cases and no manual cleanup.
+Only `It*Test` classes are collected (the Functional suite is scoped `prefix="It"`). Put HTTP
+calls in a page object under `tests/Support/Pages/` and data setup in `tests/Support/Fixtures/`.
+Mirror the structure in `tests/Functional/User/`.
 
 ---
 

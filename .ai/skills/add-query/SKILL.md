@@ -21,7 +21,7 @@ apps/api/src/<Context>/Application/Query/<Verb>/
 ```
 
 4. **Read directly from a Doctrine repository** (no domain aggregate hydration needed for queries — return DTOs).
-5. **Test under** `apps/api/tests/Functional/<Context>/Application/<Verb>QueryHandlerTest.php`.
+5. **Test** — one class per scenario, named `It<Scenario>Test`, under `apps/api/tests/Functional/<Context>/Application/<Verb>/`, extending an abstract `Base<Verb>Test`. AAA (enforced by `FunctionalTestCase`): `arrange()` seeds data, `act()` dispatches the query through the `QueryBus` (no page object), `assert()` checks the returned Response DTO. Only `It*Test` classes are collected.
 
 ## Templates
 
