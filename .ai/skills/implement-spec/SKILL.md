@@ -32,6 +32,7 @@ All phases are implemented on the same `feat-<slug>` branch (created by `/new-fe
    - PHP: follow the bounded-context layout. Use `/scaffold-bounded-context` for new contexts, `/add-command`, `/add-query`, `/add-route` for additions.
    - Frontend: follow the route shape under `apps/web/src/app/` or `apps/admin/src/app/`. Use `/scaffold-nextjs-page`, `/scaffold-shadcn-form`.
    - Migrations: run `make migrate-diff`; review the SQL; commit it.
+   - API contract: if the phase touches `apps/api` in any OpenAPI-affecting way (routes, DTOs, annotations), run `make gen-api` and commit the regenerated `apps/api/openapi.json` + `packages/api-client-ts/src/types.gen.ts` in the same phase commit — CI's `openapi-drift` job (also run locally via `/run-gates`) fails the phase otherwise.
    - Tests: PHPUnit Functional next to the controller under `apps/api/tests/Functional/`; Vitest + RTL colocated under `apps/web/src/**/__tests__/` or `apps/admin/src/**/__tests__/`.
 4. **Run `/sync-context-docs`** — update AGENTS.md for every context touched, update `docs/persistence.md` if schema changed, update the spec's Changelog, and sync any other cross-cutting docs.
 5. **Verification gate (after every phase)**: invoke `/run-gates`. It scopes the gates to the
@@ -62,6 +63,7 @@ If a phase touches ≥3 unfamiliar files or spans multiple bounded contexts, spa
 
 ## When Things Go Wrong
 
+- **Gate passes but changed files aren't picked up** — `make stop-test && make up-test`, then re-run.
 - **`make test` fails** — fix directly, or use `/root-cause` → `/fix` if the cause spans files.
 - **deptrac violation** — replace the direct import with a domain event or public application service.
 - **Spec wrong mid-implementation** — stop, update the spec, re-run `/pre-implement-spec`, resume.

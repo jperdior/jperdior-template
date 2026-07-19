@@ -75,6 +75,16 @@ Skills also trigger automatically when a task matches the skill's `description`.
 | `scaffold-nextjs-page` | App Router page with `loading.tsx` + `error.tsx` + Server Action stub. |
 | `scaffold-shadcn-form` | React-hook-form + zod schema + shadcn `Form` primitives. |
 | `regenerate-api-client` | Run OpenAPI gen against the running API and refresh `packages/api-client-ts`. |
+| `new-feature` | Create a `feat-<slug>` git worktree + branch from an up-to-date `main`. Called once per feature. |
+| `sync-context-docs` | Update bounded-context `AGENTS.md` files after implementation. Run per-phase before opening a PR. |
+| `parallel-research` | Spawn multiple Explore agents in parallel to map unfamiliar code before touching it. |
+| `run-gates` | Run the CI verification gate — dispatch each in-scope gate as a parallel subagent, scoped to the diff. |
+| `lint-php` | Run PHPStan + cs-fixer + deptrac in isolation (no test stack). |
+| `lint-js` | Run tsc + ESLint across apps/web, apps/admin, packages in isolation. |
+| `ui-design` | Decide which UI layer to use (`@jperdior/ui-react` → Tailwind → semantic HTML); how to add a Radix component. |
+| `translate-strings` | Extract user-facing `apps/web` strings into the next-intl catalogs (`en`/`es`) and keep key-parity green. |
+| `init` | Bootstrap a fresh clone — prerequisites, `.env.local`, project personalization. |
+| `customize-project` | Rename template placeholders and add project context. Run once, at project start. |
 
 ## Available Skills (automation)
 

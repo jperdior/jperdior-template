@@ -106,7 +106,7 @@ Execute a user-described task autonomously and open a GitHub PR. Resumable via `
 
    ## Checklist
    - [ ] No cross-bounded-context Domain imports (`deptrac` will catch them in CI)
-   - [ ] New entities use XML mapping only (no `#[ORM\*]` attributes)
+   - [ ] New entities use PHP attribute mapping on model classes only (no `#[ORM\*]` on domain entities)
    - [ ] New migration reviewed — `up()` and `down()` both correct
    - [ ] No credentials or tokens committed
    - [ ] OpenAPI-affecting change → `make gen-api` run and diff committed

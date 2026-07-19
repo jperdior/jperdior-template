@@ -16,6 +16,7 @@ Onboarding wizard for a fresh clone. Checks the environment, sets up config, and
    - `docker compose version` — Compose v2.24+?
    - `make --version` — GNU Make available?
    - `git --version` — always present if we got here.
+   - `gh --version` — GitHub CLI; required for PR workflows ([install](https://cli.github.com/)).
 
 2. **Copy `.env.local`** if it doesn't exist:
    ```sh

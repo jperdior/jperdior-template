@@ -17,7 +17,10 @@ For research-heavy specs (new bounded context, cross-cutting concern), spawn an 
 
 ## Workflow
 
-1. **Load Context**: read the task description and `.ai/specs/AGENTS.md`. Identify which bounded contexts and packages are affected. Use the root `AGENTS.md` Task Router to find every related guide.
+0. **Worktree gate** — run `git branch --show-current` before doing anything else. If the result is `main` (or any protected branch), **stop immediately** and tell the user:
+   > "You're on `main`. Run `/new-feature feat-<slug>` first to create the feature worktree, then re-run `/spec-writing` from inside it."
+   Do not create any file, do not read context, do not proceed until the branch is a `feat-*` branch.
+1. **Load Context**: read the task description and `.ai/specs/AGENTS.md`. Identify which bounded contexts and packages are affected. Use the root `AGENTS.md` Task Router to find every related guide. **Read `.ai/business-rules.md`** — check every existing rule for the affected contexts. A spec that silently contradicts or duplicates an existing rule is a **Critical** finding.
 2. **Initialize**: create `.ai/specs/{YYYY-MM-DD}-{kebab-case-title}.md`.
 3. **Start Minimal — Skeleton + Open Questions Gate**: Write a skeleton (TLDR + 2-3 key sections only). Before writing the skeleton, scan the brief for **critical unknowns** — decisions where the wrong assumption forces a rewrite. List them as an **Open Questions** block (`Q1`, `Q2`, …) immediately after the TLDR. **STOP after presenting the skeleton.** Do not proceed past this gate until the user has answered every question.
 4. **Apply Answers**: remove the Open Questions block and fill the skeleton.
@@ -77,7 +80,8 @@ See [references/spec-checklist.md](references/spec-checklist.md).
 7. **Idempotency**: are subscribers and workers idempotent? Messenger can retry.
 8. **Auth & RBAC**: does every protected endpoint declare its `ROLE_*` requirement?
 9. **Frontend boundary**: for UI work, is the Server/Client component boundary explicit? Are `"use client"` files justified? Does the spec describe loading / error / empty states?
-10. **API contract field alignment**: every endpoint with a request or response body must include an explicit JSON example — not just a DTO class name. The PHP DTO constructor property name (e.g., `$password`) is the exact JSON key that `#[MapRequestPayload]` deserializes, and the TypeScript client must use that exact key. A spec that only names the DTO class without showing the JSON shape is a **High** finding — it guarantees a field-name mismatch between backend and frontend.
+10. **Business rules belong in the domain**: any constraint derived from the domain (approval gates, ownership checks, status transitions, eligibility rules) MUST be enforced in the domain layer (aggregate, domain service, or application use case) and exposed as a typed `DomainException`. Filtering in the frontend or API layer is an optional UX nicety, never a substitute. If the spec enforces a rule only in the UI, that is a **Critical** finding.
+11. **API contract field alignment**: every endpoint with a request or response body must include an explicit JSON example — not just a DTO class name. The PHP DTO constructor property name (e.g., `$password`) is the exact JSON key that `#[MapRequestPayload]` deserializes, and the TypeScript client must use that exact key. A spec that only names the DTO class without showing the JSON shape is a **High** finding — it guarantees a field-name mismatch between backend and frontend.
 
 ## Reference Materials
 
@@ -85,5 +89,6 @@ See [references/spec-checklist.md](references/spec-checklist.md).
 - [references/spec-checklist.md](references/spec-checklist.md) — the review checklist
 - [references/compliance-gate.md](references/compliance-gate.md) — final compliance gate
 - Root [`AGENTS.md`](../../../AGENTS.md) — Task Router
+- [`.ai/business-rules.md`](../../business-rules.md) — domain invariants catalogue (**read before every spec**)
 - [`.ai/lessons.md`](../../lessons.md) — known pitfalls
 - [`.ai/ds-rules.md`](../../ds-rules.md) — design system rules for frontend specs

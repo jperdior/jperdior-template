@@ -17,21 +17,23 @@ Invoke before starting this workflow:
 > **In an `/implement-spec` flow?** If the last phase's `/run-gates` just passed, skip steps 2–4 (gate run) and go straight to step 5 (compose the commit). Gates are already green.
 
 1. **Confirm scope**. Run `git status`, `git diff --stat`. If unrelated files are staged or there are surprises, ask the user.
-2. **Run the verification gate** — invoke `/run-gates`. It scopes the gates to the diff and dispatches each as a parallel subagent (all lint/build gates standalone, only the PHP test gate `test-api` on the shared stack).
-3. **Fix obvious problems**:
+2. **Run the verification gate** — invoke `/run-gates`. It scopes the gates to the diff and dispatches each as a parallel subagent (all lint/build gates standalone, only the PHP test gate `test-api` on the shared stack). Let `/run-gates` decide the scope.
+3. **Collect the gate results.** Every in-scope gate MUST report PASS. Treat any FAIL as blocking — do not proceed to commit.
+4. **Fix obvious problems**:
    - Code-style issues → `make lint-fix`
    - Missing OpenAPI annotations → add them
    - Hardcoded strings the i18n linter caught → move to locale files
+   - Stale generated API artifacts (CI's `openapi-drift` job fails when the branch touches `apps/api`) → run `make gen-api` and commit the regenerated `apps/api/openapi.json` + `packages/api-client-ts/src/types.gen.ts`
    - `any` types → narrow them
    - Cross-context import (deptrac fail) → replace with event or public application service
-4. **Re-run `/run-gates`**. Every gate MUST report PASS.
-5. **Compose the commit**:
+5. **Re-run `/run-gates`**. Every gate MUST report PASS.
+6. **Compose the commit**:
    - One commit per logical change (or one per phase if implementing a spec).
    - Title format: `<type>(<context>): <summary>` (e.g. `feat(note): add CreateNoteController`).
    - Body: brief rationale + spec reference if applicable.
    - Use the project's commit-message conventions (Conventional Commits).
-6. **Commit**. NEVER use `--no-verify` unless the user explicitly asks. NEVER amend a pushed commit unless asked.
-7. **Push** if the user asked to push. Otherwise stop after committing.
+7. **Commit**. NEVER use `--no-verify` unless the user explicitly asks. NEVER amend a pushed commit unless asked.
+8. **Push** if the user asked to push. Otherwise stop after committing.
 
 ## Output
 

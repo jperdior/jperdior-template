@@ -25,7 +25,13 @@
         "new-feature",
         "init",
         "customize-project",
-        "run-gates"
+        "run-gates",
+        "sync-context-docs",
+        "parallel-research",
+        "lint-php",
+        "lint-js",
+        "ui-design",
+        "translate-strings"
       ]
     },
     "automation": {
