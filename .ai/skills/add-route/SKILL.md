@@ -24,7 +24,7 @@ apps/api/src/<Context>/Presentation/Http/
 
 5. **Add the Nelmio OpenAPI annotation** on the controller.
 6. **Run `make migrate-diff`** only if the route requires new schema.
-7. **Add a functional test** under `apps/api/tests/Functional/<Context>/Presentation/Http/<Verb><Aggregate>ControllerTest.php`.
+7. **Add a functional test** — one class per scenario, named `It<Scenario>Test`, under `apps/api/tests/Functional/<Context>/Presentation/Http/<Verb><Aggregate>/`, extending an abstract `Base<Verb><Aggregate>Test`. AAA (enforced by `FunctionalTestCase`): `arrange()` builds fixtures + auth, `act()` calls the endpoint through a page object in `tests/Support/Pages/`, `assert()` checks status + response shape. Only `It*Test` classes are collected.
 
 ## Controller Template (Command)
 
@@ -107,6 +107,6 @@ final readonly class <Verb><Aggregate>Request
    Controller: <Context>/Presentation/Http/<Verb><Aggregate>Controller
    Wired to: command.bus or query.bus
    OpenAPI: annotated
-   Test: <Verb><Aggregate>ControllerTest.php
+   Test: <Verb><Aggregate>/It<Scenario>Test.php (extends Base<Verb><Aggregate>Test)
    Next: regenerate the TS client with `make gen-api`
 ```

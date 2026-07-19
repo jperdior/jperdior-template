@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Functional\User\Presentation\Http\RequestPasswordRecovery;
 
 use App\Tests\Functional\FunctionalTestCase;
-use App\Tests\Functional\Support\Fixture\PasswordRecoveryTokenFixture;
-use App\Tests\Functional\Support\Page\UserPage;
-use PHPUnit\Framework\Attributes\Test;
+use App\Tests\Support\Fixtures\PasswordRecoveryTokenFixture;
+use App\Tests\Support\Pages\UserPage;
 
-abstract class RequestPasswordRecoveryControllerTestCase extends FunctionalTestCase
+abstract class BaseRequestPasswordRecoveryTest extends FunctionalTestCase
 {
     protected UserPage $page;
     protected PasswordRecoveryTokenFixture $tokens;
@@ -21,19 +20,7 @@ abstract class RequestPasswordRecoveryControllerTestCase extends FunctionalTestC
         $this->tokens = $this->passwordRecoveryTokenFixture();
     }
 
-    #[Test]
-    final public function test(): void
-    {
-        $this->arrange();
-        $this->act();
-        $this->assert();
-    }
-
     protected function arrange(): void
     {
     }
-
-    abstract protected function act(): void;
-
-    abstract protected function assert(): void;
 }

@@ -6,7 +6,7 @@ namespace App\Tests\Functional\User\Presentation\Http\RequestPasswordRecovery;
 
 use App\User\Infrastructure\Persistence\Doctrine\PasswordRecoveryTokenModel;
 
-final class ItSilentlySucceedsForUnknownEmailTest extends RequestPasswordRecoveryControllerTestCase
+final class ItSilentlySucceedsForUnknownEmailTest extends BaseRequestPasswordRecoveryTest
 {
     protected function act(): void
     {

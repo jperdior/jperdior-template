@@ -6,7 +6,7 @@ namespace App\Tests\Functional\User\Presentation\Http\ResetPasswordWithToken;
 
 use App\User\Domain\User;
 
-final class ItRejectsAlreadyUsedTokenTest extends ResetPasswordWithTokenControllerTestCase
+final class ItRejectsAlreadyUsedTokenTest extends BaseResetPasswordWithTokenTest
 {
     private User $user;
     private string $plainToken;

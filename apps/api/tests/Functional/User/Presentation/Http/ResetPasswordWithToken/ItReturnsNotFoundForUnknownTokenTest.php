@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\User\Presentation\Http\ResetPasswordWithToken;
 
-final class ItReturnsNotFoundForUnknownTokenTest extends ResetPasswordWithTokenControllerTestCase
+final class ItReturnsNotFoundForUnknownTokenTest extends BaseResetPasswordWithTokenTest
 {
     protected function act(): void
     {

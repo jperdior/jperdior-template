@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\User\Presentation\Http\Me;
 
-final class ItReturnsMeWhenAuthenticatedTest extends MeControllerTestCase
+final class ItReturnsMeWhenAuthenticatedTest extends BaseMeTest
 {
     private string $token = '';
 

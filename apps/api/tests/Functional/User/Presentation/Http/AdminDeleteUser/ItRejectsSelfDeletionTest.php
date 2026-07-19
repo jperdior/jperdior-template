@@ -4,23 +4,27 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\User\Presentation\Http\AdminDeleteUser;
 
-use App\Tests\Functional\FunctionalTestCase;
-
-final class ItRejectsSelfDeletionTest extends FunctionalTestCase
+final class ItRejectsSelfDeletionTest extends BaseAdminDeleteUserTest
 {
-    public function testAdminCannotDeleteTheirOwnAccount(): void
+    private string $adminId;
+    private string $token;
+
+    protected function arrange(): void
     {
         $admin = $this->userFixture()->createAdmin('admin@example.com', 'secretpass');
-        $token = $this->loginAs('admin@example.com', 'secretpass');
+        $this->adminId = $admin->id()->value;
+        $this->token = $this->loginAs('admin@example.com', 'secretpass');
+    }
 
-        $this->client->request(
-            'DELETE',
-            '/api/admin/users/'.$admin->id()->value,
-            server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token],
-        );
+    protected function act(): void
+    {
+        $this->page->adminDeleteUser($this->adminId, $this->token);
+    }
 
-        self::assertSame(409, $this->client->getResponse()->getStatusCode());
-        $body = $this->jsonResponse();
+    protected function assert(): void
+    {
+        self::assertSame(409, $this->page->getStatusCode());
+        $body = $this->page->getResponseJson();
         self::assertSame('CONFLICT', $body['code']);
         self::assertSame('An admin cannot delete their own account.', $body['message']);
     }

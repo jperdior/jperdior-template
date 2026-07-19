@@ -22,7 +22,7 @@ apps/api/src/<Context>/Application/Command/<Verb>/
 4. **Wire dependencies**: inject domain repositories + clock + transaction interface from `shared-kernel-php`. NEVER inject Doctrine directly.
 5. **Validate inputs at value-object construction** inside the command class constructor.
 6. **Emit a domain event** if the command changes state. The aggregate records it via `$this->record(new ...)`; the handler drains via `pullDomainEvents()` and dispatches to the event bus.
-7. **Add a functional test** under `apps/api/tests/Functional/<Context>/Application/<Verb>CommandHandlerTest.php`.
+7. **Add a functional test** — one class per scenario, named `It<Scenario>Test`, under `apps/api/tests/Functional/<Context>/Application/<Verb>/`, extending an abstract `Base<Verb>Test`. It's AAA (`arrange/act/assert`, enforced by `FunctionalTestCase`): `arrange()` builds fixtures, `act()` dispatches the command through the `CommandBus` (no page object — handler tests exercise the bus, not HTTP), `assert()` checks repository state / a `SpyEventBus`. Only `It*Test` classes are collected.
 8. **Run `make test-api`** to confirm.
 
 ## Command Template

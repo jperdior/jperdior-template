@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\User\Presentation\Http\SignUp;
 
-final class ItRejectsDuplicateEmailTest extends SignUpControllerTestCase
+final class ItRejectsDuplicateEmailTest extends BaseSignUpTest
 {
     protected function arrange(): void
     {

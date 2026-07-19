@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Tests\Functional\Support\Fixture\PasswordRecoveryTokenFixture;
-use App\Tests\Functional\Support\Fixture\UserFixture;
-use App\Tests\Functional\Support\Page\UserPage;
+use App\Tests\Support\Fixtures\PasswordRecoveryTokenFixture;
+use App\Tests\Support\Fixtures\UserFixture;
+use App\Tests\Support\Pages\UserPage;
 use App\User\Domain\PasswordHasherInterface;
 use App\User\Domain\PasswordRecoveryTokenRepository;
 use App\User\Domain\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -103,4 +104,23 @@ abstract class FunctionalTestCase extends WebTestCase
 
         return $em;
     }
+
+    #[Test]
+    final public function testExecution(): void
+    {
+        $this->runTestCase();
+    }
+
+    public function runTestCase(): void
+    {
+        $this->arrange();
+        $this->act();
+        $this->assert();
+    }
+
+    abstract protected function arrange(): void;
+
+    abstract protected function act(): void;
+
+    abstract protected function assert(): void;
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Functional\Support\Fixture;
+namespace App\Tests\Support\Fixtures;
 
 use App\User\Domain\PasswordRecoveryToken;
 use App\User\Domain\PasswordRecoveryTokenId;

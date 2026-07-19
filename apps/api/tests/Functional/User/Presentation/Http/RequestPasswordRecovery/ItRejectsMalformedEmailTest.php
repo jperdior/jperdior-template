@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\User\Presentation\Http\RequestPasswordRecovery;
 
-final class ItRejectsMalformedEmailTest extends RequestPasswordRecoveryControllerTestCase
+final class ItRejectsMalformedEmailTest extends BaseRequestPasswordRecoveryTest
 {
     protected function act(): void
     {

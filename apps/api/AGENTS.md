@@ -84,9 +84,17 @@ apps/api/
 └── tests/
     ├── Unit/                          ← aggregate/VO/use-case tests; fast, no DB
     ├── Doubles/                       ← in-memory/fake adapters for the domain ports (test-only; never wired into prod DI)
-    ├── Functional/                    ← full-stack HTTP tests against Postgres
+    ├── Functional/                    ← full-stack tests against Postgres; one class per scenario (It*Test), AAA-enforced
+    ├── Support/{Fixtures,Pages}/      ← data fixtures + HTTP page objects (App\Tests\Support\*)
     └── bootstrap.php
 ```
+
+Functional tests are **one class per scenario**. `FunctionalTestCase` (extends `WebTestCase`)
+owns `final #[Test] testExecution()` → `arrange()/act()/assert()` (all abstract) and wraps
+each test in a rolled-back DB transaction. Shared setup + a default `arrange()` live in an
+abstract `Base<UseCase>Test`; each scenario is a `final It<Scenario>Test`. The Functional
+suite is scoped `prefix="It"`, so only `It*Test` classes are collected. See `.ai/qa/AGENTS.md`
+and `/integration-tests`.
 
 ## CQRS Wiring
 
@@ -136,5 +144,5 @@ doctrine:
 2. Add the new context's mapping under `doctrine.yaml`.
 3. Add the repository alias under `services.yaml`.
 4. Run `make migrate-diff`, review SQL, commit.
-5. Write functional tests under `tests/Functional/<Context>/`.
+5. Write functional tests under `tests/Functional/<Context>/` — one `It<Scenario>Test` per case, extending a `Base<UseCase>Test`.
 6. Update root `AGENTS.md` Task Router if the context introduces new task patterns.
