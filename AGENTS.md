@@ -115,6 +115,12 @@ Gates split by whether they need a live database:
 - **DB-backed gates — require the headless test stack** (`make test-api`, `make test`,
   `make migrate-diff`, `make migrate`) auto-start a **headless, per-worktree
   test stack** (postgres + api) on first use — no `make start` needed.
+- **Browser e2e gate — isolated disposable stack** (`make test-e2e`) brings up its **own**
+  per-worktree stack (postgres + redis + api + nginx + web, no host ports, disposable DB
+  reset from scratch each run) and runs the web Playwright auth journey (anon → sign up →
+  log out → log in, both locales) against it via a Playwright runner container. No
+  `make start` needed; it coexists with the dev stack and other worktrees' e2e stacks.
+  `make stop-e2e` tears it down and drops its DB volume.
 
 The shared PHP stack (only the DB-backed gates use it):
 
@@ -131,6 +137,8 @@ make test-web                   # JS unit tests only — standalone, no db/api
 make lint-web                   # JS typecheck + ESLint only — standalone, no db/api
 make up-test                    # (optional) start/refresh the PHP stack explicitly
 make stop-test                  # tear down just this worktree's PHP stack
+make test-e2e                   # web Playwright auth journey on an isolated stack — no `make start`
+make stop-e2e                   # tear down this worktree's isolated e2e stack
 ```
 
 Prefer `/run-gates` over running these by hand — it scopes the gate to the diff and

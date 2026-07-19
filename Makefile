@@ -15,6 +15,12 @@ DOCKER_COMPOSE_ASYNC := $(DOCKER_COMPOSE) --profile async
 # a valid Docker Compose project-name character.
 TEST_PROJECT_NAME := $(PROJECT_NAME)-test-$(shell echo $(notdir $(PWD)) | tr '+' '-')
 DOCKER_COMPOSE_TEST := docker compose --env-file $(ENV_FILE) -p $(TEST_PROJECT_NAME) -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.test.yml
+
+# Isolated web-e2e stack: dev-shaped (live source mounts + `next dev`) but under its own
+# per-worktree project name with no host ports and a disposable DB, so `make test-e2e`
+# needs no `make start` and never touches the dev database. See docker-compose.e2e.yml.
+E2E_PROJECT_NAME := $(PROJECT_NAME)-e2e-$(shell echo $(notdir $(PWD)) | tr '+' '-')
+DOCKER_COMPOSE_E2E_STACK := docker compose --env-file $(ENV_FILE) -p $(E2E_PROJECT_NAME) -f ${PWD}/ops/docker/docker-compose.base.yml -f ${PWD}/ops/docker/docker-compose.dev.yml -f ${PWD}/ops/docker/docker-compose.e2e.yml
 EXEC := exec -T
 
 # JS workspace gates run standalone in an ephemeral node container — they need no
@@ -223,3 +229,17 @@ clean: ## Remove containers, volumes, and generated artefacts (dev + test stacks
 	@${DOCKER_COMPOSE} down --remove-orphans --volumes
 	@${DOCKER_COMPOSE_TEST} down --remove-orphans --volumes
 	@rm -rf apps/*/node_modules apps/*/.next packages/*/node_modules .turbo .pnpm-store
+
+# ----- Isolated web-e2e stack (Playwright; standalone, no `make start` needed) -----
+
+test-e2e: _ensure-volume-mountpoints ## Run web Playwright e2e against an isolated, disposable stack (own DB reset from scratch each run; no `make start` needed)
+	@$(DOCKER_COMPOSE_E2E_STACK) up -d postgres redis api nginx web
+	@sh ops/scripts/wait-for-e2e-stack.sh
+	@echo "e2e stack: resetting database from scratch…"
+	@$(DOCKER_COMPOSE_E2E_STACK) exec -T postgres psql -U $${POSTGRES_USER:-app} -d $${POSTGRES_DB:-app} -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' >/dev/null
+	@$(DOCKER_COMPOSE_E2E_STACK) exec -T api php bin/console doctrine:migrations:migrate --no-interaction -q
+	@$(DOCKER_COMPOSE_E2E_STACK) --profile e2e run --rm playwright
+
+stop-e2e: ## Stop/remove this worktree's isolated web-e2e stack; drops its disposable DB volume (kept caches survive)
+	@$(DOCKER_COMPOSE_E2E_STACK) --profile e2e down --remove-orphans
+	@docker volume rm $(E2E_PROJECT_NAME)_postgres_data >/dev/null 2>&1 || true

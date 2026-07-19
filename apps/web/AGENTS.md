@@ -27,6 +27,7 @@ pnpm -C apps/web typecheck
 pnpm -C apps/web lint
 pnpm -C apps/web build
 pnpm -C apps/web test         # Vitest + React Testing Library
+make test-e2e                 # Playwright auth journey on an isolated stack (run from repo root)
 ```
 
 ## Structure
@@ -34,23 +35,48 @@ pnpm -C apps/web test         # Vitest + React Testing Library
 ```
 src/
 ├── app/
-│   ├── layout.tsx                   ← root layout (server)
-│   ├── page.tsx                     ← landing
-│   ├── loading.tsx                  ← global loading
-│   ├── error.tsx                    ← global error (client)
-│   ├── not-found.tsx                ← 404
+│   ├── not-found.tsx                ← global 404 fallback (own <html>; non-locale paths)
 │   ├── globals.css                  ← imports @jperdior/ui-react/styles.css
-│   ├── login/{page,LoginForm,actions}.tsx
-│   ├── signup/{page,SignUpForm,actions}.tsx
-│   └── (app)/                       ← authenticated route group
-│       ├── layout.tsx               ← guards via cookies; shows nav + sign-out
-│       └── dashboard/page.tsx       ← post-login landing
-└── middleware.ts                    ← createAuthMiddleware adapter (public paths + reset-password prefix)
+│   └── [locale]/                    ← locale segment (en at /, es at /es); this IS the root layout
+│       ├── layout.tsx               ← <html lang>, NextIntlClientProvider, setRequestLocale, generateStaticParams
+│       ├── page.tsx                 ← landing
+│       ├── loading.tsx / error.tsx / not-found.tsx
+│       ├── login/{page,LoginForm,actions}.tsx
+│       ├── signup/{page,SignUpForm,actions}.tsx
+│       ├── forgot-password/… reset-password/…
+│       └── (app)/                   ← authenticated route group
+│           ├── layout.tsx           ← guards via cookies; shows nav + sign-out
+│           └── dashboard/page.tsx   ← post-login landing
+├── i18n/
+│   ├── routing.ts                   ← locales en/es, defaultLocale en, localePrefix 'as-needed'
+│   ├── navigation.ts                ← locale-aware Link / redirect / useRouter / usePathname
+│   └── request.ts                   ← per-request locale + message-catalog loader
+├── lib/message-parity.test.ts       ← asserts en.json/es.json have an identical key set
+└── middleware.ts                    ← next-intl middleware composed with createAuthMiddleware
+messages/{en,es}.json                ← message catalogs (en.json is the source of truth)
+e2e/                                 ← Playwright auth journey (run via `make test-e2e`)
+playwright.config.ts
 vitest.config.ts                     ← Vitest + jsdom config
-vitest.setup.ts                      ← jest-dom matchers + next/link & next/navigation mocks
+vitest.setup.ts                      ← jest-dom matchers + next-intl / @/i18n/navigation / next mocks
 tailwind.config.ts
-next.config.ts
+next.config.ts                       ← wrapped with createNextIntlPlugin
 ```
+
+## Internationalization
+
+`apps/web` is internationalized with **next-intl** using an as-needed locale prefix:
+**English is the default at `/` (no prefix); Spanish is at `/es`.** (`apps/admin` is not localized.)
+
+- **Never hard-code user-facing strings** — every visible string comes from `messages/{en,es}.json`
+  via `useTranslations` (client / sync server components) or `getTranslations` (async server
+  components, actions, metadata). Run `/translate-strings` after adding or changing web copy;
+  the `message-parity` test fails CI if `es.json` drifts from `en.json`.
+- **In-app navigation uses the locale-aware helpers** from `@/i18n/navigation` (`Link`,
+  `useRouter`, `usePathname`) so the active locale prefix is preserved. Server-side `redirect`
+  stays on `next/navigation` (the target is served at the default-locale, unprefixed URL).
+- The middleware runs the **auth guard first** (unauth → `/login`), then hands the response to
+  next-intl, which owns the locale rewrite + `NEXT_LOCALE` cookie. Public paths in
+  `middleware.ts` include their `/es` variants.
 
 ## Cookie Strategy
 

@@ -81,6 +81,9 @@ services:
     environment:
       NODE_ENV: development
       CI: "true"
+      # Skip Playwright's browser download during the JS gate install — the e2e runner
+      # uses the mcr.microsoft.com/playwright image's preinstalled browsers instead.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     volumes:
       - ../..:/repo
       - web_node_modules:/repo/node_modules
@@ -112,6 +115,9 @@ services:
     environment:
       NODE_ENV: development
       CI: "true"
+      # Skip Playwright's browser download during the JS gate install — the e2e runner
+      # uses the mcr.microsoft.com/playwright image's preinstalled browsers instead.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     volumes:
       - ../..:/repo
       - admin_node_modules:/repo/node_modules
