@@ -1,10 +1,12 @@
 'use client';
 
 import { useActionState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, Input, Label, Spinner } from '@jperdior/ui-react';
 import { resetPasswordAction, type ResetPasswordState } from './actions';
 
 export function ResetPasswordForm() {
+  const t = useTranslations('auth');
   const [state, formAction, isPending] = useActionState<ResetPasswordState, FormData>(
     resetPasswordAction,
     {},
@@ -13,7 +15,7 @@ export function ResetPasswordForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div className="space-y-2">
-        <Label htmlFor="newPassword">New password</Label>
+        <Label htmlFor="newPassword">{t('newPasswordLabel')}</Label>
         <Input
           id="newPassword"
           name="newPassword"
@@ -24,7 +26,7 @@ export function ResetPasswordForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="confirm">Confirm password</Label>
+        <Label htmlFor="confirm">{t('confirmPasswordLabel')}</Label>
         <Input
           id="confirm"
           name="confirm"
@@ -36,7 +38,7 @@ export function ResetPasswordForm() {
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" disabled={isPending}>
         {isPending && <Spinner />}
-        Set new password
+        {t('setNewPassword')}
       </Button>
     </form>
   );

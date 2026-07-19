@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "title": "jperdior — Notes",
+    "description": "A spec-driven Symfony + Next.js template demo."
+  },
+  "common": {
+    "appName": "jperdior-template",
+    "appDescription": "Spec-driven Symfony + Next.js + JWT auth. Add your own bounded contexts on top.",
+    "errorFallback": "Something went wrong.",
+    "notFoundHeading": "404",
+    "notFoundMessage": "This page doesn't exist.",
+    "backHome": "Back home"
+  },
+  "home": {
+    "signIn": "Sign in",
+    "createAccount": "Create account"
+  },
+  "nav": {
+    "appName": "jperdior",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "signInTitle": "Sign in",
+    "signInDescription": "Use your email and password.",
+    "forgotPassword": "Forgot password?",
+    "signInButton": "Sign in",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "createAccountTitle": "Create account",
+    "createAccountDescription": "You'll be signed in automatically.",
+    "createAccountButton": "Create account",
+    "invalidEmailOrPassword": "Email is invalid or password is too short.",
+    "accountExists": "An account with this email already exists.",
+    "createAccountFailed": "Could not create account.",
+    "forgotPasswordTitle": "Forgot your password?",
+    "forgotPasswordDescription": "Enter your email and we'll send you a link to set a new one.",
+    "forgotPasswordMetaTitle": "Forgot password",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If an account with that email exists, a password reset link has been sent. The link is valid for 1 hour.",
+    "backToSignIn": "Back to sign in",
+    "invalidEmail": "Please enter a valid email address.",
+    "resetPasswordTitle": "Reset your password",
+    "resetPasswordDescription": "You must set a new password before continuing.",
+    "resetPasswordMetaTitle": "Reset your password",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm password",
+    "setNewPassword": "Set new password",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "passwordsMismatch": "Passwords do not match.",
+    "resetPasswordFailed": "Failed to reset password.",
+    "setNewPasswordTitle": "Set a new password",
+    "setNewPasswordDescription": "Choose a strong password you have not used elsewhere.",
+    "setNewPasswordMetaTitle": "Set new password",
+    "requestNewLink": "Request a new link",
+    "invalidResetRequest": "Invalid request. Please request a new password reset.",
+    "invalidResetLink": "This password reset link is invalid.",
+    "expiredResetLink": "This password reset link has expired or has already been used.",
+    "tooManyAttempts": "Too many attempts. Please wait a moment and try again."
+  },
+  "dashboard": {
+    "welcome": "Welcome",
+    "roles": "Roles:"
+  }
+}

@@ -1,12 +1,13 @@
 'use client';
 
 import { useActionState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, useRouter } from '@/i18n/navigation';
 import { Button, Input, Label, Spinner } from '@jperdior/ui-react';
 import { resetPasswordWithTokenAction, type ResetPasswordWithTokenState } from './actions';
 
 export function ResetPasswordWithTokenForm({ token }: { token: string }) {
+  const t = useTranslations('auth');
   const router = useRouter();
   const [state, formAction, isPending] = useActionState<ResetPasswordWithTokenState, FormData>(
     resetPasswordWithTokenAction,
@@ -21,7 +22,7 @@ export function ResetPasswordWithTokenForm({ token }: { token: string }) {
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="token" value={token} />
       <div className="space-y-2">
-        <Label htmlFor="newPassword">New password</Label>
+        <Label htmlFor="newPassword">{t('newPasswordLabel')}</Label>
         <Input
           id="newPassword"
           name="newPassword"
@@ -34,7 +35,7 @@ export function ResetPasswordWithTokenForm({ token }: { token: string }) {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="confirm">Confirm password</Label>
+        <Label htmlFor="confirm">{t('confirmPasswordLabel')}</Label>
         <Input
           id="confirm"
           name="confirm"
@@ -48,10 +49,10 @@ export function ResetPasswordWithTokenForm({ token }: { token: string }) {
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
       <Button type="submit" disabled={isPending || state.done}>
         {isPending && <Spinner />}
-        Set new password
+        {t('setNewPassword')}
       </Button>
       <Link href="/forgot-password" className="text-center text-sm underline underline-offset-4">
-        Request a new link
+        {t('requestNewLink')}
       </Link>
     </form>
   );

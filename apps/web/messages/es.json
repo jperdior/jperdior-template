@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "title": "jperdior — Notas",
+    "description": "Una plantilla demo de Symfony + Next.js orientada a especificaciones."
+  },
+  "common": {
+    "appName": "jperdior-template",
+    "appDescription": "Auth JWT con Symfony + Next.js, orientado a especificaciones. Añade tus propios contextos delimitados encima.",
+    "errorFallback": "Algo salió mal.",
+    "notFoundHeading": "404",
+    "notFoundMessage": "Esta página no existe.",
+    "backHome": "Volver al inicio"
+  },
+  "home": {
+    "signIn": "Iniciar sesión",
+    "createAccount": "Crear cuenta"
+  },
+  "nav": {
+    "appName": "jperdior",
+    "signOut": "Cerrar sesión"
+  },
+  "auth": {
+    "emailLabel": "Correo electrónico",
+    "passwordLabel": "Contraseña",
+    "signInTitle": "Iniciar sesión",
+    "signInDescription": "Usa tu correo electrónico y contraseña.",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "signInButton": "Iniciar sesión",
+    "sessionExpired": "Tu sesión ha expirado. Inicia sesión de nuevo.",
+    "createAccountTitle": "Crear cuenta",
+    "createAccountDescription": "Iniciarás sesión automáticamente.",
+    "createAccountButton": "Crear cuenta",
+    "invalidEmailOrPassword": "El correo no es válido o la contraseña es demasiado corta.",
+    "accountExists": "Ya existe una cuenta con este correo electrónico.",
+    "createAccountFailed": "No se pudo crear la cuenta.",
+    "forgotPasswordTitle": "¿Olvidaste tu contraseña?",
+    "forgotPasswordDescription": "Introduce tu correo y te enviaremos un enlace para establecer una nueva.",
+    "forgotPasswordMetaTitle": "Olvidé mi contraseña",
+    "sendResetLink": "Enviar enlace de restablecimiento",
+    "resetLinkSent": "Si existe una cuenta con ese correo, se ha enviado un enlace para restablecer la contraseña. El enlace es válido durante 1 hora.",
+    "backToSignIn": "Volver a iniciar sesión",
+    "invalidEmail": "Introduce una dirección de correo válida.",
+    "resetPasswordTitle": "Restablece tu contraseña",
+    "resetPasswordDescription": "Debes establecer una nueva contraseña antes de continuar.",
+    "resetPasswordMetaTitle": "Restablece tu contraseña",
+    "newPasswordLabel": "Nueva contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "setNewPassword": "Establecer nueva contraseña",
+    "passwordTooShort": "La contraseña debe tener al menos 8 caracteres.",
+    "passwordsMismatch": "Las contraseñas no coinciden.",
+    "resetPasswordFailed": "No se pudo restablecer la contraseña.",
+    "setNewPasswordTitle": "Establece una nueva contraseña",
+    "setNewPasswordDescription": "Elige una contraseña segura que no hayas usado en otro sitio.",
+    "setNewPasswordMetaTitle": "Establecer nueva contraseña",
+    "requestNewLink": "Solicitar un nuevo enlace",
+    "invalidResetRequest": "Solicitud no válida. Solicita un nuevo restablecimiento de contraseña.",
+    "invalidResetLink": "Este enlace de restablecimiento no es válido.",
+    "expiredResetLink": "Este enlace de restablecimiento ha expirado o ya se ha usado.",
+    "tooManyAttempts": "Demasiados intentos. Espera un momento e inténtalo de nuevo."
+  },
+  "dashboard": {
+    "welcome": "Bienvenido",
+    "roles": "Roles:"
+  }
+}

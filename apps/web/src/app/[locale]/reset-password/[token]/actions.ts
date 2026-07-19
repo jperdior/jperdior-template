@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { getTranslations } from 'next-intl/server';
 import { ApiError } from '@jperdior/api-client-ts';
 import { apiClient } from '@jperdior/api-client-ts/server';
 
@@ -21,6 +22,7 @@ export async function resetPasswordWithTokenAction(
   _prev: ResetPasswordWithTokenState,
   formData: FormData,
 ): Promise<ResetPasswordWithTokenState> {
+  const t = await getTranslations('auth');
   const parsed = schema.safeParse({
     token:       formData.get('token'),
     newPassword: formData.get('newPassword'),
@@ -29,8 +31,8 @@ export async function resetPasswordWithTokenAction(
   if (!parsed.success) {
     const issues = parsed.error.issues;
     const mismatch = issues.find((i) => i.path[0] === 'confirm');
-    if (mismatch) return { error: mismatch.message };
-    return { error: 'Invalid request. Please request a new password reset.' };
+    if (mismatch) return { error: t('passwordsMismatch') };
+    return { error: t('invalidResetRequest') };
   }
 
   const client = apiClient();
@@ -39,12 +41,12 @@ export async function resetPasswordWithTokenAction(
     await client.resetPasswordWithToken(parsed.data.token, parsed.data.newPassword);
   } catch (e) {
     if (e instanceof ApiError) {
-      if (e.status === 404) return { error: 'This password reset link is invalid.' };
-      if (e.status === 422) return { error: 'This password reset link has expired or has already been used.' };
-      if (e.status === 429) return { error: 'Too many attempts. Please wait a moment and try again.' };
+      if (e.status === 404) return { error: t('invalidResetLink') };
+      if (e.status === 422) return { error: t('expiredResetLink') };
+      if (e.status === 429) return { error: t('tooManyAttempts') };
     }
     console.error('resetPasswordWithTokenAction failed:', e);
-    return { error: 'Failed to reset your password. Please try again.' };
+    return { error: t('resetPasswordFailed') };
   }
 
   return { done: true };

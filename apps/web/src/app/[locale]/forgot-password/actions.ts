@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { getTranslations } from 'next-intl/server';
 import { apiClient } from '@jperdior/api-client-ts/server';
 
 const schema = z.object({ email: z.string().email() });
@@ -11,8 +12,9 @@ export async function forgotPasswordAction(
   _prev: ForgotPasswordState,
   formData: FormData,
 ): Promise<ForgotPasswordState> {
+  const t = await getTranslations('auth');
   const parsed = schema.safeParse({ email: formData.get('email') });
-  if (!parsed.success) return { error: 'Please enter a valid email address.' };
+  if (!parsed.success) return { error: t('invalidEmail') };
 
   const client = apiClient();
 
