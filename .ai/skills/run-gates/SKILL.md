@@ -1,6 +1,6 @@
 ---
 name: run-gates
-description: Run the CI verification gate — dispatch each in-scope gate (lint-api, test-api, lint-web, test-web, build-web, test-e2e) as a parallel subagent, scoped to the diff so only the tests relevant to what changed run. Lint/build gates run standalone without postgres/api; the PHP test gate (test-api) uses the shared test stack; the web e2e gate (test-e2e) uses its own isolated disposable stack. Triggers on "run the gate", "run gates", "verify the branch", "ci gate".
+description: Run the CI verification gate — dispatch each in-scope gate (lint-api, test-api, lint-web, test-web, build-web, test-e2e, openapi-drift) as a parallel subagent, scoped to the diff so only the tests relevant to what changed run. Lint/build gates run standalone without postgres/api; the PHP test gate (test-api) uses the shared test stack; the web e2e gate (test-e2e) uses its own isolated disposable stack. Triggers on "run the gate", "run gates", "verify the branch", "ci gate".
 ---
 
 # Run the Verification Gate
@@ -38,12 +38,13 @@ Run `git diff --name-only <base>...HEAD`, then map the changed paths:
 - Changed **one or more `apps/api/src/<Context>/`** (e.g. `User`, `Order`) → `lint-api` + `test-api` **scoped to those contexts only**: `make test-api ARG="tests/Functional/<Context>"` per touched context, or `make test-api ARG="--filter '<Ctx1>|<Ctx2>'"`. Do **not** run the whole PHPUnit suite for a single-context change.
 - Changed **`apps/api/src/Shared/`, `packages/shared-kernel-php/`, `apps/api/config/`, or `apps/api/migrations/`** (cross-cutting — can break any context) → run the **full** `make test-api`.
 - Changed `apps/api/**` in an OpenAPI-affecting way (routes, DTOs, Nelmio annotations) → also run **openapi-drift**: `make gen-api`, then `git diff --exit-code -- apps/api/openapi.json packages/api-client-ts/src/types.gen.ts`. A non-empty diff means the regenerated artifacts weren't committed — commit them. (CI's `openapi-drift` job runs the same check.)
+- Changed the **auth/session surface** — `apps/api/src/User/`, the login/refresh/logout endpoints, or `packages/auth-server-ts/` — → also run **`test-e2e`**: the journey signs up, logs in, and logs out against the live API, so an auth-side backend change can break it with **no web diff at all**. Scope e2e by *auth impact*, not by which tree changed.
 
 **Frontend — `apps/web/**` / `apps/admin/**` / `packages/{ui-react,api-client-ts}/**`**
 - Always `lint-web` for any FE change.
 - `test-web` runs the JS unit suite (web vitest + admin). Skip it only if the change is untestable-by-unit (pure markup/copy with no logic).
 - `build-web` when UI/build output could change (any `apps/web`/`apps/admin` change).
-- **`test-e2e`** (web only) when the change can affect the flows the journey exercises — routing/middleware, auth pages (login/signup), the home page, or the shared header/nav/layout. For a change confined to an unrelated page that already has a vitest unit, e2e is optional (say so in the report).
+- **`test-e2e`** when the change can affect the journey's flows — on the frontend: routing/middleware, auth pages (login/signup), the home page, or the shared header/nav/layout (and see the auth/session **backend** trigger above). For a change confined to an unrelated page that already has a vitest unit, e2e is optional (say so in the report).
 
 **Docs / specs / CI-yaml only** → no code gates; say "no gates in scope".
 
@@ -77,7 +78,7 @@ A compact table of gate → PASS/FAIL with evidence, and note explicitly what wa
 
 ## Output
 
-```
+```text
 Verification gate ({N} gates, scoped to diff)
   make lint-api                 PASS
   make test-api ARG="…User"     PASS ({M} unit tests — User only)

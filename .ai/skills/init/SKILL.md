@@ -27,7 +27,7 @@ Onboarding wizard for a fresh clone. Checks the environment, sets up config, and
 3. **Personalize the project**: run `/customize-project` to rename placeholder package names and add your project description to `AGENTS.md`. This is the right time — before the first image build.
 
 4. **Explain the two stack modes**:
-   - **Headless test stack** (default for development) — auto-starts on `make lint` / `make test` / `make build-web`. Per-worktree, port-free, parallel-safe. No `make start` needed for development.
+   - **Headless test stack** (default for development) — the DB-backed gates (`make test` / `make test-api`) auto-start it per-worktree on first use; the standalone gates (`make lint`, `make lint-web`, `make build-web`) need no DB and run in ephemeral containers. Port-free, parallel-safe. No `make start` needed for development.
    - **Full dev stack** (for browser testing) — `make start` brings up Traefik + nginx + Postgres + Redis + Mailpit with host ports. Needed only when you want to see the app in a browser.
 
 5. **Report next steps**.

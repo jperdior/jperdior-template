@@ -372,4 +372,4 @@ docs/         ARCHITECTURE, getting-started, auth, adding-a-bounded-context, ops
 - **Event IDs**: `<context>.<aggregate>.<action_past_tense>` (e.g. `user.account.created`).
 - **DB**: snake_case columns and tables; plural table names; UUID PKs; columns `id`, `created_at`, `updated_at`, `deleted_at` where applicable.
 - **TypeScript**: `strict: true`; no `any`; React server components by default in `apps/web` and `apps/admin`.
-- **i18n**: never hard-code user-facing strings; use the locale files under `apps/web/messages/` and `apps/admin/messages/`.
+- **i18n**: `apps/web` is internationalized with next-intl (English at `/`, Spanish at `/es`) — never hard-code user-facing strings there; put them in `apps/web/messages/{en,es}.json` and run `/translate-strings`. `apps/admin` is **not** localized yet (no message catalogs); localizing it is future work.

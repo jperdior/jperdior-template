@@ -49,17 +49,16 @@ Take a `root-cause` report and ship the minimal fix.
 
 Do these in order, before anything else:
 
-1. **FIRST — update local `main`, unconditionally** (per the AGENTS.md "Always refresh main before branching" invariant). Do this even if you are not currently on `main`; it guarantees every later `origin/main`/`main` comparison and every file you read is current:
+1. **FIRST — fetch so `origin/main` is current** (per the AGENTS.md "Always refresh main before branching" invariant). `origin/main` is the base the new worktree branches from, so fetching is all this workflow needs:
    ```sh
    git fetch origin
-   git checkout main && git pull --ff-only origin main
    ```
-   Only after this is local `main` a trustworthy base and source of truth. If you skipped this and already read files, **re-read them after the pull** — they may be stale.
+   Do **not** `git checkout main` here — in a linked worktree that fails when the primary worktree already has `main` checked out (the normal case). Treat `origin/main` as the source of truth; if your primary worktree's local `main` is behind, fast-forward it there, separately. If you already read files from a stale tree, **re-read them after the fetch** — they may be stale.
 2. **Reject the current branch as a base unless it is a fresh, purpose-made fix branch you created in this session.** Now that `main` is current, check what the bug actually lives on:
    ```sh
-   git log origin/main..HEAD --oneline   # on a non-main branch: empty = already merged into main (invalid base; the fix belongs on a fresh branch from the updated main); non-empty = someone else's unmerged work (STOP, ask the user)
+   git log origin/main..HEAD --oneline   # empty = HEAD is at origin/main (e.g. an already-merged branch) → create a fresh fix branch. Non-empty = unmerged commits: fine if this is the fix branch YOU created this session; STOP only if it's an unfamiliar or shared branch you did not create.
    ```
-   If you are on `main`, on an already-merged branch, or on an unrelated branch, it is **not** a valid base — create a new one. Only continue on the current branch if you created it for *this* fix.
+   A non-empty diff is *expected* for your own in-progress fix branch — it is **not** by itself a reason to stop. Stop only when the branch is `main`, an already-merged branch, or someone else's / an unrelated branch. Continue on the current branch only if you created it for *this* fix.
 3. **Create a dedicated worktree from the refreshed `main` — ALWAYS, no exceptions.** Every fix runs in its own worktree branched from the updated `main`, however small the change (yes, even a one-line CSS/config/env edit). Run `/new-feature fix-<slug>` (or `EnterWorktree`):
    ```sh
    /new-feature fix-<slug>          # creates .claude/worktrees/fix-<slug> on branch fix-<slug> from main

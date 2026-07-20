@@ -1,6 +1,6 @@
 'use server';
 
-import { redirect } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { apiClient } from '@jperdior/api-client-ts/server';
@@ -29,6 +29,7 @@ export async function signUpAction(_prev: SignUpState, formData: FormData): Prom
     const { token, refresh_token } = await client.login(parsed.data);
     await persistTokens(token, refresh_token);
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof Error && error.message.includes('already exists')) {
       return { error: t('accountExists') };
     }

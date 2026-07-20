@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { unstable_rethrow } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ApiError } from '@jperdior/api-client-ts';
 import { apiClient } from '@jperdior/api-client-ts/server';
@@ -40,6 +41,7 @@ export async function resetPasswordWithTokenAction(
   try {
     await client.resetPasswordWithToken(parsed.data.token, parsed.data.newPassword);
   } catch (e) {
+    unstable_rethrow(e);
     if (e instanceof ApiError) {
       if (e.status === 404) return { error: t('invalidResetLink') };
       if (e.status === 422) return { error: t('expiredResetLink') };
