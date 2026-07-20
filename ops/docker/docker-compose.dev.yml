@@ -131,6 +131,7 @@ services:
       - web_app_node_modules:/repo/apps/web/node_modules
       - api_client_ts_node_modules:/repo/packages/api-client-ts/node_modules
       - ui_react_node_modules:/repo/packages/ui-react/node_modules
+      - auth_server_ts_node_modules:/repo/packages/auth-server-ts/node_modules
     working_dir: /repo
     user: "0:0"
     command:
@@ -167,6 +168,7 @@ services:
       - admin_app_node_modules:/repo/apps/admin/node_modules
       - api_client_ts_node_modules:/repo/packages/api-client-ts/node_modules
       - ui_react_node_modules:/repo/packages/ui-react/node_modules
+      - auth_server_ts_node_modules:/repo/packages/auth-server-ts/node_modules
     working_dir: /repo
     user: "0:0"
     command:
@@ -198,5 +200,6 @@ volumes:
   admin_app_node_modules:
   api_client_ts_node_modules:
   ui_react_node_modules:
+  auth_server_ts_node_modules:
   pnpm_store:
   corepack_cache:

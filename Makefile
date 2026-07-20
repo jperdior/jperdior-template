@@ -69,6 +69,7 @@ _ensure-volume-mountpoints: ## Pre-create Docker named-volume mount points as th
 	          .pnpm-store \
 	          apps/web/node_modules apps/admin/node_modules \
 	          packages/api-client-ts/node_modules packages/ui-react/node_modules \
+	          packages/auth-server-ts/node_modules \
 	          apps/api/vendor apps/api/var apps/api/public/bundles
 
 build: ## Build all container images
