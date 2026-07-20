@@ -14,27 +14,27 @@ permissions:
   contents: read
   pull-requests: read
 
-# Every job invokes the same containerised Makefile targets developers run locally —
-# the Makefile is the single author of the gate commands, so local green ≡ CI green.
+# Runs on GitHub-hosted `ubuntu-latest` (free for this public template). Gates run
+# NATIVELY — composer/phpunit and pnpm directly on the runner, with an ephemeral
+# `services:` Postgres for the functional suite — no docker-compose stack, so nothing
+# persists between jobs. A fresh GitHub VM ships no PHP 8.4 / Node / pnpm, so each job
+# provisions its toolchain with setup-php / setup-node / pnpm/action-setup (a self-hosted
+# runner with those pre-installed can drop the setup steps). The `make` targets remain the
+# local-dev workflow; CI mirrors them command-for-command so local green ≈ CI green.
 #
-# Path filtering: the `changes` job detects which parts of the monorepo a PR touches, and
-# every downstream job runs only when its area changed. Jobs gate on a JOB-LEVEL `if:`,
-# never a top-level `on.pull_request.paths` filter — a top-level filter leaves the whole
-# workflow untriggered, so a *required* check stays "Expected" forever and blocks the merge,
-# whereas a job skipped by `if:` reports a "skipped" conclusion that GitHub counts as a
-# passing required check. So a docs- or spec-only PR skips the entire matrix and still merges.
-#
-# Shared infra (this workflow, the Makefile, Docker) is listed in BOTH the php and js areas
-# so a change there re-runs everything — nothing that can affect a build is silently skipped.
-
+# Path filtering: the `changes` job detects which areas a PR touches; each job gates on a
+# JOB-LEVEL `if:`, never a top-level `on.pull_request.paths` filter — the latter leaves the
+# whole workflow untriggered, so a *required* check stays "Expected" forever and blocks the
+# merge, whereas a skipped job reports a conclusion GitHub counts as passing. Shared infra
+# (this workflow, lockfiles) is folded into every area so a change there re-runs everything.
 jobs:
   changes:
     name: Detect changed areas
     runs-on: ubuntu-latest
     outputs:
       php: ${{ steps.filter.outputs.php }}
-      js: ${{ steps.filter.outputs.js }}
-      openapi: ${{ steps.filter.outputs.openapi }}
+      web: ${{ steps.filter.outputs.web }}
+      admin: ${{ steps.filter.outputs.admin }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -43,25 +43,23 @@ jobs:
           filters: |
             php:
               - '.github/workflows/ci.yml'
-              - 'Makefile'
-              - 'ops/docker/**'
               - 'apps/api/**'
               - 'packages/shared-kernel-php/**'
-            js:
+            web:
               - '.github/workflows/ci.yml'
-              - 'Makefile'
-              - 'ops/docker/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'apps/web/**'
-              - 'apps/admin/**'
               - 'packages/ui-react/**'
               - 'packages/api-client-ts/**'
               - 'packages/auth-server-ts/**'
-            openapi:
+              - 'apps/api/openapi.json'
+            admin:
               - '.github/workflows/ci.yml'
-              - 'Makefile'
-              - 'apps/api/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'apps/admin/**'
+              - 'packages/ui-react/**'
               - 'packages/api-client-ts/**'
 
   php-lint:
@@ -71,54 +69,213 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: make lint-shared-kernel
-      - run: make lint-api
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: ctype, iconv, intl, pdo_pgsql, mbstring, zip, bcmath, opcache, redis, apcu, amqp
+          tools: composer:v2
+          coverage: none
+      - name: Install (shared-kernel-php)
+        run: cd packages/shared-kernel-php && composer install --no-interaction --no-progress --prefer-dist
+      - name: Install (apps/api)
+        run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
+      - name: PHPStan (shared-kernel-php)
+        run: cd packages/shared-kernel-php && vendor/bin/phpstan analyse -c phpstan.dist.neon --no-progress
+      - name: PHPStan (apps/api)
+        run: cd apps/api && vendor/bin/phpstan analyse -c phpstan.dist.neon --memory-limit=512M --no-progress
+      - name: php-cs-fixer
+        run: cd apps/api && vendor/bin/php-cs-fixer fix --dry-run --diff
+      - name: deptrac (cross-bounded-context guard)
+        run: cd apps/api && vendor/bin/deptrac analyse --no-progress
 
-  php-tests:
-    name: PHP tests (Unit + Functional, headless test stack)
+  php-tests-unit:
+    name: PHP unit tests
     needs: changes
     if: ${{ needs.changes.outputs.php == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: make test-shared-kernel
-      - run: make test-api
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: ctype, iconv, intl, pdo_pgsql, mbstring, zip, bcmath, opcache, redis, apcu, amqp
+          tools: composer:v2
+          coverage: none
+      - name: Install (shared-kernel-php)
+        run: cd packages/shared-kernel-php && composer install --no-interaction --no-progress --prefer-dist
+      - name: Install (apps/api)
+        run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
+      - name: PHPUnit (shared-kernel-php)
+        run: cd packages/shared-kernel-php && vendor/bin/phpunit
+      - name: PHPUnit (apps/api Unit suite)
+        run: cd apps/api && vendor/bin/phpunit --testsuite Unit
 
-  openapi-drift:
-    name: OpenAPI spec + TS client freshness
+  php-tests-functional:
+    name: PHP functional tests (against Postgres)
     needs: changes
-    if: ${{ needs.changes.outputs.openapi == 'true' }}
+    if: ${{ needs.changes.outputs.php == 'true' }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: app
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: "postgresql://app:app@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+      APP_ENV: test
+      APP_SECRET: ci-secret
+      JWT_PASSPHRASE: ci-passphrase
+      JWT_SECRET_KEY: "%kernel.project_dir%/config/jwt/private.pem"
+      JWT_PUBLIC_KEY: "%kernel.project_dir%/config/jwt/public.pem"
+      JWT_TTL: "3600"
+      JWT_REFRESH_TTL: "2592000"
+      MESSENGER_TRANSPORT_DSN: "doctrine://default?auto_setup=1"
+      MESSENGER_FAILED_TRANSPORT_DSN: "doctrine://default?queue_name=failed&auto_setup=1"
+      CORS_ALLOW_ORIGIN: "^https?://localhost(:[0-9]+)?$"
+      LOCK_DSN: flock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: ctype, iconv, intl, pdo_pgsql, mbstring, zip, bcmath, opcache, redis, apcu, amqp
+          tools: composer:v2
+          coverage: none
+      - name: Install (apps/api)
+        run: cd apps/api && composer install --no-interaction --no-progress --prefer-dist
+      - name: Generate JWT keypair
+        run: cd apps/api && php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+      - name: Create + migrate test DB
+        run: |
+          cd apps/api
+          php bin/console doctrine:database:create --env=test --if-not-exists
+          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+      - name: PHPUnit (Functional suite)
+        run: cd apps/api && vendor/bin/phpunit --testsuite Functional
+      - name: OpenAPI drift gate
+        run: |
+          cd apps/api
+          php bin/console nelmio:apidoc:dump --format=json > openapi.json
+          git diff --exit-code -- openapi.json \
+            || { echo "::error::apps/api/openapi.json is stale — the backend changed the API contract. Run 'make gen-api' and commit the result."; exit 1; }
+
+  js-lint-web:
+    name: JS typecheck + ESLint (web + packages)
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Regenerate via the same target developers use
-        run: make gen-api
-      - name: Fail if committed artifacts are stale
-        run: git diff --exit-code -- apps/api/openapi.json packages/api-client-ts/src/types.gen.ts
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - name: TS client drift gate
+        run: |
+          pnpm -C packages/api-client-ts gen
+          git diff --exit-code -- packages/api-client-ts/src/types.gen.ts \
+            || { echo "::error::packages/api-client-ts/src/types.gen.ts is out of sync with the committed openapi.json. Run 'make gen-api' and commit the result."; exit 1; }
+      - run: pnpm -r --filter './packages/*' typecheck
+      - run: pnpm -C apps/web typecheck
+      - run: pnpm -C apps/web lint
 
-  js-lint:
-    name: JS typecheck + ESLint
+  js-lint-admin:
+    name: JS typecheck + ESLint (admin)
     needs: changes
-    if: ${{ needs.changes.outputs.js == 'true' }}
+    if: ${{ needs.changes.outputs.admin == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: make lint-web
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm -C apps/admin typecheck
+      - run: pnpm -C apps/admin lint
 
-  js-tests:
-    name: JS unit tests (Vitest)
+  js-test-web:
+    name: JS unit tests (web + packages)
     needs: changes
-    if: ${{ needs.changes.outputs.js == 'true' }}
+    if: ${{ needs.changes.outputs.web == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: make test-web
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm -C packages/auth-server-ts test
+      - run: pnpm -C packages/api-client-ts test
+      - run: pnpm -C apps/web test
 
-  js-build:
-    name: JS production build
+  js-test-admin:
+    name: JS unit tests (admin)
     needs: changes
-    if: ${{ needs.changes.outputs.js == 'true' }}
+    if: ${{ needs.changes.outputs.admin == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: make build-web
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm -C apps/admin test
+
+  js-build-web:
+    name: JS production build (web)
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm -C apps/web build
+
+  js-build-admin:
+    name: JS production build (admin)
+    needs: changes
+    if: ${{ needs.changes.outputs.admin == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile=false
+      - run: pnpm -C apps/admin build
