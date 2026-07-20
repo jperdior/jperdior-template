@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Command\ForcePasswordReset\ForcePasswordResetCommand;
+use App\User\Application\ForcePasswordReset\ForcePasswordResetCommand;
 use App\User\Domain\Exception\UserNotFound;
 use Jperdior\SharedKernel\Domain\Bus\Command\CommandBus;
 use OpenApi\Attributes as OA;

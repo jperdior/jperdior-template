@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Query\ListUsers\ListUsersQuery;
-use App\User\Application\Query\ListUsers\UserListResponse;
+use App\User\Application\ListUsers\ListUsersQuery;
+use App\User\Application\ListUsers\UserListResponse;
 use Jperdior\SharedKernel\Domain\Bus\Query\QueryBus;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;

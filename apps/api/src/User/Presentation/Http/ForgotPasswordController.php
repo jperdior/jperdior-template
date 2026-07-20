@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Command\RequestPasswordRecovery\RequestPasswordRecoveryCommand;
+use App\User\Application\RequestPasswordRecovery\RequestPasswordRecoveryCommand;
 use App\User\Presentation\Http\Dto\ForgotPasswordRequest;
 use Jperdior\SharedKernel\Domain\Bus\Command\CommandBus;
 use OpenApi\Attributes as OA;

@@ -22,11 +22,12 @@ apps/api/src/<Context>/
 │   ├── <Aggregate>Repository.php             ← interface
 │   ├── Event/<Aggregate>Created.php          ← initial domain event
 │   └── Exception/<Aggregate>NotFound.php
-├── Application/
-│   ├── Command/{Create,Update,Delete}<Aggregate>/
+├── Application/                              ← grouped by use case, not by trigger (no Command/ or Query/ folder)
+│   ├── {Create,Update,Delete}<Aggregate>/
 │   │   ├── <Verb><Aggregate>Command.php      ← final readonly
-│   │   └── <Verb><Aggregate>CommandHandler.php
-│   └── Query/{Get,List}<Aggregate>/
+│   │   ├── <Verb><Aggregate>CommandHandler.php
+│   │   └── <Verb><Aggregate>UseCase.php      ← optional; the capability a subscriber can also drive
+│   └── {Get,List}<Aggregate>/
 │       ├── <Verb><Aggregate>Query.php
 │       ├── <Verb><Aggregate>QueryHandler.php
 │       └── <Verb><Aggregate>Response.php

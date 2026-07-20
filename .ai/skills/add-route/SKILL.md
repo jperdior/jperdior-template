@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace App\<Context>\Presentation\Http;
 
-use App\<Context>\Application\Command\<Verb>\<Verb>Command;
+use App\<Context>\Application\<Verb>\<Verb>Command;
 use App\<Context>\Presentation\Http\Dto\<Verb><Aggregate>Request;
 use App\Shared\Domain\Bus\Command\CommandBus;
 use Nelmio\ApiDocBundle\Annotation\Model;

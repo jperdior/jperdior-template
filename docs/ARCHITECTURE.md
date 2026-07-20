@@ -91,7 +91,7 @@ Inject `CommandBus` / `QueryBus`, never handlers directly. Controllers are thin 
 The domain defines the contract. Doctrine implements it. The alias lives in `src/<Context>/Infrastructure/Symfony/Resources/config/services.yaml`.
 
 **4. No cross-context imports.**
-`App\User\Domain\` is invisible to `App\Order\`. Contexts communicate through domain events on the event bus or through public Application service responses. `deptrac` enforces this in CI — a cross-context `Domain/` import fails the build.
+`App\Order\` cannot import `App\User\`'s aggregates, repositories, value objects, or `Application/` — `deptrac` fails the build on that. Contexts communicate through domain events on the event bus or public Application service responses. The one cross-importable part of a context is its `Domain/Event/`: **domain events are a context's published contract**, so a consumer imports the producer's event class directly (deptrac's `DomainEvent` layer allows it) — see [domain-events.md](domain-events.md).
 
 ---
 
@@ -142,6 +142,34 @@ Controller
     ← CurrentUserResponse
   ← JSON response
 ```
+
+### Application layout — grouped by use case, not by trigger
+
+Each use case gets one folder, `Application/<Action>/`, holding the `<Action>UseCase` plus
+whatever triggers drive it — a `CommandHandler`, a `QueryHandler`, and/or a
+`DomainEventSubscriber`. There is no `Command/`/`Query/` grouping folder; a use case is
+independent of what triggers it, so the same `<Action>UseCase` can be reached from the
+command bus **and** from an event subscriber.
+
+```
+User/Application/SignUp/{SignUpCommand, SignUpCommandHandler, SignUpUseCase}.php
+User/Application/ListUsers/{ListUsersQuery, ListUsersQueryHandler, ListUsersUseCase, UserListResponse}.php
+Tenant/Application/CreateTenant/{CreateTenantCommand, CreateTenantCommandHandler,
+                                 CreateTenantUseCase, CreateTenantOnUserRegistered}.php   ← command + event, one use case
+```
+
+### Event subscriber flow (cross-context)
+
+```
+User use case → EventBus::publish(UserRegistered)          (App\User\Domain\Event\UserRegistered)
+  → Messenger routes to every DomainEventSubscriber subscribedTo it
+    → Tenant\Application\CreateTenant\CreateTenantOnUserRegistered::__invoke   (imports the event directly)
+      → CommandBus::dispatch(CreateTenantCommand)          (drives Tenant's own use case)
+```
+
+Synchronous by default; `event.bus` allows an event with no subscribers. Full model and the
+`DomainEvent`-layer rule (events are cross-importable, everything else stays private):
+[domain-events.md](domain-events.md).
 
 ---
 

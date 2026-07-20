@@ -52,7 +52,7 @@ git diff origin/main...HEAD --name-only \
 2. **Read the code** — always read from the filesystem, never from memory:
    - `Domain/*.php` — aggregates, value objects, domain events, exceptions, invariants
    - `Presentation/Http/` — controllers (routes, HTTP methods, auth annotations)
-   - `Application/Command/` and `Application/Query/` — command/query names give the write/read surface
+   - `Application/<Action>/` — one folder per use case (command/query handlers + any event subscriber); the folder names give the write/read/react surface
    - `Infrastructure/Persistence/` — new *Model classes, new columns, new repository methods
 
 3. **Write / update the AGENTS.md** following the template below.

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Query\GetCurrentUser\CurrentUserResponse;
-use App\User\Application\Query\GetCurrentUser\GetCurrentUserQuery;
+use App\User\Application\GetCurrentUser\CurrentUserResponse;
+use App\User\Application\GetCurrentUser\GetCurrentUserQuery;
 use Jperdior\SharedKernel\Domain\Bus\Query\QueryBus;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\SecurityBundle\Security;

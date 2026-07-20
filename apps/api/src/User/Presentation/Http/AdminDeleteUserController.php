@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Command\SoftDeleteUser\SoftDeleteUserCommand;
+use App\User\Application\SoftDeleteUser\SoftDeleteUserCommand;
 use App\User\Infrastructure\Symfony\Security\SecurityUser;
 use Jperdior\SharedKernel\Domain\Bus\Command\CommandBus;
 use OpenApi\Attributes as OA;

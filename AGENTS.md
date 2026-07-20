@@ -180,7 +180,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Adding a Query (read side) | `apps/api/AGENTS.md` → CQRS + `.ai/skills/add-query/SKILL.md` |
 | Adding an HTTP endpoint | `apps/api/AGENTS.md` → Presentation + `.ai/skills/add-route/SKILL.md` |
 | Adding a Doctrine migration | `.ai/skills/scaffold-doctrine-migration/SKILL.md` |
-| Adding a domain event subscriber | `apps/api/AGENTS.md` → Events |
+| Adding a domain event subscriber / cross-context communication (one context reacts to another's event) | `docs/domain-events.md` + `apps/api/AGENTS.md` → Events & Subscribers + `.ai/skills/add-event-subscriber/SKILL.md` |
 | Adding context AGENTS.md / guidelines | `.ai/skills/create-agents-md/SKILL.md` |
 | **Auth** | |
 | User aggregate, JWT, refresh tokens, security.yaml | `apps/api/src/User/AGENTS.md` + `docs/auth.md` |
@@ -362,7 +362,7 @@ ops/
   k8s/        Helm chart skeleton
   ci/         Shared CI scripts
 .ai/          Specs, skills, qa, lessons, ds-rules — the AI harness
-docs/         ARCHITECTURE, getting-started, auth, adding-a-bounded-context, ops, ai-workflow
+docs/         ARCHITECTURE, getting-started, auth, adding-a-bounded-context, domain-events, persistence, ops, ai-workflow
 ```
 
 ## Conventions (project-wide)

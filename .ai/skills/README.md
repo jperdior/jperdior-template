@@ -71,6 +71,7 @@ Skills also trigger automatically when a task matches the skill's `description`.
 | `add-command` | Add a CQRS write command + handler + functional test scaffold. |
 | `add-query` | Add a CQRS query + handler + response DTO + functional test scaffold. |
 | `add-route` | Add an invokable controller + Request DTO + Response DTO + Nelmio annotation + functional test. |
+| `add-event-subscriber` | Add a domain-event subscriber so one context reacts to another's event; the producer's event is imported directly, and it scaffolds the consumer use case, subscriber, and functional test. |
 | `scaffold-doctrine-migration` | Wrap `php bin/console doctrine:migrations:diff` with naming + snapshot review. |
 | `scaffold-nextjs-page` | App Router page with `loading.tsx` + `error.tsx` + Server Action stub. |
 | `scaffold-shadcn-form` | React-hook-form + zod schema + shadcn `Form` primitives. |

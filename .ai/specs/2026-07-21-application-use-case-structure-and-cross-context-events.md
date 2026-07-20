@@ -78,12 +78,20 @@ the namespace segment `\Command\` / `\Query\` is dropped
 
 ### Cross-context event convention
 
-- **Context-internal events** (only the owning context reacts): live in
-  `<Context>/Domain/Event/` — where `UserRegistered` stays.
-- **Cross-context / integration events** (another context subscribes): live in
-  `apps/api/src/Shared/Domain/Event/`. Both the emitting and consuming contexts may depend
-  on `Shared` (deptrac allows `User → Shared`), so neither imports the other's `Domain/`.
-  This mirrors the convention in the author's own `dungeon-manager` project.
+- **Events always live in their owning context's `Domain/Event/`** — whether one context
+  reacts or several. `UserRegistered` stays `App\User\Domain\Event\UserRegistered`. There is
+  no promotion to a shared location.
+- **A context's domain events are its published contract.** A consumer imports the producer's
+  event class directly. deptrac gains a dedicated **`DomainEvent` layer** collecting every
+  `^App\<Context>\Domain\Event\*`; every context's ruleset may depend on it. The context
+  layers use a `bool` collector with `must_not` on the `Domain\Event\` namespace, so an event
+  class binds to the `DomainEvent` layer **only** (deptrac allows a class in multiple layers,
+  which would otherwise re-trip the private-context rule). Net: importing another context's
+  aggregate/repository/value-object/`Application/` still fails the build; importing its
+  events does not.
+- **Guardrail:** cross-context event payloads must be **primitive** (strings/arrays/scalars —
+  no producer value objects), so importing an event never transitively pulls in the
+  producer's internals. The template's `UserRegistered` already satisfies this.
 - **Subscriber placement**: in the **consumer** context's `Application/<Action>/` folder,
   next to the use case it drives, named `<Verb><Thing>On<Event>` — implements
   `DomainEventSubscriber`, `subscribedTo()` returns the event class, `__invoke` delegates to
@@ -112,9 +120,11 @@ client must be byte-identical after the change (verified via `make gen-api`).
   `Query/<Action>/` folder up to `Application/<Action>/`; rewrite `namespace` lines; fix
   every `use` import (12 controllers, 2 console commands, 4 unit tests, intra-Application
   refs). Gate: `make lint-api` + `make test-api`.
-- **Phase 3 — `Shared/Domain/Event/` convention.** Create the namespace with a short
-  `README.md` documenting its purpose; no event classes moved (UserRegistered stays until a
-  real cross-context consumer exists). Gate: `make lint-api`.
+- **Phase 3 — `DomainEvent` deptrac layer.** Add a `DomainEvent` layer in `deptrac.yaml`
+  collecting `^App\<Context>\Domain\Event\*`; add it to each context's ruleset; give context
+  layers a `bool`/`must_not` collector excluding the `Domain\Event\` namespace so events bind
+  only to the `DomainEvent` layer. Events stay in their owning context's `Domain/Event/`;
+  consumers import them directly. No event classes move. Gate: `make lint-api` (deptrac).
 - **Phase 4 — `/add-event-subscriber` skill.** New `.ai/skills/add-event-subscriber/SKILL.md`;
   register in `.ai/skills/tiers.json`, `.ai/skills/README.md`, and the AGENTS.md Task Router.
 - **Phase 5 — Documentation.** New `docs/domain-events.md`; update `apps/api/AGENTS.md`,
@@ -130,9 +140,9 @@ Each phase leaves the app green.
 |---|----------|----------|------------|----------|
 | 1 | A stale `use` import missed → class-not-found at runtime | Medium | phpstan + functional tests exercise every controller/handler path; grep for old namespaces returns zero | Low |
 | 2 | DI autowiring stops finding a moved service | Low | globs are depth-agnostic + interface-tagged; `make test-api` boots the container and dispatches every bus | Low |
-| 3 | deptrac flags a new violation after the move | Low | layers key on `^App\User\.*`, unaffected by depth; deptrac runs in `make lint-api` | Low |
+| 3 | deptrac flags a new violation after the move | Low | context layers key on `^App\<Context>\.*`, unaffected by folder depth; deptrac runs in `make lint-api` | Low |
 | 4 | OpenAPI drift from touched controllers | Low | only `use` lines change; `make gen-api` diff must be empty | Low |
-| 5 | Docs describe a `Shared/Domain/Event/` path deptrac would actually reject | Medium | doc read-through validates `User → Shared` is allowed and the example subscriber compiles conceptually | Low |
+| 5 | `DomainEvent` layer misconfigured — event binds to two layers and re-trips the context rule, or the `must_not` typo lets aggregates leak | Medium | context layers use `bool`/`must_not` so events bind to `DomainEvent` only; `make lint-api` runs deptrac; `UserRegistered` (User aggregate → DomainEvent) must stay green | Low |
 | 6 | Skill/docs drift from the real flat structure over time | Low | skills + AGENTS.md updated in the same PR; `/sync-context-docs` covers future contexts | Low |
 
 ## Integration Coverage
@@ -154,8 +164,8 @@ no published package exposes them.
 
 - [ ] No `Symfony\*`/`Doctrine\*` imports added to any `Domain/`.
 - [ ] No controller calls a handler directly (all via a bus).
-- [ ] No cross-context `Domain/`/`Application/` import (deptrac green); cross-context events
-      documented as living in `Shared/Domain/Event/`.
+- [ ] No cross-context import of aggregates/repositories/value-objects/`Application/` (deptrac
+      green); domain events are cross-importable via the `DomainEvent` layer, payloads primitive.
 - [ ] No Doctrine attributes on domain entities.
 - [ ] `openapi.json` + `types.gen.ts` unchanged (`make gen-api` clean).
 - [ ] `make lint` + `make test` green.
