@@ -18,13 +18,13 @@ Onboarding wizard for a fresh clone. Checks the environment, sets up config, and
    - `git --version` — always present if we got here.
    - `gh --version` — GitHub CLI; required for PR workflows ([install](https://cli.github.com/)).
 
-2. **Copy `.env.local`** if it doesn't exist:
+2. **Copy `.env.local`** if it doesn't exist. Do this in the **main checkout** (`.env.local` is untracked, per-checkout local config — it is not a personalization edit and does not belong on a branch):
    ```sh
    [ -f .env.local ] || cp .env.dist .env.local
    echo "Review .env.local and adjust APP_SECRET / JWT_PASSPHRASE / DB credentials before production use."
    ```
 
-3. **Personalize the project**: run `/customize-project` to rename placeholder package names and add your project description to `AGENTS.md`. This is the right time — before the first image build.
+3. **Personalize the project**: run `/customize-project` to rename placeholder package names and add your project description to `AGENTS.md`. This is the right time — before the first image build. `/customize-project` makes its edits in its **own isolated worktree** branched from `main` and opens a PR — it never mutates the main checkout, consistent with `/fix` and `/new-feature`. Init does **not** branch itself; it delegates all tracked-file changes to `/customize-project`.
 
 4. **Explain the three stack modes**:
    - **Headless test stack** (default for development) — the DB-backed gates (`make test` / `make test-api`) auto-start it per-worktree on first use; the standalone gates (`make lint`, `make lint-web`, `make build-web`) need no DB and run in ephemeral containers. Port-free, parallel-safe. No `make start` needed for development.
@@ -55,5 +55,6 @@ Need a browser preview?
 ## Rules
 
 - Never overwrite an existing `.env.local` — only copy if missing.
+- Never edit tracked files in the main checkout from this skill — all personalization edits go through `/customize-project`, which runs in its own worktree and opens a PR.
 - Never run `make start` from this skill — that's a separate user decision.
 - Do not attempt to patch `/etc/hosts` — that requires sudo and must be done via `make init`.

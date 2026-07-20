@@ -18,10 +18,19 @@ Ask the following questions **one at a time** (do not ask all at once):
 
 After collecting the four answers, **show a summary** of every file that will change and what will be replaced. Ask for confirmation before applying.
 
-Before applying any edits, **create a branch**:
-```sh
-git checkout -b chore/customize-project-<name>
-```
+Before applying any edits, **create an isolated worktree** — consistent with `/fix` and `/new-feature`, never mutate the main checkout:
+
+1. Refresh `main` so the worktree branches from a current base:
+   ```sh
+   git fetch origin
+   ```
+2. Create + enter the worktree via `/new-feature` (or the `EnterWorktree` tool), naming it `chore-customize-project`:
+   ```sh
+   /new-feature chore-customize-project   # creates .claude/worktrees/chore-customize-project on a new branch and enters it
+   ```
+   Apply every edit below **inside** the worktree. Never `git checkout -b` in the main checkout.
+
+Verify you are inside the worktree before writing any file — `pwd` MUST contain `.claude/worktrees/chore-customize-project`.
 
 ## Changes applied on confirmation
 
@@ -51,14 +60,16 @@ After applying all edits, **prepend** this block to `AGENTS.md` (after the `# Ag
 ---
 ```
 
-Finally, **commit and push**, then **open a PR**:
+Finally, from **inside the worktree**, **commit and push** the worktree's branch, then **open a PR**:
 ```sh
 git add -A
 git commit -m "chore: customize project for <name>"
-git push -u origin chore/customize-project-<name>
+git push -u origin "$(git branch --show-current)"
 gh pr create --title "chore: customize project for <name>" \
   --body "Renames template placeholders and adds project context to AGENTS.md."
 ```
+
+After the PR merges, clean up the worktree (exit it, `git worktree prune`, delete the branch) — same as any `/new-feature` or `/fix` worktree.
 
 ## Output
 
@@ -77,6 +88,7 @@ Next steps:
 
 ## Rules
 
+- Apply all edits in a dedicated worktree branched from an up-to-date `main` — never mutate the main checkout. Consistent with `/fix` and `/new-feature`.
 - Ask questions one at a time — do not dump all four at once.
 - Always show the summary and ask for confirmation before applying any edits.
 - Never change the PHP namespace (`App\`) — it is Symfony's standard and renaming it would touch every PHP source file. The `composer.json` name field is sufficient.
