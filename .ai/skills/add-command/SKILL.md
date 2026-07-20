@@ -93,6 +93,60 @@ final readonly class <Verb>CommandHandler implements CommandHandler
 - **Idempotency**: design for retries. The same command applied twice MUST produce the same outcome (or fail cleanly).
 - **Auto-tagging**: `_instanceof: App\Shared\Domain\Bus\Command\CommandHandler` in `config/services.yaml` wires this to the `command.bus` Messenger transport. Never tag manually.
 
+## Cross-context data in handlers — the Provider pattern
+
+When a handler (or a domain service it calls) needs data owned by **another bounded context** — e.g. validating input against a definition that lives elsewhere — never:
+
+- import the other context's `Domain\` or `Application\` types into your handler, or
+- inject `QueryBus` into a handler or domain service just to fetch cross-context data.
+
+Both couple your domain to another context; `deptrac` flags the first, and the second smuggles infrastructure into the domain. Use the **Provider pattern** instead:
+
+1. **Declare a domain interface** in *your* context's `Domain\` layer, expressed entirely in your own types:
+   ```php
+   // App\<Context>\Domain\<OtherContext>DefinitionProvider.php
+   interface <OtherContext>DefinitionProvider
+   {
+       public function get(<OtherContext>Id $id): <OtherContext>Definitions;
+   }
+   ```
+   `<OtherContext>Definitions` (and any supporting value objects) also live in `<Context>\Domain\` — they are *your* context's projection of what it needs to know about the other one.
+
+2. **Put the logic that uses it in a Domain Service** under `Domain\Service\`, depending only on the interface:
+   ```php
+   // App\<Context>\Domain\Service\<Aggregate>Factory.php
+   final class <Aggregate>Factory
+   {
+       public function __construct(private readonly <OtherContext>DefinitionProvider $provider) {}
+   }
+   ```
+
+3. **Implement the interface in Infrastructure**, where using `QueryBus` is allowed:
+   ```php
+   // App\<Context>\Infrastructure\<OtherContext>\QueryBus<OtherContext>DefinitionProvider.php
+   final class QueryBus<OtherContext>DefinitionProvider implements <OtherContext>DefinitionProvider
+   {
+       public function __construct(private readonly QueryBus $queryBus) {}
+
+       public function get(<OtherContext>Id $id): <OtherContext>Definitions
+       {
+           $response = $this->queryBus->ask(new Get<OtherContext>Query(id: $id->value()));
+           // map the response DTO → your own domain type
+           return new <OtherContext>Definitions(/* … */);
+       }
+   }
+   ```
+
+4. **Wire the alias** in `config/services.yaml`:
+   ```yaml
+   App\<Context>\Domain\<OtherContext>DefinitionProvider:
+       alias: App\<Context>\Infrastructure\<OtherContext>\QueryBus<OtherContext>DefinitionProvider
+   ```
+
+5. **Handlers stay thin** — inject the domain service, not the provider directly.
+
+Why it matters: the domain is unit-testable with a stub provider (no `QueryBus`, no Symfony, no DB); cross-context validation lives in the domain where it belongs; and the QueryBus mechanism stays an infrastructure detail the domain never sees. This is the approved escape hatch `deptrac` leaves open for cross-context reads.
+
 ## Output
 
 ```

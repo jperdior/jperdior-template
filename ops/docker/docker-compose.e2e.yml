@@ -1,0 +1,65 @@
+# Isolated, disposable web-e2e stack overlay. Composed as base + dev + THIS file under a
+# per-worktree project name (DOCKER_COMPOSE_E2E_STACK in the Makefile) and brought up with
+# an explicit service list (`postgres redis api nginx web`), so the browser-facing app runs
+# fully isolated from `make start`:
+#
+#   - Its own postgres volume  → a disposable DB, reset from scratch on every `make test-e2e`
+#     (the Makefile drops + re-migrates the schema before each run).
+#   - No host ports: postgres's and redis's host-port publishes are dropped, and traefik /
+#     mailpit / rabbitmq / admin are simply never started (web / nginx / api are already
+#     portless in the dev overlay — Traefik fronts them there). So this stack coexists with
+#     the dev stack AND with other worktrees' e2e stacks — no port collisions.
+#   - Keeps the dev overlay's source mounts + `next dev`, so it exercises the LIVE worktree
+#     code (no image rebuild on change), unlike the production-shaped base images.
+#
+# The Playwright runner (`playwright` service, profile `e2e`) is executed via `run --rm`
+# against http://web:3000 on this stack's network.
+
+services:
+  postgres:
+    # Ephemeral stack: neutralize base's restart policy and drop the host-port publish.
+    restart: "no"
+    ports: !reset []
+
+  redis:
+    restart: "no"
+    ports: !reset []
+
+  api:
+    restart: "no"
+
+  nginx:
+    restart: "no"
+
+  web:
+    restart: "no"
+
+  playwright:
+    profiles: [e2e]
+    image: mcr.microsoft.com/playwright:v1.60.0-jammy
+    working_dir: /repo
+    depends_on:
+      web:
+        condition: service_started
+    environment:
+      # Point Playwright at the in-network `web` service; browsers ship with the image.
+      PLAYWRIGHT_BASE_URL: http://web:3000
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      CI: "true"
+    volumes:
+      - ../..:/repo
+      # Dedicated node_modules volume — the runner's install filter differs from web's,
+      # so it must not share web's node_modules volume.
+      - playwright_node_modules:/repo/node_modules
+      - pnpm_store:/repo/.pnpm-store
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        npm install -g pnpm@9.15.0 --silent
+        pnpm install --filter "@jperdior/web..." --filter "./packages/*"
+        pnpm -C apps/web exec playwright test
+
+volumes:
+  playwright_node_modules:

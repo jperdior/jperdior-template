@@ -122,6 +122,10 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.localhost}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
       CI: "true"
+      # `@jperdior/web` carries `@playwright/test` (devDep) for `make test-e2e`; the e2e
+      # browsers come from the dedicated Playwright runner image, so skip the browser
+      # download during this service's `next dev` install.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     volumes:
       - ../..:/repo
       - web_node_modules:/repo/node_modules
@@ -158,6 +162,10 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.localhost}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
       CI: "true"
+      # `@jperdior/web` carries `@playwright/test` (devDep) for `make test-e2e`; the e2e
+      # browsers come from the dedicated Playwright runner image, so skip the browser
+      # download during this service's `next dev` install.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     volumes:
       - ../..:/repo
       - admin_node_modules:/repo/node_modules

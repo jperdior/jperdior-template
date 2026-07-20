@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -18,12 +19,14 @@
     "@jperdior/auth-server": "workspace:*",
     "@jperdior/ui-react": "workspace:*",
     "next": "16.2.6",
+    "next-intl": "^4.3.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-hook-form": "^7.53.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "1.60.0",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
