@@ -134,10 +134,12 @@ git commit -m "docs: sync project docs after <feature-name>"
 \`\`\`
 Domain/
 ├── <Aggregate>.php
+├── Event/<Aggregate><Action>.php        (published contract; primitive payload)
 ├── ...
-Application/
-├── Command/<Verb><Entity>/...
-├── Query/<Get|List><Entity>/...
+Application/                 (one folder per use case — no Command/ or Query/ folder)
+├── <Action>/{<Action>Command,<Action>CommandHandler,<Action>UseCase}.php
+├── <Action>/{<Action>Query,<Action>QueryHandler,<Action>UseCase,<Action>Response}.php
+├── <Action>/{<Action>DomainEventSubscriber,<Action>UseCase}.php   (reacts to a domain event)
 Infrastructure/
 └── Persistence/
     ├── Doctrine<Entity>Repository.php
