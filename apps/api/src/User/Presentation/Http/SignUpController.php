@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Command\SignUp\SignUpCommand;
+use App\User\Application\SignUp\SignUpCommand;
 use App\User\Presentation\Http\Dto\SignUpRequest;
 use Jperdior\SharedKernel\Domain\Bus\Command\CommandBus;
 use OpenApi\Attributes as OA;

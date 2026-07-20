@@ -52,7 +52,7 @@ git diff origin/main...HEAD --name-only \
 2. **Read the code** — always read from the filesystem, never from memory:
    - `Domain/*.php` — aggregates, value objects, domain events, exceptions, invariants
    - `Presentation/Http/` — controllers (routes, HTTP methods, auth annotations)
-   - `Application/Command/` and `Application/Query/` — command/query names give the write/read surface
+   - `Application/<Action>/` — one folder per use case (command/query handlers + any event subscriber); the folder names give the write/read/react surface
    - `Infrastructure/Persistence/` — new *Model classes, new columns, new repository methods
 
 3. **Write / update the AGENTS.md** following the template below.
@@ -134,10 +134,12 @@ git commit -m "docs: sync project docs after <feature-name>"
 \`\`\`
 Domain/
 ├── <Aggregate>.php
+├── Event/<Aggregate><Action>.php        (published contract; primitive payload)
 ├── ...
-Application/
-├── Command/<Verb><Entity>/...
-├── Query/<Get|List><Entity>/...
+Application/                 (one folder per use case — no Command/ or Query/ folder)
+├── <Action>/{<Action>Command,<Action>CommandHandler,<Action>UseCase}.php
+├── <Action>/{<Action>Query,<Action>QueryHandler,<Action>UseCase,<Action>Response}.php
+├── <Action>/{<Action>DomainEventSubscriber,<Action>UseCase}.php   (reacts to a domain event)
 Infrastructure/
 └── Persistence/
     ├── Doctrine<Entity>Repository.php

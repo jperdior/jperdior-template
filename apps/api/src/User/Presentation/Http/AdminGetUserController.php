@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Query\GetUserById\GetUserByIdQuery;
-use App\User\Application\Query\GetUserById\UserDetailResponse;
+use App\User\Application\GetUserById\GetUserByIdQuery;
+use App\User\Application\GetUserById\UserDetailResponse;
 use App\User\Domain\Exception\UserNotFound;
 use Jperdior\SharedKernel\Domain\Bus\Query\QueryBus;
 use OpenApi\Attributes as OA;

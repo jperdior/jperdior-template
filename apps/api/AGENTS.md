@@ -5,6 +5,7 @@ Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context
 ## Always
 
 - Match the four-layer layout in every context: `Domain/`, `Application/`, `Infrastructure/`, `Presentation/`.
+- Group the Application layer by **use case**, not by trigger: `Application/<Action>/` holds the `<Action>UseCase` plus its trigger(s) — a `CommandHandler`, a `QueryHandler`, and/or a `DomainEventSubscriber`, all delegating to that one use case. There is no `Command/` or `Query/` grouping folder.
 - Dispatch through `CommandBus` / `QueryBus` from controllers. Never inject a handler.
 - Place repository interfaces in `Domain/`, Doctrine implementations in `Infrastructure/Persistence/`, alias them in `config/services.yaml`.
 - Use PHP attributes on `*Model` persistence classes under `Infrastructure/Persistence/Doctrine/`. Register each context with `type: attribute` in `config/packages/doctrine.yaml`. Never put `#[ORM\*]` on Domain entities.
@@ -23,7 +24,7 @@ Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context
 
 ## Never
 
-- **Never** import another context's `Domain/` or `Application/`. CI `deptrac` enforces this.
+- **Never** import another context's aggregates, repositories, value objects, or `Application/`. CI `deptrac` enforces this. The **one** exception is a context's `Domain/Event/` classes — domain events are a context's published contract and may be imported cross-context (see Events & Subscribers).
 - **Never** add `#[ORM\*]` attributes to domain entities. ORM mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
 - **Never** call `em->find()` from a controller. Use a query.
 - **Never** catch a domain exception in a controller. Context-specific HTTP statuses live in the context's `ExceptionStatusMapProvider` (`Presentation/Http/<Context>ExceptionStatusMap.php`); everything else falls back to the Shared `ExceptionListener`'s generic mapping (`DomainException`→409, `InvalidArgumentException`→400).
@@ -114,6 +115,47 @@ _instanceof:
 
 Adding a new handler = `implements CommandHandler` (or Query/Event). No manual tagging. The same applies to exception status maps: `implements ExceptionStatusMapProvider` in a context's Presentation layer and the Shared `ExceptionListener` picks it up (exact exception class → `{status, code, message}`; duplicate class keys across providers fail fast at container build).
 
+## Events & Subscribers
+
+Contexts communicate **only** through domain events on `event.bus` (or a public Application
+response / the Provider pattern for reads). One context emits; another reacts. Full model in
+`docs/domain-events.md`; scaffold with `/add-event-subscriber`.
+
+- **Aggregates record, use cases publish.** `$this->record(new <Event>(...))` in the
+  aggregate; `$this->eventBus->publish(...$aggregate->pullDomainEvents())` in the use case.
+- **Events live in their owning context's `Domain/Event/`** — always (`UserRegistered` →
+  `App\User\Domain\Event\UserRegistered`). A context's events are its **published contract**:
+  another context imports the event class directly. deptrac's `DomainEvent` layer
+  (`deptrac.yaml`) permits importing any `App\<Context>\Domain\Event\*` while still failing the
+  build on any cross-context import of aggregates, repositories, value objects, or
+  `Application/`. **Cross-context event payloads must be primitive** (no producer value
+  objects), or the import drags in the producer's internals.
+- **Subscribers live in the consumer's `Application/<Action>/`** next to the use case they
+  drive, named `<Verb><Thing>On<Event>`. They implement `DomainEventSubscriber`
+  (`subscribedTo()` + `__invoke`), delegate (usually dispatch a local command), and hold **no**
+  business logic. Auto-tagged onto `event.bus` via `_instanceof` — never tag manually.
+
+```php
+final readonly class CreateTenantOnUserRegistered implements DomainEventSubscriber
+{
+    public function __construct(private CommandBus $commandBus) {}
+
+    public static function subscribedTo(): array
+    {
+        return [UserRegistered::class];   // App\User\Domain\Event\UserRegistered — imported directly
+    }
+
+    public function __invoke(UserRegistered $event): void
+    {
+        $this->commandBus->dispatch(new CreateTenantCommand(ownerId: $event->aggregateId));
+    }
+}
+```
+
+`event.bus` sets `allow_no_handlers: true` (an event with no subscriber is fine) and runs
+**synchronously**; `messenger.yaml` has the commented RabbitMQ path for async. Design
+reactions to be idempotent so an at-least-once queue is a drop-in later.
+
 ## Repository Wiring Pattern
 
 ```yaml
@@ -143,6 +185,9 @@ doctrine:
 1. Use `/scaffold-bounded-context` (or copy the User layout manually).
 2. Add the new context's mapping under `doctrine.yaml`.
 3. Add the repository alias under `services.yaml`.
-4. Run `make migrate-diff`, review SQL, commit.
-5. Write functional tests under `tests/Functional/<Context>/` — one `It<Scenario>Test` per case, extending a `Base<UseCase>Test`.
-6. Update root `AGENTS.md` Task Router if the context introduces new task patterns.
+4. Add the context to `deptrac.yaml`: a layer (a `bool` collector matching `^App\<Context>\.*`
+   with `must_not` excluding `^App\<Context-or-any>\Domain\Event\.*`, mirroring `User`) plus a
+   ruleset entry allowing `Shared, SharedKernel, Symfony, Doctrine, Vendor, DomainEvent`.
+5. Run `make migrate-diff`, review SQL, commit.
+6. Write functional tests under `tests/Functional/<Context>/` — one `It<Scenario>Test` per case, extending a `Base<UseCase>Test`.
+7. Update root `AGENTS.md` Task Router if the context introduces new task patterns.

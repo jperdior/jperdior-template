@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Command\ResetPasswordWithToken\ResetPasswordWithTokenCommand;
+use App\User\Application\ResetPasswordWithToken\ResetPasswordWithTokenCommand;
 use App\User\Presentation\Http\Dto\ResetPasswordWithTokenRequest;
 use Jperdior\SharedKernel\Domain\Bus\Command\CommandBus;
 use OpenApi\Attributes as OA;

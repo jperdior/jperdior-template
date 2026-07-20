@@ -201,7 +201,7 @@ Never run migrations without reviewing the SQL first. The `migrate-diff` command
 The handler is Symfony Messenger glue. The use case is pure PHP:
 
 ```php
-// Application/Command/Create<Aggregate>/<Verb>CommandHandler.php
+// Application/Create<Aggregate>/<Verb>CommandHandler.php
 final class Create<Aggregate>CommandHandler implements CommandHandler
 {
     public function __construct(
@@ -215,7 +215,7 @@ final class Create<Aggregate>CommandHandler implements CommandHandler
     }
 }
 
-// Application/Command/Create<Aggregate>/<Verb>UseCase.php
+// Application/Create<Aggregate>/<Verb>UseCase.php
 final class Create<Aggregate>UseCase
 {
     public function __construct(
@@ -255,7 +255,7 @@ Mirror the structure in `tests/Functional/User/`.
 
 ## Cross-context communication
 
-**Never** import another context's `Domain/` or `Application/` namespaces. `deptrac` enforces this in CI — a cross-context import fails the build.
+**Never** import another context's aggregates, repositories, value objects, or `Application/`. `deptrac` enforces this in CI. The **one** exception is a context's `Domain/Event/` classes — domain events are a context's published contract and are importable cross-context (see below).
 
 ### Cross-context ID references
 
@@ -270,17 +270,42 @@ Do **not** import `User\Domain\ValueObject\UserId`. The two value objects hold t
 
 ### Event-based communication
 
-Communication between contexts is via domain events on the event bus:
+Communication between contexts is via domain events on the event bus. The event lives in
+**its owning context's `Domain/Event/`** and the consumer imports it directly — a context's
+domain events are its published contract. `deptrac`'s `DomainEvent` layer permits importing
+any `App\<Context>\Domain\Event\*` while still blocking imports of aggregates, repositories,
+value objects, or `Application/`. Keep cross-context event payloads **primitive** (no producer
+value objects) so the import never drags in the producer's internals.
 
 ```php
-// Context A: publish
-$this->record(new OrderPlaced($orderId->value, $userId->value));
+// App\Order\Domain\Event\OrderPlaced — lives in Order, extends DomainEvent, primitive payload
 
-// Context B: subscribe
-final class SendOrderConfirmation implements DomainEventSubscriber
+// Context A (Order): the aggregate records it; the use case publishes it
+$this->record(new OrderPlaced($orderId->value, $ownerId->value));
+// … then in the use case: $this->eventBus->publish(...$order->pullDomainEvents());
+
+// Context B (Notification): subscribe in its OWN Application/<Action>/ folder,
+// next to the use case the reaction drives.
+// App\Notification\Application\SendOrderConfirmation\SendConfirmationOnOrderPlaced
+final readonly class SendConfirmationOnOrderPlaced implements DomainEventSubscriber
 {
-    public function __invoke(OrderPlaced $event): void { ... }
+    public function __construct(private CommandBus $commandBus) {}
+
+    public static function subscribedTo(): array
+    {
+        return [OrderPlaced::class];   // App\Order\Domain\Event\OrderPlaced — imported directly
+    }
+
+    public function __invoke(OrderPlaced $event): void
+    {
+        // Delegate — no business logic here. Drive this context's use case.
+        $this->commandBus->dispatch(new SendOrderConfirmationCommand(orderId: $event->aggregateId));
+    }
 }
 ```
 
-If Context B needs a read projection of Context A's data, subscribe to its events and maintain a local read model. Never reach into A's repository directly.
+The subscriber is auto-tagged onto `event.bus` via `_instanceof` — no YAML. It **delegates**
+(dispatch a command or call a use case) and holds no logic. If Context B needs a read
+projection of Context A's data, subscribe to its events and maintain a local read model;
+never reach into A's repository directly. Full model + testing: `docs/domain-events.md`;
+scaffold with `/add-event-subscriber`.

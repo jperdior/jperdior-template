@@ -14,10 +14,16 @@ Add a Symfony Messenger command and handler to an existing bounded context.
 3. **Generate the files**:
 
 ```
-apps/api/src/<Context>/Application/Command/<Verb>/
+apps/api/src/<Context>/Application/<Verb>/
 ├── <Verb>Command.php           ← final readonly, implements Shared\Domain\Bus\Command\Command
 └── <Verb>CommandHandler.php    ← implements Shared\Domain\Bus\Command\CommandHandler
 ```
+
+The Application layer is grouped **by use case, not by trigger** — one folder per action, no
+`Command/`/`Query/` grouping. This folder may also hold a `<Verb>QueryHandler` or a
+`DomainEventSubscriber` (`/add-event-subscriber`) that drives the same use case. For a
+non-trivial write, extract a `<Verb>UseCase` service the handler delegates to (see the User
+context) so an event subscriber can reuse it.
 
 4. **Wire dependencies**: inject domain repositories + clock + transaction interface from `shared-kernel-php`. NEVER inject Doctrine directly.
 5. **Validate inputs at value-object construction** inside the command class constructor.
@@ -32,7 +38,7 @@ apps/api/src/<Context>/Application/Command/<Verb>/
 
 declare(strict_types=1);
 
-namespace App\<Context>\Application\Command\<Verb>;
+namespace App\<Context>\Application\<Verb>;
 
 use App\Shared\Domain\Bus\Command\Command;
 
@@ -54,7 +60,7 @@ final readonly class <Verb>Command implements Command
 
 declare(strict_types=1);
 
-namespace App\<Context>\Application\Command\<Verb>;
+namespace App\<Context>\Application\<Verb>;
 
 use App\<Context>\Domain\<Aggregate>;
 use App\<Context>\Domain\<Aggregate>Id;

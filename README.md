@@ -144,6 +144,7 @@ Once the stack is up, sign into the admin panel at `admin.localhost` with the au
 | [docs/persistence.md](docs/persistence.md) | Database schema, naming conventions, *Model pattern, repository pattern, migrations |
 | [docs/auth.md](docs/auth.md) | JWT flow, refresh rotation, frontend cookie strategy |
 | [docs/adding-a-bounded-context.md](docs/adding-a-bounded-context.md) | Step-by-step guide for adding a new context |
+| [docs/domain-events.md](docs/domain-events.md) | Domain events + cross-context communication (emit, subscribe; events are a context's published contract) |
 | [docs/ai-workflow.md](docs/ai-workflow.md) | Spec-first AI-driven development with the `.ai/` harness |
 | [docs/ops.md](docs/ops.md) | Docker setup, environment variables, CI pipeline |
 | [AGENTS.md](AGENTS.md) | Task router — the first file an AI agent reads before any coding |

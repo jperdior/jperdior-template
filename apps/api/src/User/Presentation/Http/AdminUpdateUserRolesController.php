@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Command\UpdateUserRoles\UpdateUserRolesCommand;
+use App\User\Application\UpdateUserRoles\UpdateUserRolesCommand;
 use App\User\Domain\Exception\UserNotFound;
 use App\User\Presentation\Http\Dto\UpdateUserRolesRequest;
 use Jperdior\SharedKernel\Domain\Bus\Command\CommandBus;

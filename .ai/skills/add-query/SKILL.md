@@ -14,11 +14,14 @@ Add a read-side query, handler, and response DTO.
 3. **Generate**:
 
 ```
-apps/api/src/<Context>/Application/Query/<Verb>/
+apps/api/src/<Context>/Application/<Verb>/
 ├── <Verb>Query.php             ← final readonly, implements Shared\Domain\Bus\Query\Query
 ├── <Verb>QueryHandler.php      ← implements Shared\Domain\Bus\Query\QueryHandler
 └── <Verb>Response.php          ← final readonly DTO returned to the caller
 ```
+
+The Application layer is grouped **by use case, not by trigger** — one folder per action, no
+`Command/`/`Query/` grouping folder.
 
 4. **Read directly from a Doctrine repository** (no domain aggregate hydration needed for queries — return DTOs).
 5. **Test** — one class per scenario, named `It<Scenario>Test`, under `apps/api/tests/Functional/<Context>/Application/<Verb>/`, extending an abstract `Base<Verb>Test`. AAA (enforced by `FunctionalTestCase`): `arrange()` seeds data, `act()` dispatches the query through the `QueryBus` (no page object), `assert()` checks the returned Response DTO. Only `It*Test` classes are collected.
@@ -29,7 +32,7 @@ apps/api/src/<Context>/Application/Query/<Verb>/
 <?php
 declare(strict_types=1);
 
-namespace App\<Context>\Application\Query\<Verb>;
+namespace App\<Context>\Application\<Verb>;
 
 use App\Shared\Domain\Bus\Query\Query;
 
@@ -46,7 +49,7 @@ final readonly class <Verb>Query implements Query
 <?php
 declare(strict_types=1);
 
-namespace App\<Context>\Application\Query\<Verb>;
+namespace App\<Context>\Application\<Verb>;
 
 use App\Shared\Domain\Bus\Query\QueryHandler;
 
@@ -76,7 +79,7 @@ final readonly class <Verb>QueryHandler implements QueryHandler
 <?php
 declare(strict_types=1);
 
-namespace App\<Context>\Application\Query\<Verb>;
+namespace App\<Context>\Application\<Verb>;
 
 final readonly class <Verb>Response
 {

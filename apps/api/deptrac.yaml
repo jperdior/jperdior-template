@@ -6,12 +6,28 @@ deptrac:
         - '#.*Kernel\.php#'
 
     layers:
+        # A context's domain events are its PUBLISHED contract: any context may import
+        # `App\<Context>\Domain\Event\*`. Everything else in a context stays private.
+        # This layer is listed first and the context layers below exclude the Event
+        # namespace, so an event class belongs to THIS layer only (deptrac allows a class
+        # in several layers, which would otherwise re-trip the private context rule).
+        - name: DomainEvent
+          collectors:
+              - { type: classLike, value: '^App\\[A-Za-z0-9_]+\\Domain\\Event\\.*' }
         - name: User
           collectors:
-              - { type: classLike, value: '^App\\User\\.*' }
+              - type: bool
+                must:
+                    - { type: classLike, value: '^App\\User\\.*' }
+                must_not:
+                    - { type: classLike, value: '^App\\[A-Za-z0-9_]+\\Domain\\Event\\.*' }
         - name: Shared
           collectors:
-              - { type: classLike, value: '^App\\Shared\\.*' }
+              - type: bool
+                must:
+                    - { type: classLike, value: '^App\\Shared\\.*' }
+                must_not:
+                    - { type: classLike, value: '^App\\[A-Za-z0-9_]+\\Domain\\Event\\.*' }
         - name: SharedKernel
           collectors:
               - { type: classLike, value: '^Jperdior\\SharedKernel\\.*' }
@@ -26,13 +42,16 @@ deptrac:
               - { type: classLike, value: '^(?!App\\|Jperdior\\).*' }
 
     ruleset:
-        # Bounded contexts can depend on Shared adapters, the shared kernel, and the framework.
+        # Bounded contexts depend on Shared adapters, the shared kernel, the framework, and
+        # any context's domain events (DomainEvent) — but NEVER another context's aggregates,
+        # repositories, value objects, or handlers.
         User:
             - Shared
             - SharedKernel
             - Symfony
             - Doctrine
             - Vendor
+            - DomainEvent
         # Shared adapters depend on the kernel + framework but never on a specific context.
         Shared:
             - SharedKernel
@@ -42,6 +61,12 @@ deptrac:
 
         # The shared kernel is pure PHP — only Symfony Uid is allowed (covered under Vendor).
         SharedKernel:
+            - Vendor
+
+        # Domain events carry PRIMITIVE payloads only (strings/arrays) so importing one never
+        # drags in the producer's internals. They extend the shared-kernel DomainEvent base.
+        DomainEvent:
+            - SharedKernel
             - Vendor
 
     skip_violations: []

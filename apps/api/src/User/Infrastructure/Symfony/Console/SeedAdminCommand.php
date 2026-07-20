@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\User\Infrastructure\Symfony\Console;
 
-use App\User\Application\Command\EnsureAdmin\EnsureAdminCommand;
+use App\User\Application\EnsureAdmin\EnsureAdminCommand;
 use Jperdior\SharedKernel\Domain\Bus\Command\CommandBus;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

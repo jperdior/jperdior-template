@@ -17,4 +17,4 @@ A `PasswordRecoveryToken` can be redeemed only once and expires 1 hour after cre
 `POST /auth/forgot-password` always returns `204 No Content` regardless of whether the supplied email is registered, preventing user enumeration.
 
 - **Context**: User
-- **Enforcement**: `RequestPasswordRecoveryUseCase` in `apps/api/src/User/Application/Command/RequestPasswordRecovery/` silently no-ops when `UserRepository::findByEmail()` returns `null` **or** when `Email` value-object construction throws `InvalidArgumentException`.
+- **Enforcement**: `RequestPasswordRecoveryUseCase` in `apps/api/src/User/Application/RequestPasswordRecovery/` silently no-ops when `UserRepository::findByEmail()` returns `null` **or** when `Email` value-object construction throws `InvalidArgumentException`.

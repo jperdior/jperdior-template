@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\User\Presentation\Http;
 
-use App\User\Application\Command\SelfResetPassword\SelfResetPasswordCommand;
+use App\User\Application\SelfResetPassword\SelfResetPasswordCommand;
 use App\User\Infrastructure\Symfony\Security\SecurityUser;
 use App\User\Presentation\Http\Dto\SelfResetPasswordRequest;
 use Jperdior\SharedKernel\Domain\Bus\Command\CommandBus;

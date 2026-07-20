@@ -64,15 +64,24 @@ Domain/
 ├── Event/UserRegistered.php
 └── Exception/{UserNotFound,UserAlreadyExists,PasswordRecoveryToken{NotFound,Expired,AlreadyUsed}}.php
 
-Application/
-├── Command/SignUp/{SignUpCommand,SignUpCommandHandler,SignUpUseCase}.php
-├── Command/SelfResetPassword/{...Command,...CommandHandler,...UseCase}.php
-├── Command/ForcePasswordReset/{...Command,...CommandHandler,...UseCase}.php
-├── Command/RequestPasswordRecovery/{...Command,...CommandHandler,...UseCase}.php
-├── Command/ResetPasswordWithToken/{...Command,...CommandHandler,...UseCase}.php   (wraps body in TransactionInterface for PESSIMISTIC_WRITE)
-├── Command/PromoteToAdmin/{PromoteToAdminCommand,PromoteToAdminCommandHandler}.php
-├── Command/EnsureAdmin/{EnsureAdminCommand,EnsureAdminCommandHandler,EnsureAdminUseCase}.php   (idempotent create-or-promote; backs the dev seeder)
-└── Query/GetCurrentUser/{GetCurrentUserQuery,GetCurrentUserQueryHandler,CurrentUserResponse}.php
+Application/                 (grouped by use case, not by trigger — no Command/ or Query/ folder)
+├── SignUp/{SignUpCommand,SignUpCommandHandler,SignUpUseCase}.php
+├── SelfResetPassword/{...Command,...CommandHandler,...UseCase}.php
+├── ForcePasswordReset/{...Command,...CommandHandler,...UseCase}.php
+├── RequestPasswordRecovery/{...Command,...CommandHandler,...UseCase}.php
+├── ResetPasswordWithToken/{...Command,...CommandHandler,...UseCase}.php   (wraps body in TransactionInterface for PESSIMISTIC_WRITE)
+├── AdminCreateUser/, PromoteToAdmin/, UpdateUserRoles/, SoftDeleteUser/, RestoreUser/   ({...Command,...CommandHandler,...UseCase}.php each)
+├── EnsureAdmin/{EnsureAdminCommand,EnsureAdminCommandHandler,EnsureAdminUseCase}.php   (idempotent create-or-promote; backs the dev seeder)
+├── GetCurrentUser/{GetCurrentUserQuery,GetCurrentUserQueryHandler,GetCurrentUserUseCase,CurrentUserResponse}.php
+├── GetUserById/{GetUserByIdQuery,GetUserByIdQueryHandler,GetUserByIdUseCase,UserDetailResponse}.php
+└── ListUsers/{ListUsersQuery,ListUsersQueryHandler,ListUsersUseCase,UserListResponse,UserSummary}.php
+```
+
+Every action folder is `Application/<Action>/` holding one `<Action>UseCase` plus its
+trigger(s). A command handler, a query handler, and a `DomainEventSubscriber` can all live
+in one folder, each delegating to that use case — so a future subscriber that reacts to
+another context's event has a natural home. See `docs/domain-events.md`.
+```
 
 Infrastructure/
 ├── Persistence/DoctrineUserRepository.php
