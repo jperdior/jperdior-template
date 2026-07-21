@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@jper
 import { apiClient } from '@jperdior/api-client-ts/server';
 
 export default async function DashboardPage() {
-  // The middleware only checks cookie presence; a dead session (expired access
+  // The proxy only checks cookie presence; a dead session (expired access
   // token + revoked refresh token) reaches this page. `apiClient()` handles it
   // globally — on a dead session it clears the cookies and redirects to
   // /login?reason=expired — so there is nothing to catch here.

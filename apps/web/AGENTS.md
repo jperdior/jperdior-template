@@ -14,7 +14,7 @@ Next.js 16 public app (App Router, RSC by default). Consumes the API via `@jperd
 ## Never
 
 - **Never** use raw `fetch` in app code. Use `apiClient()` from `@jperdior/api-client-ts/server`.
-- **Never** hand-roll session handling. Sign-in/out, route guarding, and token cookies come from `@jperdior/auth-server` (`createSignInAction`, `createSignOutAction`, `createAuthMiddleware`, `persistTokens`/`clearTokens`/`isAuthenticated`).
+- **Never** hand-roll session handling. Sign-in/out, route guarding, and token cookies come from `@jperdior/auth-server` (`createSignInAction`, `createSignOutAction`, `createAuthProxy`, `persistTokens`/`clearTokens`/`isAuthenticated`).
 - **Never** store tokens in `localStorage`. They're HTTP-only cookies, written by `persistTokens()`.
 - **Never** import server-only code (`next/headers`, `@jperdior/api-client-ts/server`) inside `'use client'` files. TypeScript will warn but check.
 - **Never** hard-code colors / sizes — use the DS preset tokens.
@@ -52,7 +52,7 @@ src/
 │   ├── navigation.ts                ← locale-aware Link / redirect / useRouter / usePathname
 │   └── request.ts                   ← per-request locale + message-catalog loader
 ├── lib/message-parity.test.ts       ← asserts en.json/es.json have an identical key set
-└── middleware.ts                    ← next-intl middleware composed with createAuthMiddleware
+└── proxy.ts                         ← next-intl middleware composed with createAuthProxy
 messages/{en,es}.json                ← message catalogs (en.json is the source of truth)
 e2e/                                 ← Playwright auth journey (run via `make test-e2e`)
 playwright.config.ts
@@ -74,9 +74,9 @@ next.config.ts                       ← wrapped with createNextIntlPlugin
 - **In-app navigation uses the locale-aware helpers** from `@/i18n/navigation` (`Link`,
   `useRouter`, `usePathname`) so the active locale prefix is preserved. Server-side `redirect`
   stays on `next/navigation` (the target is served at the default-locale, unprefixed URL).
-- The middleware runs the **auth guard first** (unauth → `/login`), then hands the response to
+- The proxy runs the **auth guard first** (unauth → `/login`), then hands the response to
   next-intl, which owns the locale rewrite + `NEXT_LOCALE` cookie. Public paths in
-  `middleware.ts` include their `/es` variants.
+  `proxy.ts` include their `/es` variants.
 
 ## Cookie Strategy
 
