@@ -272,8 +272,22 @@ Rules:
 - **Messages carry primitives + shared identifier VOs only** — never a producer's domain VO.
 - **Dispatch, never import the handler.** The message class is the contract; the handler resolves on
   the producer's side via the bus.
-- **A cross-context read is still a read** — put the dispatch in the consumer's use case (so it holds
-  for every entry point, HTTP or not — L-008), not only in a controller.
+
+### Where to dispatch — controller vs use case
+
+Cross-context CQRS is allowed everywhere; **where** you dispatch depends on *why* you are querying.
+This is the Service Layer / Application Service principle (Fowler, Vernon): presentation stays thin,
+business decisions live in the application layer.
+
+| Intent | Where | Why |
+|---|---|---|
+| **Shape a response** — read-only display data to build the HTTP payload | **Controller** may dispatch it | Pure presentation concern; the controller already formats the response (e.g. re-query the just-written aggregate for its response DTO). |
+| **Gate a decision / enforce a precondition or invariant** — "does this write proceed?", ownership/eligibility/existence checks | **Use case / application service** dispatches it | It holds for **every** entry point (HTTP, console, subscriber — L-008), and keeps business logic out of Presentation. Enforcing an ownership check only at the API edge is a review-Critical (it can be bypassed by a non-HTTP caller). |
+
+- **If synchronous cross-context reads proliferate, prefer autonomy** — have the consumer maintain a
+  **local read model fed by the producer's events** and query *that*, instead of querying the producer
+  on every request. Events for state you can cache; synchronous queries for the occasional gate. A
+  synchronous query couples the two request paths at runtime (Dahan's autonomy principle).
 
 ## See also
 
