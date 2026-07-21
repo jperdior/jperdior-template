@@ -25,7 +25,7 @@ For research-heavy specs (new bounded context, cross-cutting concern), spawn an 
 3. **Start Minimal — Skeleton + Open Questions Gate**: Write a skeleton (TLDR + 2-3 key sections only). Before writing the skeleton, scan the brief for **critical unknowns** — decisions where the wrong assumption forces a rewrite. List them as an **Open Questions** block (`Q1`, `Q2`, …) immediately after the TLDR. **STOP after presenting the skeleton.** Do not proceed past this gate until the user has answered every question.
 4. **Apply Answers**: remove the Open Questions block and fill the skeleton.
 5. **Research**: when relevant, compare against open-source leaders / RFCs / Symfony recipes. Quote evidence.
-6. **Design**: write the Architecture, Data Models, API Contracts sections. For every aggregate, declare which **bounded context** it lives in. For every endpoint, declare which **bus** it dispatches to. For every cross-context need, declare the **domain event** or **public application service** used (NOT a direct import).
+6. **Design**: write the Architecture, Data Models, API Contracts sections. For every aggregate, declare which **bounded context** it lives in. For every endpoint, declare which **bus** it dispatches to. For every cross-context need, declare the **domain event** (react) or the **bus-dispatched published `*Command`/`*Query`** (act/read) used — never a direct import of another context's internals.
 7. **Phasing**: break delivery into testable phases. Each phase ends with `make test` passing and a working app. All phases ship together in a single PR (the spec commits as the first commit, then phases accumulate on the same `feat-<slug>` branch). Define phases at a granularity that is independently reviewable and leaves the app in a valid state at each checkpoint.
 8. **Risks & Impact**: document concrete failure scenarios (severity, affected area, mitigation, residual risk).
 9. **Integration Coverage**: list the PHPUnit Functional tests (API) and Vitest + RTL tests (apps/web, apps/admin) that must exist for the new behaviour.
@@ -71,7 +71,7 @@ See [references/spec-checklist.md](references/spec-checklist.md).
 
 ## Review Heuristics (The Staff-Engineer Lens)
 
-1. **Boundary integrity**: does the spec propose any `use App\<OtherContext>\Domain\…` import? If yes, that's a **Critical** violation — propose an event or a public application service instead.
+1. **Boundary integrity**: does the spec propose importing another context's aggregate, repository, VO, or executable Application class (`use App\<OtherContext>\Domain\…` beyond `Domain\Event\`, or a `*Handler`/`*UseCase`/`*Subscriber`)? If yes, that's a **Critical** violation — propose a domain event or a bus-dispatched published `*Command`/`*Query` (the `PublicMessage` layer) instead. Importing another context's `*Command`/`*Query`/Response DTO to dispatch it through the bus is allowed.
 2. **Bus discipline**: do controllers dispatch through `CommandBus` / `QueryBus`? Or does the spec wire a handler directly into a controller? Critical.
 3. **Mapping discipline**: does the spec add `#[ORM\Entity]` / `#[ORM\Column]` attributes to a domain entity? Critical — ORM attributes belong on `*Model` persistence classes in `Infrastructure/Persistence/Doctrine/`, never on domain entities.
 4. **Aggregate granularity**: is there exactly one aggregate root per write transaction? Splitting one logical transaction across two aggregates is a smell; merging two distinct lifecycles into one aggregate is also a smell.

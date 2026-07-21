@@ -75,7 +75,7 @@ Do **not** start any new work until the user has acknowledged the merged state.
 
 - **Never** import framework code (`Symfony\*`, `Doctrine\*`, `Predis\*`) inside `Domain/`.
 - **Never** call command/query handlers directly from controllers — always go through the bus.
-- **Never** import another bounded context's `Domain/` or `Application/` — cross-context communication goes through the event bus or a public application service. (CI: `deptrac` enforces this.)
+- **Never** import another bounded context's aggregates, repositories, value objects, or its executable Application classes (`*Handler`, `*UseCase`, `*Subscriber`). A context's **published contract** — its `Domain/Event/` classes **and** its `*Command` / `*Query` / Response DTOs — **is** cross-importable, but a command/query may only be **dispatched through the bus**, never handled by importing its handler. Cross-context communication is therefore: domain events (react) or bus-dispatched commands/queries (act/read). (CI: `deptrac` enforces this via the `DomainEvent` + `PublicMessage` layers.)
 - **Never** add Doctrine attributes to domain entities; ORM mapping belongs on `*Model` persistence classes in `Infrastructure/Persistence/Doctrine/`.
 - **Never** edit generated files (`apps/api/openapi.json`, `packages/api-client-ts/src/types.gen.ts`) by hand.
 - **Never** commit credentials, raw tokens, or `.env.local`.

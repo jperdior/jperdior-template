@@ -99,14 +99,29 @@ final readonly class <Verb>CommandHandler implements CommandHandler
 - **Idempotency**: design for retries. The same command applied twice MUST produce the same outcome (or fail cleanly).
 - **Auto-tagging**: `_instanceof: App\Shared\Domain\Bus\Command\CommandHandler` in `config/services.yaml` wires this to the `command.bus` Messenger transport. Never tag manually.
 
-## Cross-context data in handlers — the Provider pattern
+## Cross-context data in handlers
 
-When a handler (or a domain service it calls) needs data owned by **another bounded context** — e.g. validating input against a definition that lives elsewhere — never:
+When a handler (or a use case it drives) needs data owned by **another bounded context** — e.g.
+validating input against, or confirming the existence of, an entity that lives elsewhere — dispatch
+that context's **published CQRS message** through the bus. A context's `*Command` / `*Query` and
+their Response DTOs are cross-importable (`deptrac`'s `PublicMessage` layer); its aggregates,
+repositories, value objects, and executable Application classes (`*Handler`/`*UseCase`/`*Subscriber`)
+are **not**. So:
 
-- import the other context's `Domain\` or `Application\` types into your handler, or
-- inject `QueryBus` into a handler or domain service just to fetch cross-context data.
+- ✅ **From the Application layer** (your use case or handler), inject `QueryBus`/`CommandBus` and
+  dispatch the other context's `*Query`/`*Command` — e.g.
+  `$this->queryBus->ask(new GetCustomerQuery($customerId, $tenantId))`. You import the message + its
+  Response DTO, never the other context's handler. This is the default, simplest approach.
+- ❌ Never import the other context's `Domain\` types (aggregate, repository, VO) or its executable
+  Application classes.
+- ❌ Never inject `QueryBus` into a **Domain** service or aggregate — the domain layer stays
+  framework-free. When cross-context logic must live in the **Domain** layer, use the **Provider
+  pattern** below to keep it pure and unit-testable.
 
-Both couple your domain to another context; `deptrac` flags the first, and the second smuggles infrastructure into the domain. Use the **Provider pattern** instead:
+### The Provider pattern (keep the Domain layer pure)
+
+Use this when the cross-context read feeds a **domain** rule (a domain service / factory), so the
+domain never sees `QueryBus` or another context's message:
 
 1. **Declare a domain interface** in *your* context's `Domain\` layer, expressed entirely in your own types:
    ```php
@@ -151,7 +166,7 @@ Both couple your domain to another context; `deptrac` flags the first, and the s
 
 5. **Handlers stay thin** — inject the domain service, not the provider directly.
 
-Why it matters: the domain is unit-testable with a stub provider (no `QueryBus`, no Symfony, no DB); cross-context validation lives in the domain where it belongs; and the QueryBus mechanism stays an infrastructure detail the domain never sees. This is the approved escape hatch `deptrac` leaves open for cross-context reads.
+Why it matters: the domain is unit-testable with a stub provider (no `QueryBus`, no Symfony, no DB); cross-context validation lives in the domain where it belongs; and the QueryBus mechanism stays an infrastructure detail the domain never sees. The Infrastructure implementation legally imports the other context's `Get<OtherContext>Query` + Response — both `PublicMessage` classes. For a plain Application-layer read (no domain rule involved), skip the indirection and dispatch the query straight from your use case.
 
 ## Output
 

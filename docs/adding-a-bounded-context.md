@@ -255,7 +255,7 @@ Mirror the structure in `tests/Functional/User/`.
 
 ## Cross-context communication
 
-**Never** import another context's aggregates, repositories, value objects, or `Application/`. `deptrac` enforces this in CI. The **one** exception is a context's `Domain/Event/` classes — domain events are a context's published contract and are importable cross-context (see below).
+**Never** import another context's aggregates, repositories, value objects, or its executable Application classes (`*Handler` / `*UseCase` / `*Subscriber`). `deptrac` enforces this in CI. A context's **published contract** *is* cross-importable — its `Domain/Event/` classes (react asynchronously) **and** its `*Command` / `*Query` / Response DTOs (act/read synchronously through the bus). See "Event-based communication" and "Cross-context CQRS" below.
 
 ### Cross-context ID references
 
@@ -274,8 +274,8 @@ Communication between contexts is via domain events on the event bus. The event 
 **its owning context's `Domain/Event/`** and the consumer imports it directly — a context's
 domain events are its published contract. `deptrac`'s `DomainEvent` layer permits importing
 any `App\<Context>\Domain\Event\*` while still blocking imports of aggregates, repositories,
-value objects, or `Application/`. Keep cross-context event payloads **primitive** (no producer
-value objects) so the import never drags in the producer's internals.
+value objects, or executable Application classes. Keep cross-context event payloads **primitive**
+(no producer value objects) so the import never drags in the producer's internals.
 
 ```php
 // App\Order\Domain\Event\OrderPlaced — lives in Order, extends DomainEvent, primitive payload
@@ -305,7 +305,27 @@ final readonly class SendConfirmationOnOrderPlaced implements DomainEventSubscri
 ```
 
 The subscriber is auto-tagged onto `event.bus` via `_instanceof` — no YAML. It **delegates**
-(dispatch a command or call a use case) and holds no logic. If Context B needs a read
-projection of Context A's data, subscribe to its events and maintain a local read model;
-never reach into A's repository directly. Full model + testing: `docs/domain-events.md`;
-scaffold with `/add-event-subscriber`.
+(dispatch a command or call a use case) and holds no logic. Full model + testing:
+`docs/domain-events.md`; scaffold with `/add-event-subscriber`.
+
+### Cross-context CQRS
+
+When Context B needs a **synchronous** result from Context A — read a value or trigger a change
+and know it happened *now* — dispatch A's `*Command` or `*Query` through the bus instead of
+reacting to an event. Import A's message class **and** its Response DTO (both are A's published
+`PublicMessage` contract); never import A's handler, use case, aggregate, or repository.
+
+```php
+// App\Order\Application\PlaceOrder\PlaceOrderUseCase  (Context B)
+use App\Customer\Application\GetCustomer\GetCustomerQuery;   // Context A's PublicMessage — importable
+// verify the customer exists before placing the order:
+$this->queryBus->ask(new GetCustomerQuery($command->customerId));
+```
+
+`deptrac`'s `PublicMessage` layer (`^App\<Ctx>\Application\*` minus the classes implementing a bus
+handler/subscriber interface, minus `*UseCase`) permits the message + response import and still blocks
+the handler/use-case/aggregate.
+Keep messages **primitive + shared identifier VOs only**. Put the dispatch in a **use case**, not
+just a controller, so the check holds for every entry point (L-008). Choose events for reactions,
+CQRS for in-request reads/acts; if B needs a durable read projection of A's data, prefer subscribing
+to A's events and maintaining a local read model over querying A on every request.

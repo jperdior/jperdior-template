@@ -90,8 +90,8 @@ Inject `CommandBus` / `QueryBus`, never handlers directly. Controllers are thin 
 **3. Repository interfaces in `Domain/`, implementations in `Infrastructure/`.**
 The domain defines the contract. Doctrine implements it. The alias lives in `src/<Context>/Infrastructure/Symfony/Resources/config/services.yaml`.
 
-**4. No cross-context imports.**
-`App\Order\` cannot import `App\User\`'s aggregates, repositories, value objects, or `Application/` — `deptrac` fails the build on that. Contexts communicate through domain events on the event bus or public Application service responses. The one cross-importable part of a context is its `Domain/Event/`: **domain events are a context's published contract**, so a consumer imports the producer's event class directly (deptrac's `DomainEvent` layer allows it) — see [domain-events.md](domain-events.md).
+**4. No cross-context imports of internals.**
+`App\Order\` cannot import `App\User\`'s aggregates, repositories, value objects, or its executable Application classes (`*Handler`/`*UseCase`/`*Subscriber`) — `deptrac` fails the build on that. Contexts communicate through the **bus**: a consumer imports the producer's **published contract** — its `Domain/Event/` classes (react asynchronously, `DomainEvent` layer) or its `*Command` / `*Query` / Response DTOs (act/read synchronously, `PublicMessage` layer) — and dispatches them through the event/command/query bus. The handler always resolves on the producer's side; you never import it. See [domain-events.md](domain-events.md).
 
 ---
 

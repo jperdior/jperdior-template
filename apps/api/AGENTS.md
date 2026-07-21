@@ -24,7 +24,7 @@ Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context
 
 ## Never
 
-- **Never** import another context's aggregates, repositories, value objects, or `Application/`. CI `deptrac` enforces this. The **one** exception is a context's `Domain/Event/` classes — domain events are a context's published contract and may be imported cross-context (see Events & Subscribers).
+- **Never** import another context's aggregates, repositories, value objects, or its **executable** Application classes (`*Handler`, `*UseCase`, `*Subscriber`). CI `deptrac` enforces this. A context's **published contract** is cross-importable: its `Domain/Event/` classes **and** its `*Command` / `*Query` / Response DTOs (the `PublicMessage` layer). A cross-context command/query is only ever **dispatched through the bus** — you import the message class, never the handler. (See Cross-Context Communication and Events & Subscribers below.)
 - **Never** add `#[ORM\*]` attributes to domain entities. ORM mapping belongs on `*Model` classes in `Infrastructure/Persistence/Doctrine/`.
 - **Never** call `em->find()` from a controller. Use a query.
 - **Never** catch a domain exception in a controller. Context-specific HTTP statuses live in the context's `ExceptionStatusMapProvider` (`Presentation/Http/<Context>ExceptionStatusMap.php`); everything else falls back to the Shared `ExceptionListener`'s generic mapping (`DomainException`→409, `InvalidArgumentException`→400).
@@ -115,10 +115,30 @@ _instanceof:
 
 Adding a new handler = `implements CommandHandler` (or Query/Event). No manual tagging. The same applies to exception status maps: `implements ExceptionStatusMapProvider` in a context's Presentation layer and the Shared `ExceptionListener` picks it up (exact exception class → `{status, code, message}`; duplicate class keys across providers fail fast at container build).
 
+## Cross-Context Communication
+
+Contexts communicate through **two** boundary-clean channels, never by importing each other's
+internals:
+
+1. **Domain events** (`event.bus`) — one context emits, another *reacts* asynchronously. Use for
+   fire-and-forget side effects. See Events & Subscribers below.
+2. **Bus-dispatched commands & queries** (`command.bus` / `query.bus`) — one context *acts on* or
+   *reads from* another synchronously, in-request. The caller imports the other context's
+   `*Command` / `*Query` and its Response DTO (the `PublicMessage` deptrac layer) and dispatches it
+   through the bus; the handler resolves on the other side. Use when you need a result now — e.g.
+   verifying an entity exists/belongs to the tenant before proceeding.
+
+What stays **private** to a context: its aggregates, repositories, value objects, and its
+executable Application classes (`*Handler`, `*UseCase`, `*Subscriber`). You may never import and call
+another context's handler or use case directly — that's what the bus is for. **Messages carry
+primitives + shared identifier VOs only** (never a producer's domain VO, or the import drags in
+internals). `deptrac`'s `PublicMessage` layer (`^App\<Ctx>\Application\*` minus the classes that
+implement a bus handler/subscriber interface, minus `*UseCase`) enforces this, mirroring the
+`DomainEvent` carve-out.
+
 ## Events & Subscribers
 
-Contexts communicate **only** through domain events on `event.bus` (or a public Application
-response / the Provider pattern for reads). One context emits; another reacts. Full model in
+Domain events on `event.bus`: one context emits; another reacts. Full model in
 `docs/domain-events.md`; scaffold with `/add-event-subscriber`.
 
 - **Aggregates record, use cases publish.** `$this->record(new <Event>(...))` in the
@@ -127,9 +147,9 @@ response / the Provider pattern for reads). One context emits; another reacts. F
   `App\User\Domain\Event\UserRegistered`). A context's events are its **published contract**:
   another context imports the event class directly. deptrac's `DomainEvent` layer
   (`deptrac.yaml`) permits importing any `App\<Context>\Domain\Event\*` while still failing the
-  build on any cross-context import of aggregates, repositories, value objects, or
-  `Application/`. **Cross-context event payloads must be primitive** (no producer value
-  objects), or the import drags in the producer's internals.
+  build on any cross-context import of aggregates, repositories, value objects, or **executable**
+  Application classes (`*Handler`/`*UseCase`/`*Subscriber`). **Cross-context event payloads must be
+  primitive** (no producer value objects), or the import drags in the producer's internals.
 - **Subscribers live in the consumer's `Application/<Action>/`** next to the use case they
   drive, named `<Verb><Thing>On<Event>`. They implement `DomainEventSubscriber`
   (`subscribedTo()` + `__invoke`) and **invoke the use case directly** — the same use case the

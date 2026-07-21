@@ -1,11 +1,19 @@
 # Domain Events & Cross-Context Communication
 
-Bounded contexts never call into each other directly. They communicate by **domain events**
-on a synchronous event bus. This is how "when a user registers, create a tenant" is built:
-the `User` context emits an event; the `Tenant` context subscribes and drives its own use
-case. A context's **domain events are the one part of it other contexts may import** — its
-aggregates, repositories, value objects, and `Application/` stay private, and `deptrac`
-fails the build on any cross-context import of those.
+Bounded contexts never import each other's internals. They communicate through two
+boundary-clean channels, both mediated by a bus:
+
+1. **Domain events** (`event.bus`) — one context emits, another *reacts* asynchronously. This is
+   how "when a user registers, create a tenant" is built: the `User` context emits an event; the
+   `Tenant` context subscribes and drives its own use case. This document covers this channel.
+2. **Bus-dispatched commands & queries** (`command.bus` / `query.bus`) — one context *acts on* or
+   *reads from* another synchronously, in-request, by dispatching the other context's `*Command` or
+   `*Query`. See [Cross-context CQRS](#cross-context-cqrs-commands--queries) at the end.
+
+A context's **published contract** — the part other contexts may import — is its `Domain/Event/`
+classes **plus** its `*Command` / `*Query` / Response DTOs. Its aggregates, repositories, value
+objects, and executable Application classes (`*Handler` / `*UseCase` / `*Subscriber`) stay private,
+and `deptrac` fails the build on any cross-context import of those.
 
 The infrastructure is already wired. This doc explains the flow and the conventions; use
 `/add-event-subscriber` to scaffold a consumer.
@@ -217,13 +225,55 @@ Functional tests live under `tests/Functional/<ConsumerContext>/Application/<Act
 - **Aggregates record, use cases publish, subscribers delegate.** A subscriber invokes its use
   case directly (never via the command bus); no business logic in a subscriber — if it deserves a
   unit test, it belongs in a use case.
-- **Events are a context's published contract** — a consumer imports the producer's
-  `Domain\Event\<Event>` directly (deptrac's `DomainEvent` layer allows it). Never import
-  another context's aggregates, repositories, value objects, or `Application/` — those stay
-  private. Keep cross-context event payloads **primitive** so the import stays clean.
+- **Events (and CQRS messages) are a context's published contract** — a consumer imports the
+  producer's `Domain\Event\<Event>`, or its `*Command` / `*Query` / Response DTO, directly (deptrac's
+  `DomainEvent` + `PublicMessage` layers allow it). Never import another context's aggregates,
+  repositories, value objects, or executable Application classes (`*Handler`/`*UseCase`/`*Subscriber`)
+  — those stay private. Keep cross-context payloads **primitive** so the import stays clean.
 - **Name the reaction `<Verb><Thing>On<Event>`** — `CreateTenantOnUserRegistered`.
 - **Events are past tense** (`UserRegistered`); commands are imperative (`CreateTenant`).
 - **Design for retries** — the bus is sync now but built to move to a queue.
+
+## Cross-context CQRS (commands & queries)
+
+When a context needs a **synchronous** result from another — read a value, or trigger a state
+change and know it happened *now* — dispatch the other context's command/query through the bus
+instead of importing its internals. Domain events are for *reactions* (fire-and-forget); CQRS
+messages are for *in-request* acts and reads.
+
+```php
+// App\Order\Application\PlaceOrder\PlaceOrderUseCase (Order context)
+use App\Customer\Application\GetCustomer\GetCustomerQuery;      // Customer's PublicMessage — importable
+use Jperdior\SharedKernel\Domain\Bus\Query\QueryBus;
+
+final class PlaceOrderUseCase
+{
+    public function __construct(private QueryBus $queryBus, /* … */) {}
+
+    public function __invoke(PlaceOrderCommand $command): void
+    {
+        // Reads Customer's state through the bus. If the customer doesn't exist, Customer's handler
+        // throws CustomerNotFound → 404 (mapped by Customer's status map). Order imports the QUERY +
+        // its RESPONSE, never Customer's handler/use-case/aggregate.
+        $this->queryBus->ask(new GetCustomerQuery($command->customerId));
+        // … proceed to place the order …
+    }
+}
+```
+
+What crosses the boundary here: `GetCustomerQuery` and `CustomerResponse` — both `PublicMessage`
+classes carrying primitives. What does **not**: `GetCustomerQueryHandler`, `GetCustomerUseCase`, the
+`Customer` aggregate, `CustomerRepository`. deptrac's `PublicMessage` layer
+(`^App\<Ctx>\Application\*` minus the classes implementing a bus handler/subscriber interface, minus
+`*UseCase`) permits the former and still
+fails the build on the latter.
+
+Rules:
+- **Messages carry primitives + shared identifier VOs only** — never a producer's domain VO.
+- **Dispatch, never import the handler.** The message class is the contract; the handler resolves on
+  the producer's side via the bus.
+- **A cross-context read is still a read** — put the dispatch in the consumer's use case (so it holds
+  for every entry point, HTTP or not — L-008), not only in a controller.
 
 ## See also
 
