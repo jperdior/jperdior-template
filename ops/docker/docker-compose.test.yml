@@ -22,16 +22,22 @@ name: ${COMPOSE_PROJECT_NAME:-jperdior}
 # base file (Compose v2.24+ required, same as the dev overlay).
 
 services:
-  # postgres: inherited from base as-is. Base publishes no host port, so no override
-  # is needed — the test DB (`app_test`) is reachable only inside this project's network.
+  # postgres: inherited from base as-is (no host port). Only the restart policy is
+  # overridden so this ephemeral test stack never resurrects after a reboot / daemon
+  # restart — unlike the long-lived dev stack (which is `unless-stopped` in the base
+  # file). Same choice the e2e overlay makes; `make stop-test` still removes it.
+  postgres:
+    restart: "no"
 
   # nginx is never started by `make up-test` (it starts an explicit service list and
   # nothing depends on nginx here), but neutralize its inherited host port so even a
   # bare `docker compose up` on this stack cannot collide with the dev stack's :8080.
   nginx:
+    restart: "no"
     ports: !reset []
 
   api:
+    restart: "no"
     depends_on: !override
       postgres: { condition: service_healthy }
     environment:
@@ -74,6 +80,7 @@ services:
         exec sleep infinity
 
   web:
+    restart: "no"
     build: !reset
     image: node:22-alpine
     ports: !reset []
@@ -109,6 +116,7 @@ services:
         exec sleep infinity
 
   admin:
+    restart: "no"
     build: !reset
     image: node:22-alpine
     ports: !reset []
