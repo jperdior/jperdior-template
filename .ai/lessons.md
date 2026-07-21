@@ -72,8 +72,12 @@ Institutional memory of mistakes worth not repeating. One entry per lesson. Writ
 
 ## L-009 — Cross-context `*Model` imports are allowed at the Persistence boundary
 
-Under `<Context>/Infrastructure/Persistence/Doctrine*Repository.php`, a repository MAY import `App\<OtherContext>\Infrastructure\Persistence\Doctrine\*Model::class` for the purpose of QueryBuilder JOIN expressions. The cross-context coupling stays at the Infrastructure layer only — Domain / Application / Presentation cross-context imports remain forbidden (L-003).
+At the `<Context>/Infrastructure/Persistence/` boundary, a persistence class MAY import `App\<OtherContext>\Infrastructure\Persistence\Doctrine\*Model::class` at two seams: a **repository** (`Doctrine*Repository.php`) for QueryBuilder JOINs or `em->getReference()`, **and** a `*Model` that maps a cross-context `#[ORM\ManyToOne]`/`ManyToMany` association (a Model→Model FK). The cross-context coupling stays at the Infrastructure layer only — Domain / Application / Presentation cross-context imports remain forbidden (L-003).
 
-**Why**: this avoids per-row or batched follow-up lookups (fetch an ID list, then a second query to resolve display data for each) when a single JOIN can populate a read-model DTO directly. Performance and clarity both win over a chain of N+1-shaped repository calls.
+**Why**: a mapped association gives a **real, Doctrine-managed foreign key** — Doctrine owns the constraint + index, so `migrate-diff` generates them and stays stable (no perpetual drift). JOINs also avoid N+1-shaped follow-up lookups. Both keep read models populated in a single query.
 
-**How to apply**: when adding a JOIN, import the other context's `*Model::class` and add a `skip_violations` entry in `apps/api/deptrac.yaml` listing the repository class and the specific import. Raw-SQL JOINs on table names are also permitted and need **no** `skip_violations` entry — deptrac sees PHP imports, not SQL strings. Prefer raw SQL when the repository is already DBAL-shaped rather than QueryBuilder-shaped.
+**How to apply**:
+- **`*Model` classes are NOT `final`** — Doctrine proxies (`getReference`, lazy associations) subclass the entity at runtime; a final class throws `Cannot generate lazy ghost … is final`. The `final_class` php-cs-fixer rule exempts `#[ORM\Entity]` classes, so non-final is lint-clean.
+- Map the FK as `#[ORM\ManyToOne(targetEntity: OtherModel::class)]` + `#[ORM\JoinColumn(name: '<col>_id', onDelete: 'CASCADE')]`. Set it from the repository via `em->getReference(OtherModel::class, $id)`; filter reads with `IDENTITY(x.assoc) = :id` so the read repository needs no cross-context import.
+- Add a `skip_violations` entry in `apps/api/deptrac.yaml` for **each** coupled persistence class (the `*Model` and any repository importing the other `*Model`), listing the specific import.
+- Raw-SQL JOINs on table names need **no** `skip_violations` — deptrac sees PHP imports, not SQL strings. Prefer raw SQL when the repository is already DBAL-shaped.

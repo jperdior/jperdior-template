@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: 'users')]
 #[ORM\UniqueConstraint(name: 'uq_users_email', columns: ['email'])]
-final class UserModel
+class UserModel
 {
     #[ORM\Id]
     #[ORM\Column(type: 'string', length: 36)]
