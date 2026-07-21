@@ -1,6 +1,6 @@
 # @jperdior/auth-server — Agents Guidelines
 
-The session module for the Next.js apps. Everything a page, action, or middleware needs to
+The session module for the Next.js apps. Everything a page, action, or proxy needs to
 know about sign-in, sign-out, route guarding, and token cookies lives behind this package's
 interface — apps configure it, they never hand-roll token handling.
 
@@ -9,7 +9,7 @@ interface — apps configure it, they never hand-roll token handling.
 ```ts
 createSignInAction({ authorize?, postSignInRedirect?, defaultRedirect? })
 createSignOutAction({ redirectTo? })
-createAuthMiddleware({ publicPaths, publicPrefixes?, loginPath? })
+createAuthProxy({ publicPaths, publicPrefixes?, loginPath? })
 persistTokens(token, refreshToken) / clearTokens() / isAuthenticated()
 type SignInState = { error?: string }
 ```
@@ -21,13 +21,13 @@ type SignInState = { error?: string }
 - The `next` redirect param is sanitised: only relative paths starting with `/` (and not `//`)
   are honoured; anything else falls back to `defaultRedirect`.
 - Cookie names (`at`/`rt`) are canonical in `@jperdior/api-client-ts/server`
-  (`ACCESS_TOKEN_COOKIE`/`REFRESH_TOKEN_COOKIE`). `middleware.ts` mirrors them as literals so
-  the middleware bundle never imports `next/headers` — `middleware.test.ts` locks the parity.
+  (`ACCESS_TOKEN_COOKIE`/`REFRESH_TOKEN_COOKIE`). `proxy.ts` mirrors them as literals so
+  the proxy bundle never imports `next/headers` — `proxy.test.ts` locks the parity.
 
 ## Always
 
 - Consume this package from app adapters only: a `'use server'` `actions.ts` that wraps the
-  factory product in an exported async function, and a `middleware.ts` that exports the factory
+  factory product in an exported async function, and a `proxy.ts` that exports the factory
   product plus a static `config.matcher`.
 - Keep cookie attributes `httpOnly`, `sameSite: 'lax'`, `secure` (prod), `path: '/'` — locked
   by `signIn.test.ts`.
@@ -53,6 +53,6 @@ src/
 ├── cookies.ts      ← persistTokens / clearTokens / isAuthenticated
 ├── signIn.ts       ← createSignInAction (zod parse → login → me → authorize → persist → redirect)
 ├── signOut.ts      ← createSignOutAction
-├── middleware.ts    ← createAuthMiddleware (cookie-presence route guard)
+├── proxy.ts    ← createAuthProxy (cookie-presence route guard)
 └── __tests__/
 ```

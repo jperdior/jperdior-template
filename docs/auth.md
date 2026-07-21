@@ -23,7 +23,7 @@ HS256 uses the same key to sign and verify. Any service that can verify tokens c
 
 `localStorage` is readable by any JavaScript on the page, including injected scripts from third-party ads, analytics, or XSS. A token in `localStorage` is one XSS away from exfiltration.
 
-The frontends never see tokens in JavaScript. Both the access token (`at`) and the refresh token (`rt`) live in `HttpOnly`, `SameSite=Lax` cookies (`Secure` in production), written by `@jperdior/auth-server`'s `persistTokens()` during sign-in. Server Components and Server Actions call the API through `apiClient()` from `@jperdior/api-client-ts/server`, which reads the access-token cookie and, on a 401, calls `/auth/refresh` with the refresh-token cookie and persists the rotated pair. The Next.js middleware (built with `createAuthMiddleware` from `@jperdior/auth-server`) only checks cookie presence for route protection — token validation stays server-side in the API.
+The frontends never see tokens in JavaScript. Both the access token (`at`) and the refresh token (`rt`) live in `HttpOnly`, `SameSite=Lax` cookies (`Secure` in production), written by `@jperdior/auth-server`'s `persistTokens()` during sign-in. Server Components and Server Actions call the API through `apiClient()` from `@jperdior/api-client-ts/server`, which reads the access-token cookie and, on a 401, calls `/auth/refresh` with the refresh-token cookie and persists the rotated pair. The Next.js proxy (built with `createAuthProxy` from `@jperdior/auth-server`) only checks cookie presence for route protection — token validation stays server-side in the API.
 
 ---
 
@@ -90,7 +90,7 @@ Authorization: Bearer <expired-jwt>
 → 401 { "code": 401, "message": "Expired JWT Token" }
 ```
 
-The Next.js middleware catches this, calls `/auth/refresh` server-side, updates the cookie, and retries the original request — transparent to the user.
+The Next.js proxy catches this, calls `/auth/refresh` server-side, updates the cookie, and retries the original request — transparent to the user.
 
 ---
 

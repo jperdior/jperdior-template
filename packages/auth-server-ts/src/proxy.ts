@@ -2,11 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 // Cookie names mirror ACCESS_TOKEN_COOKIE / REFRESH_TOKEN_COOKIE from
 // @jperdior/api-client-ts/server (the canonical definition). They are literal here so the
-// middleware bundle never imports next/headers; middleware.test.ts locks the parity.
+// proxy bundle never imports next/headers; proxy.test.ts locks the parity.
 const ACCESS_COOKIE = 'at';
 const REFRESH_COOKIE = 'rt';
 
-export interface AuthMiddlewareConfig {
+export interface AuthProxyConfig {
   /** Exact pathnames that never require a session. */
   publicPaths: string[];
   /** Pathname prefixes that never require a session (e.g. token-bearing reset links). */
@@ -15,11 +15,11 @@ export interface AuthMiddlewareConfig {
   loginPath?: string;
 }
 
-export function createAuthMiddleware(config: AuthMiddlewareConfig) {
+export function createAuthProxy(config: AuthProxyConfig) {
   const loginPath = config.loginPath ?? '/login';
   const publicPrefixes = config.publicPrefixes ?? [];
 
-  return function middleware(req: NextRequest): NextResponse {
+  return function proxy(req: NextRequest): NextResponse {
     const { pathname } = req.nextUrl;
 
     if (

@@ -14,7 +14,7 @@ Next.js 16 admin back-office. Same stack as `apps/web` (App Router, RSC by defau
 
 - **Never** use raw `fetch` in app code. Use `apiClient()`.
 - **Never** store tokens in `localStorage`. They're HttpOnly cookies.
-- **Never** assume a user is admin without calling `/api/me` — JWT payload is reliable, but the layout/middleware doesn't decode it.
+- **Never** assume a user is admin without calling `/api/me` — JWT payload is reliable, but the layout/proxy doesn't decode it.
 - **Never** import server-only code (`next/headers`, `@jperdior/api-client-ts/server`) inside `'use client'` files.
 
 ## Validation Commands
@@ -49,7 +49,7 @@ src/
 │   ├── UserDetailActions.tsx        ← detail-page actions (4 dialogs, adds Restore)
 │   ├── CreateUserDialog.tsx
 │   └── PaginationControls.tsx
-└── middleware.ts                    ← createAuthMiddleware adapter (public: / and /login)
+└── proxy.ts                         ← createAuthProxy adapter (public: / and /login)
 ```
 
 ## Cookie Strategy

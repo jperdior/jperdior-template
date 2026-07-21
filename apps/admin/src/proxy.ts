@@ -1,6 +1,6 @@
-import { createAuthMiddleware } from '@jperdior/auth-server';
+import { createAuthProxy } from '@jperdior/auth-server';
 
-export const middleware = createAuthMiddleware({
+export const proxy = createAuthProxy({
   publicPaths: ['/', '/login'],
 });
 

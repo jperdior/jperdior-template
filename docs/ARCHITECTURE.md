@@ -201,7 +201,7 @@ Both `apps/web` and `apps/admin` are Next.js 15 App Router applications:
 - **Server Actions** for mutations.
 - **Forms**: shadcn `Form` + react-hook-form + zod.
 - **API access**: `@jperdior/api-client-ts` (generated from OpenAPI spec). Never raw `fetch`.
-- **Tokens**: access token in memory (Zustand), refresh token in HttpOnly cookie. Next.js middleware handles silent refresh on 401.
+- **Tokens**: access token in memory (Zustand), refresh token in HttpOnly cookie. Next.js proxy handles silent refresh on 401.
 - **Design tokens**: semantic Tailwind tokens from `@jperdior/ui-react`. No hardcoded colors. See `.ai/ds-rules.md`.
 
 ---

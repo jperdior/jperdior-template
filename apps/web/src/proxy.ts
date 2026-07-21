@@ -1,6 +1,6 @@
 import createMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
-import { createAuthMiddleware } from '@jperdior/auth-server';
+import { createAuthProxy } from '@jperdior/auth-server';
 import { routing } from './i18n/routing';
 
 const handleI18n = createMiddleware(routing);
@@ -9,7 +9,7 @@ const handleI18n = createMiddleware(routing);
 // its `/es` variant too. English is served without a prefix (`as-needed`), so the bare
 // paths cover the default locale. The trailing slash on `reset-password/` whitelists
 // token-bearing reset URLs without exposing the authenticated `/reset-password` page.
-const auth = createAuthMiddleware({
+const auth = createAuthProxy({
   publicPaths: [
     '/',
     '/login',
@@ -23,7 +23,7 @@ const auth = createAuthMiddleware({
   publicPrefixes: ['/reset-password/', '/es/reset-password/'],
 });
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // 1. Guard first: an unauthenticated hit on a protected page short-circuits to /login.
   const authResponse = auth(request);
   if (authResponse.headers.has('location')) {
