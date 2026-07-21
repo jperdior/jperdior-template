@@ -22,11 +22,11 @@ Institutional memory of mistakes worth not repeating. One entry per lesson. Writ
 
 ## L-003 — Cross-context imports
 
-**Don't** import another bounded context's `Domain/` or `Application/` classes. Communication between contexts goes through the **event bus** (publish domain events, subscribe in the other context) or a **public Application service** exposed for cross-context use.
+**Don't** import another bounded context's aggregates, repositories, value objects, or its **executable** Application classes (`*Handler` / `*UseCase` / `*Subscriber`). A context's **published contract** *is* cross-importable: its `Domain/Event/` classes **and** its `*Command` / `*Query` / Response DTOs (deptrac's `DomainEvent` + `PublicMessage` layers). Communication between contexts goes through the bus — react to a domain event, or **dispatch** the other context's published `*Command`/`*Query` through the command/query bus (you import the message class, never the handler).
 
-**Why**: enforced by `deptrac` in CI. The whole point of bounded contexts is replaceability. A single `use App\User\Domain\User;` inside `Orders\` collapses that boundary.
+**Why**: enforced by `deptrac` in CI. The whole point of bounded contexts is replaceability. A single `use App\User\Domain\User;` inside `Orders\` collapses that boundary. Messages stay swap-safe because they carry **primitives + shared identifier VOs only** — never a producer's domain VO.
 
-**How to apply**: if you need data from another context, either subscribe to its events and project a local read-model, or call its public bus.
+**How to apply**: if you need data from another context, either subscribe to its events and project a local read-model, or dispatch its published `*Query`/`*Command` through the bus (put the dispatch in a use case, not just a controller — L-008). For a cross-context read that feeds a **domain** rule, keep the domain framework-free with the Provider pattern (`.ai/skills/add-command/SKILL.md`).
 
 ---
 

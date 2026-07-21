@@ -2,12 +2,13 @@
 
 ## Architecture
 
-- [ ] No cross-context `Domain/` or `Application/` imports
+- [ ] No cross-context imports of internals (aggregates, repositories, VOs, `*Handler`/`*UseCase`/`*Subscriber`)
 - [ ] Controllers dispatch via `CommandBus` / `QueryBus` (never inject a handler)
 - [ ] Repository interfaces in `Domain/`, implementations in `Infrastructure/Persistence/`
 - [ ] Repository implementations aliased to interfaces in `config/services.yaml`
 - [ ] No `#[ORM\*]` on domain entities; ORM attributes belong on `*Model` classes in `Infrastructure/Persistence/Doctrine/`
-- [ ] Cross-context interaction via domain events or public application services
+- [ ] Cross-context interaction via domain events, or bus-dispatched `*Command`/`*Query` (`PublicMessage`) — never a direct handler/aggregate import
+- [ ] Cross-context CQRS messages carry primitives + shared identifier VOs only (no producer domain VOs)
 
 ## CQRS
 

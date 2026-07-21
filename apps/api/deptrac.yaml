@@ -14,6 +14,26 @@ deptrac:
         - name: DomainEvent
           collectors:
               - { type: classLike, value: '^App\\[A-Za-z0-9_]+\\Domain\\Event\\.*' }
+        # A context's Commands, Queries, and Response DTOs are its PUBLISHED CQRS contract: any
+        # context may import them and dispatch them through the command/query bus (exactly like
+        # domain events). The executable side stays PRIVATE, so a cross-context call MUST go through
+        # the bus and can never invoke another context's logic directly. "Executable" is identified
+        # by the bus interface it implements (the same interfaces `_instanceof` tags) — NOT by name,
+        # because subscribers are named `<Verb>On<Event>` (no `Subscriber` suffix). Use cases are
+        # plain classes, excluded by the `*UseCase` suffix convention. Carved out first (before the
+        # context layers) and excluded from every context layer's `must_not`, so a message class
+        # belongs to THIS layer only.
+        - name: PublicMessage
+          collectors:
+              - &public_message
+                type: bool
+                must:
+                    - { type: classLike, value: '^App\\[A-Za-z0-9_]+\\Application\\.*' }
+                must_not:
+                    - { type: implements, value: 'Jperdior\SharedKernel\Domain\Bus\Command\CommandHandler' }
+                    - { type: implements, value: 'Jperdior\SharedKernel\Domain\Bus\Query\QueryHandler' }
+                    - { type: implements, value: 'Jperdior\SharedKernel\Domain\Bus\Event\DomainEventSubscriber' }
+                    - { type: classLike, value: '.*UseCase$' }
         - name: User
           collectors:
               - type: bool
@@ -21,6 +41,7 @@ deptrac:
                     - { type: classLike, value: '^App\\User\\.*' }
                 must_not:
                     - { type: classLike, value: '^App\\[A-Za-z0-9_]+\\Domain\\Event\\.*' }
+                    - *public_message
         - name: Shared
           collectors:
               - type: bool
@@ -28,6 +49,7 @@ deptrac:
                     - { type: classLike, value: '^App\\Shared\\.*' }
                 must_not:
                     - { type: classLike, value: '^App\\[A-Za-z0-9_]+\\Domain\\Event\\.*' }
+                    - *public_message
         - name: SharedKernel
           collectors:
               - { type: classLike, value: '^Jperdior\\SharedKernel\\.*' }
@@ -42,9 +64,10 @@ deptrac:
               - { type: classLike, value: '^(?!App\\|Jperdior\\).*' }
 
     ruleset:
-        # Bounded contexts depend on Shared adapters, the shared kernel, the framework, and
-        # any context's domain events (DomainEvent) — but NEVER another context's aggregates,
-        # repositories, value objects, or handlers.
+        # Bounded contexts depend on Shared adapters, the shared kernel, the framework, any context's
+        # domain events (DomainEvent), and any context's published CQRS messages (PublicMessage —
+        # Commands/Queries/Response DTOs, dispatched through the bus). They NEVER import another
+        # context's aggregates, repositories, value objects, handlers, use cases, or subscribers.
         User:
             - Shared
             - SharedKernel
@@ -52,6 +75,7 @@ deptrac:
             - Doctrine
             - Vendor
             - DomainEvent
+            - PublicMessage
         # Shared adapters depend on the kernel + framework but never on a specific context.
         Shared:
             - SharedKernel
@@ -66,6 +90,13 @@ deptrac:
         # Domain events carry PRIMITIVE payloads only (strings/arrays) so importing one never
         # drags in the producer's internals. They extend the shared-kernel DomainEvent base.
         DomainEvent:
+            - SharedKernel
+            - Vendor
+
+        # Published CQRS messages (Commands/Queries/Response DTOs) carry PRIMITIVE payloads only
+        # (never a producer's domain VO, or importing one drags in internals). They may reference
+        # each other (a Response nesting a Summary DTO stays in this same layer).
+        PublicMessage:
             - SharedKernel
             - Vendor
 

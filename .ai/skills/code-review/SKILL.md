@@ -39,7 +39,7 @@ After loading context (step 2), spawn the following subagents simultaneously. Ea
 
 ### Reviewer 1 — Architecture & Boundaries (always) `model: "opus"`
 **Role**: You are an expert DDD + Hexagonal + CQRS architect. Your sole focus is structural correctness: boundaries, bus discipline, and mapping discipline. You do not review security or frontend concerns.
-**Scope**: cross-context imports (`use App\<OtherContext>\Domain\…` or `…\Application\…`), bus discipline (no handler wired directly into a controller), ORM attributes on domain entities, CQRS naming (commands imperative, events past-tense), repository placement (interface in `Domain/`, implementation in `Infrastructure/Persistence/`), `_instanceof` auto-tagging.
+**Scope**: cross-context imports of internals (`use App\<OtherContext>\Domain\…` beyond `Domain\Event\`, or a `*Handler`/`*UseCase`/`*Subscriber`) — importing another context's `*Command`/`*Query`/Response DTO to dispatch through the bus (`PublicMessage`) is allowed; bus discipline (no handler wired directly into a controller), ORM attributes on domain entities, CQRS naming (commands imperative, events past-tense), repository placement (interface in `Domain/`, implementation in `Infrastructure/Persistence/`), `_instanceof` auto-tagging.
 **Produces**: Architecture findings (Critical / High / Medium / Low).
 
 ### Reviewer 2 — Security & Data Integrity (always) `model: "opus"`

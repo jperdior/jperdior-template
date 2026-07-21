@@ -24,7 +24,7 @@
 - **Bounded context(s) affected**: {list}
 - **New aggregates / value objects**: {list}
 - **Buses used**: command / query / event
-- **Cross-context interaction**: {via which domain events, or which public application services}
+- **Cross-context interaction**: {which domain events (react), or which bus-dispatched `*Command`/`*Query` published messages (act/read) — never a direct internal import}
 
 ## Data Models
 

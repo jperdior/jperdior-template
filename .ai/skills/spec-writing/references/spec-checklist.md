@@ -11,8 +11,8 @@
 ## 2. Architecture
 
 - [ ] Every aggregate placed in a bounded context
-- [ ] No cross-context `Domain/` or `Application/` imports proposed
-- [ ] Cross-context interaction via event bus or public application service
+- [ ] No cross-context imports of internals proposed (aggregates, repositories, VOs, `*Handler`/`*UseCase`/`*Subscriber`)
+- [ ] Cross-context interaction via domain events or bus-dispatched `*Command`/`*Query` (`PublicMessage`)
 - [ ] No proposal to add `#[ORM\*]` attributes to domain entities
 
 ## 3. Data & Security
