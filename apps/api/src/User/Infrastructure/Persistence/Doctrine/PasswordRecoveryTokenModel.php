@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: 'password_recovery_tokens')]
 #[ORM\Index(name: 'idx_password_recovery_tokens_token_hash', columns: ['token_hash'])]
-final class PasswordRecoveryTokenModel
+class PasswordRecoveryTokenModel
 {
     #[ORM\Id]
     #[ORM\Column(type: 'string', length: 36)]

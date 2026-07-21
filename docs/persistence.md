@@ -86,17 +86,27 @@ Infrastructure/
 
 1. **`#[ORM\Entity]`** on the class.
 2. **`#[ORM\Table(name: 'snake_case_plural')]`** with explicit table name.
-3. Fields are **`public`** — Doctrine 3 lazy-ghost proxies set them directly.
-4. Fields use **primitive PHP types only**: `string`, `int`, `bool`, `DateTimeImmutable`, `array` (for JSON). No value objects.
-5. **`#[ORM\Id]`** + `#[ORM\Column(type: 'string', length: 36)]` on `$id`. **No auto-generation** (`GeneratedValue(strategy: 'NONE')`) — IDs are UUIDs generated at the application layer.
-6. **Explicit column names** with `name:` attribute when they differ from the property name.
-7. No relationships (`#[ORM\ManyToOne]`, `#[ORM\OneToMany]`). Cross-aggregate references are **FK IDs stored as plain strings**. The domain enforces referential integrity.
+3. **`*Model` classes are NOT `final`.** This is the one exception to the project's final-by-default
+   rule: Doctrine builds a runtime subclass (proxy/lazy-ghost) for `getReference()` and lazy
+   associations, and you cannot subclass a final class (`Cannot generate lazy ghost … is final`).
+   The `final_class` php-cs-fixer rule exempts classes carrying `#[ORM\Entity]`, so leaving them
+   non-final is lint-clean.
+4. Fields are **`public`** — Doctrine 3 lazy-ghost proxies set them directly.
+5. Scalar fields use **primitive PHP types only**: `string`, `int`, `bool`, `DateTimeImmutable`, `array` (for JSON). No value objects.
+6. **`#[ORM\Id]`** + `#[ORM\Column(type: 'string', length: 36)]` on `$id`. **No auto-generation** (`GeneratedValue(strategy: 'NONE')`) — IDs are UUIDs generated at the application layer.
+7. **Explicit column names** with `name:` attribute when they differ from the property name.
+8. **Relationships are permitted** where a real, Doctrine-managed foreign key is wanted:
+   `#[ORM\ManyToOne]` with a `#[ORM\JoinColumn(... onDelete: 'CASCADE')]`. Doctrine owns the FK and
+   its indexes, so `migrate-diff` stays stable. Set associations from the repository via
+   `em->getReference(TargetModel::class, $id)` (a proxy — no DB round-trip). For an id-only read/filter
+   use `IDENTITY(x.assoc)` in DQL so you don't need to load the target. See **Cross-Context FK
+   References** for the boundary rule.
 
 Example — `UserModel`:
 ```php
 #[ORM\Entity]
 #[ORM\Table(name: 'users')]
-final class UserModel
+class UserModel
 {
     #[ORM\Id]
     #[ORM\Column(type: 'string', length: 36)]
@@ -236,14 +246,39 @@ Rules:
 
 ## Cross-Context FK References
 
-If context `Order` needs to reference a `User`, it stores `user_id` as a plain string column. The FK is **not** declared as a Doctrine relationship. The domain defines a local value object:
+A cross-aggregate reference is a **real, Doctrine-managed foreign key** mapped as an
+`#[ORM\ManyToOne]` association on the owning `*Model`, with a `#[ORM\JoinColumn]` carrying
+`onDelete: 'CASCADE'`. Doctrine owns the FK constraint and its index, so `migrate-diff` generates
+them and stays stable (no perpetual drift). This applies both **within** a context and **across**
+contexts.
 
 ```php
-// In Order\Domain\ValueObject\OwnerId — NOT importing User\Domain\UserId
-final readonly class OwnerId extends UuidValueObject {}
+// An association owner (e.g. an Order↔User link) mapping two real FKs
+#[ORM\ManyToOne(targetEntity: OrderModel::class)]
+#[ORM\JoinColumn(name: 'order_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+public OrderModel $order;
+
+#[ORM\ManyToOne(targetEntity: UserModel::class)]                 // cross-context — Persistence boundary only
+#[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+public UserModel $user;
 ```
 
-This keeps contexts decoupled — `Order` never imports `User\Domain\*`.
+**Boundary rule (L-009).** A cross-context association is the **one** place a `*Model` may import
+another context's `*Model`. It is a Persistence-boundary coupling only — Domain / Application /
+Presentation must never import across contexts — and every such import is whitelisted in
+`apps/api/deptrac.yaml` `skip_violations` (both the `*Model` and any repository that calls
+`getReference(OtherModel::class, …)`). Keep filters id-based (`IDENTITY(x.assoc) = :id`) so read
+repositories don't need the other `*Model` at all.
+
+To name the referenced id in the **domain** without importing another context's ID type, define a
+local value object (extends the shared-kernel `Uuid`):
+
+```php
+// In Order\Domain\OwnerId — NOT importing User\Domain\UserId
+final readonly class OwnerId extends \Jperdior\SharedKernel\Domain\ValueObject\Uuid {}
+```
+
+This keeps the domain decoupled — `Order\Domain\*` never imports `User\Domain\*`.
 
 ---
 
