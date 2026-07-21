@@ -248,7 +248,7 @@ Step 2 — Design (inside the worktree)
   /pre-implement-spec .ai/specs/{file}.md   ← readiness report; fix gaps before coding
 
 Step 3 — Implement (all on the same feat-<slug> branch, one PR at the end)
-  /implement-spec .ai/specs/{file}.md       ← phase by phase, CI + code-review gate after each
+  /implement-spec .ai/specs/{file}.md       ← phase by phase, CI gate after each; single code review once all phases are done
                                              ← sync-context-docs runs per-phase as part of /implement-spec
   /open-pr                     ← single PR to main (includes spec + code)
 
@@ -329,7 +329,7 @@ git push origin v<version>            ← release.yml extracts the `[v<version>]
 | `/new-feature` | Setup | Creates a `feat-<slug>` worktree+branch from `main`. Called **once** per feature. |
 | `/spec-writing` | Design | Drafts the spec locally on the feature branch. Does **not** open a spec-only PR. |
 | `/pre-implement-spec` | Audit | Audits the local spec for gaps, missing tests, BC risks. Verdict must be "ready" before coding starts. |
-| `/implement-spec` | Implement | Executes the spec phase by phase; runs the CI gate after each phase. |
+| `/implement-spec` | Implement | Executes the spec phase by phase; runs the CI gate after each phase, then a single `/code-review` once all phases are done. |
 | `/sync-context-docs` | Document | Updates `apps/api/src/<Context>/AGENTS.md` for every context touched by the branch. Run per-phase inside `/implement-spec` before the verification gate. |
 | `/open-pr` | Ship | Opens the implementation PR (spec + code) using the repository PR template. |
 | **Bug fixing** | | |
