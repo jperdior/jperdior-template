@@ -136,6 +136,20 @@ internals). `deptrac`'s `PublicMessage` layer (`^App\<Ctx>\Application\*` minus 
 implement a bus handler/subscriber interface, minus `*UseCase`) enforces this, mirroring the
 `DomainEvent` carve-out.
 
+**Where to dispatch a cross-context message — controller vs use case.** The capability is allowed
+everywhere; *where* depends on **why** you query (the Service Layer / Application Service principle —
+Fowler, Vernon — presentation stays thin, decisions live in the application layer):
+
+- **Shaping a response** (read-only display data for the HTTP payload) → a **controller** may dispatch
+  it. This is presentation work (e.g. re-querying the just-written aggregate for its response DTO).
+- **Gating a decision / enforcing a precondition or invariant** (does this write proceed? ownership /
+  eligibility / existence) → the **use case** dispatches it, so it holds for every entry point
+  (HTTP, console, subscriber — L-008) and keeps business logic out of Presentation. An ownership check
+  placed **only** in a controller is a review-**Critical** (heuristic #10 lists "ownership checks" as
+  domain/application concerns; the API edge is never the sole enforcement point).
+- **If synchronous cross-context reads proliferate**, prefer a **local read model fed by the
+  producer's events** over querying it on every request (autonomy over runtime coupling).
+
 ## Events & Subscribers
 
 Domain events on `event.bus`: one context emits; another reacts. Full model in
