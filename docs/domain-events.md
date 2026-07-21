@@ -18,7 +18,7 @@ Aggregate.record(event)                 (Domain — an aggregate mutates and rec
    → EventBus.publish(...events)        (Application — publishes onto messenger.bus.event)
    → Symfony Messenger (synchronous)
    → DomainEventSubscriber.__invoke()   (Application of ANOTHER context — reacts)
-   → commandBus.dispatch(localCommand)  (drives the consumer's own use case)
+   → useCase(...)                        (invokes the consumer's own use case directly)
 ```
 
 Every arrow already exists in the template for `User`'s `UserRegistered`; only the
@@ -119,14 +119,18 @@ final readonly class SignUpCommandHandler implements CommandHandler
 
 A subscriber lives in the **consumer** context's `Application/<Action>/` folder, beside the
 use case it drives. It implements `DomainEventSubscriber`, declares the events in
-`subscribedTo()`, and in `__invoke` **delegates** — usually by dispatching a local command
-so the reaction runs through the normal command path. It contains no business logic itself.
+`subscribedTo()`, and in `__invoke` **invokes the use case directly** — the same use case the
+`CommandHandler` invokes. It contains no business logic itself: it maps the event's primitive
+payload to the use case's input (generating any ids, as the composition root) and calls it.
+It does **not** dispatch a command through the command bus to reach its own use case. This is
+the CodelyTV php-ddd-example shape (e.g.
+`Mooc/CoursesCounter/Application/Increment/IncrementCoursesCounterOnCourseCreated`).
 
 ```php
 // App\Tenant\Application\CreateTenant\CreateTenantOnUserRegistered
 final readonly class CreateTenantOnUserRegistered implements DomainEventSubscriber
 {
-    public function __construct(private CommandBus $commandBus) {}
+    public function __construct(private CreateTenantUseCase $useCase) {}
 
     public static function subscribedTo(): array
     {
@@ -135,17 +139,20 @@ final readonly class CreateTenantOnUserRegistered implements DomainEventSubscrib
 
     public function __invoke(UserRegistered $event): void
     {
-        $this->commandBus->dispatch(new CreateTenantCommand(
-            ownerId: $event->aggregateId,       // the newly-registered user
+        ($this->useCase)(new CreateTenantCommand(
+            tenantId: TenantId::random()->value,   // ids generated here (subscriber = composition root)
+            ownerUserId: $event->aggregateId,      // the newly-registered user
         ));
     }
 }
 ```
 
-The `CreateTenant` use case is now reachable **two ways** with one implementation behind
-both: the command bus (an admin creating a tenant) and this subscriber (auto-provisioning on
-registration). That is the whole point of the `Application/<Action>/` layout — a use case is
-independent of what triggers it.
+The `CreateTenant` use case is reachable **two ways** with one implementation behind both:
+the command bus (`CreateTenantCommand` → `CreateTenantCommandHandler` → `CreateTenantUseCase`,
+an admin creating a tenant) and this subscriber (`CreateTenantOnUserRegistered` →
+`CreateTenantUseCase`, auto-provisioning on registration). **Both adapters invoke the same use
+case** — the subscriber does not go through the command handler. That is the whole point of the
+`Application/<Action>/` layout: a use case is independent of what triggers it.
 
 ## Where events live — the deptrac rule
 
@@ -198,16 +205,18 @@ reactions) so the switch is safe.
 
 ## Testing a subscriber
 
-Publish the source event through the real `EventBus` and assert the consumer's side effect.
+Publish the source event through the real `EventBus` and assert the consumer's side effect —
+the use case ran, so assert the resulting repository state (e.g. the new tenant + membership).
 Use the test doubles in `apps/api/tests/Doubles/` — e.g. `SpyEventBus` to capture published
-events, or a spy/in-memory command bus to assert the reaction dispatched the right command.
+events, in-memory repositories to inspect what the use case wrote.
 Functional tests live under `tests/Functional/<ConsumerContext>/Application/<Action>/` as
 `It<Scenario>Test` (AAA, one scenario per class); see `.ai/qa/AGENTS.md`.
 
 ## Rules of thumb
 
-- **Aggregates record, use cases publish, subscribers delegate.** No business logic in a
-  subscriber — if it deserves a unit test, it belongs in a use case.
+- **Aggregates record, use cases publish, subscribers delegate.** A subscriber invokes its use
+  case directly (never via the command bus); no business logic in a subscriber — if it deserves a
+  unit test, it belongs in a use case.
 - **Events are a context's published contract** — a consumer imports the producer's
   `Domain\Event\<Event>` directly (deptrac's `DomainEvent` layer allows it). Never import
   another context's aggregates, repositories, value objects, or `Application/` — those stay
