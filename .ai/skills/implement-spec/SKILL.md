@@ -1,6 +1,6 @@
 ---
 name: implement-spec
-description: Implement an approved spec from .ai/specs/, phase by phase, with the code-review gate enforced between phases. Triggers on "implement spec", "build from spec", "code the spec", "implement phase X".
+description: Implement an approved spec from .ai/specs/, phase by phase, with the CI verification gate enforced between phases and a single code review once all phases are done. Triggers on "implement spec", "build from spec", "code the spec", "implement phase X".
 ---
 
 # Implement Spec
@@ -38,19 +38,20 @@ All phases are implemented on the same `feat-<slug>` branch (created by `/new-fe
 5. **Verification gate (after every phase)**: invoke `/run-gates`. It scopes the gates to the
    diff and dispatches each as a parallel subagent (lint/build gates standalone, `test-api`
    on the shared stack). Every gate MUST report PASS. Fix before continuing.
-6. **Code review gate**: invoke `/code-review` on the diff. Resolve every Critical and High finding.
-7. **Commit**: `feat({context}): {phase title} (spec: {file})`
-8. **Pause** and confirm with the user before starting the next phase (unless they said "implement all without stopping").
+   **Do not run `/code-review` here** — code review runs once, after all phases are done (see below).
+6. **Commit**: `feat({context}): {phase title} (spec: {file})`
+7. **Pause** and confirm with the user before starting the next phase (unless they said "implement all without stopping").
 
 ### After all phases are done
 
 1. **Final doc sync**: run `/sync-context-docs` once more to catch any changes from the last phase that weren't covered, then commit the doc changes.
-2. Push the branch:
+2. **Code review gate (once, over the whole branch)**: invoke `/code-review` on the full branch diff against `main`. This is the *only* code review in the flow — it runs here, not per phase, so review reasons about the finished feature as a whole instead of re-reviewing churn each phase. Resolve every Critical and High finding, then commit the fixes.
+3. Push the branch:
    ```sh
    git push -u origin $(git rev-parse --abbrev-ref HEAD)
    ```
-2. Open the single PR via `/open-pr`.
-3. **Clean up after the PR merges** — once the PR is merged to main:
+4. Open the single PR via `/open-pr`.
+5. **Clean up after the PR merges** — once the PR is merged to main:
    - Exit the worktree (`ExitWorktree` tool if available, otherwise `cd` to main repo root).
    - Delete the worktree: `sudo rm -rf .claude/worktrees/<name>` (Docker may have created root-owned files).
    - Run `git worktree prune` from the main repo.
