@@ -132,13 +132,16 @@ response / the Provider pattern for reads). One context emits; another reacts. F
   objects), or the import drags in the producer's internals.
 - **Subscribers live in the consumer's `Application/<Action>/`** next to the use case they
   drive, named `<Verb><Thing>On<Event>`. They implement `DomainEventSubscriber`
-  (`subscribedTo()` + `__invoke`), delegate (usually dispatch a local command), and hold **no**
-  business logic. Auto-tagged onto `event.bus` via `_instanceof` — never tag manually.
+  (`subscribedTo()` + `__invoke`) and **invoke the use case directly** — the same use case the
+  `CommandHandler` invokes — mapping the event's primitive payload to its input and generating
+  any ids (the subscriber is the composition root when there's no controller). They hold **no**
+  business logic and do **not** dispatch a command through the command bus to reach their own use
+  case. Auto-tagged onto `event.bus` via `_instanceof` — never tag manually.
 
 ```php
 final readonly class CreateTenantOnUserRegistered implements DomainEventSubscriber
 {
-    public function __construct(private CommandBus $commandBus) {}
+    public function __construct(private CreateTenantUseCase $useCase) {}
 
     public static function subscribedTo(): array
     {
@@ -147,10 +150,16 @@ final readonly class CreateTenantOnUserRegistered implements DomainEventSubscrib
 
     public function __invoke(UserRegistered $event): void
     {
-        $this->commandBus->dispatch(new CreateTenantCommand(ownerId: $event->aggregateId));
+        ($this->useCase)(new CreateTenantCommand(
+            tenantId: TenantId::random()->value,   // ids generated here (composition root)
+            ownerUserId: $event->aggregateId,
+        ));
     }
 }
 ```
+
+One use case, many entry points: the `CommandHandler` (HTTP/CLI) and this subscriber (event)
+both invoke `CreateTenantUseCase`; the subscriber never routes through the command handler.
 
 `event.bus` sets `allow_no_handlers: true` (an event with no subscriber is fine) and runs
 **synchronously**; `messenger.yaml` has the commented RabbitMQ path for async. Design
