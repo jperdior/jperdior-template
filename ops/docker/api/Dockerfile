@@ -66,6 +66,13 @@ COPY apps/api/src ./apps/api/src
 COPY apps/api/templates ./apps/api/templates
 RUN cd apps/api && composer dump-autoload --optimize --classmap-authoritative --no-dev
 
+# Warm the prod cache at build time: compile the DI container and pre-generate Doctrine
+# proxies so the image ships cache-warm. Critical under worker mode — the kernel is
+# long-lived, so a cache-cold first request would pay the full compile (and, worse, 500 on
+# proxy generation). Opens no DB connection. Dev/test/e2e mount a fresh var/ volume and warm
+# via bin/start, so this baked cache only serves the production image.
+RUN cd apps/api && APP_ENV=prod APP_DEBUG=0 php bin/console cache:warmup --no-interaction
+
 # ---- Stage 3: Runtime ----
 FROM base AS runtime
 

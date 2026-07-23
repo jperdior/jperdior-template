@@ -189,27 +189,21 @@ smoke job all green:
 - [ ] Messenger sync buses hold no cross-request handler state.
 - [ ] Container RSS does not grow unbounded across the e2e journey (spot-check).
 
-### OPEN ISSUE — Doctrine lazy-ghost proxy for `final` entities (blocks worker mode)
+### RESOLVED — Doctrine lazy-ghost proxy for the `final` RefreshToken entity
 
-Under worker mode + prod, the first request to a route that resolves any Doctrine proxy fails with:
+`RefreshToken` (`apps/api/src/User/Infrastructure/Security/RefreshToken.php`) was the **only**
+`final` `#[ORM\Entity]` (the other mapped classes — `UserModel`, `PasswordRecoveryTokenModel` —
+are already non-final). With `enable_lazy_ghost_objects: true`, Doctrine ORM 3 on PHP 8.4 uses
+native lazy objects, which cannot wrap a `final` class → `cache:warmup` and any request that
+resolved the proxy 500'd with *"Cannot generate lazy ghost … is final"*. Latent on `main`
+(dev generates proxies on-demand and the auth flow never lazy-loads a RefreshToken); surfaced
+only in the cache-warmed / worker prod image.
 
-```
-Uncaught Exception: Cannot generate lazy ghost: class "App\User\Infrastructure\Security\RefreshToken" is final.
-```
-
-`RefreshToken` (`apps/api/src/User/Infrastructure/Security/RefreshToken.php`) is a `final`
-`#[ORM\Entity]`. Doctrine ORM 3 on PHP 8.4 uses native lazy objects for proxies, which cannot
-wrap a `final` class. `php bin/console cache:warmup` hits the same error, so warming at build
-is **not** a fix. Reproduces in the standalone prod image (`/healthz` and `/api/doc` work;
-routeless `/` 500s because the request pipeline resolves the proxy).
-
-**Candidate fixes (to decide + verify against the auth e2e journey):**
-1. Drop `final` from `RefreshToken` (+ any other `final` mapped entity) — smallest change; verify no design rule requires `final` on persistence models.
-2. Configure Doctrine to keep using the (deprecated) proxy autoloader instead of native lazy objects.
-3. Confirm whether this also affects dev/test (it did not surface there — dev uses `APP_DEBUG=1`), and whether real auth (refresh-token load) trips it at runtime, not just `/`.
-
-Status: **unresolved** — must be closed (and the `api-runtime-smoke` `GET /` assertion made
-green) before this branch is PR-ready.
+**Fix applied:** drop `final` from `RefreshToken` (aligning it with the other non-final mapped
+entities), and warm the cache at build time in the Dockerfile so the prod image ships with
+proxies pre-generated. Verified: `cache:warmup` succeeds at build; the worker-mode prod image
+serves `/healthz`=200, `GET /`=404, `/api/doc`=301 with **no** critical/fatal in the runtime
+logs; the `api-runtime-smoke` `GET /` assertion is green.
 
 ## Risks & Impact Review
 
