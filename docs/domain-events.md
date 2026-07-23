@@ -8,7 +8,7 @@ boundary-clean channels, both mediated by a bus:
    `Tenant` context subscribes and drives its own use case. This document covers this channel.
 2. **Bus-dispatched commands & queries** (`command.bus` / `query.bus`) — one context *acts on* or
    *reads from* another synchronously, in-request, by dispatching the other context's `*Command` or
-   `*Query`. See [Cross-context CQRS](#cross-context-cqrs-commands--queries) at the end.
+   `*Query`. See [Cross-context CQRS](#cross-context-cqrs-commands-queries) at the end.
 
 A context's **published contract** — the part other contexts may import — is its `Domain/Event/`
 classes **plus** its `*Command` / `*Query` / Response DTOs. Its aggregates, repositories, value
