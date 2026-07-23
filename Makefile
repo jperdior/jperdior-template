@@ -234,7 +234,7 @@ clean: ## Remove containers, volumes, and generated artefacts (dev + test stacks
 # ----- Isolated web-e2e stack (Playwright; standalone, no `make start` needed) -----
 
 test-e2e: _ensure-volume-mountpoints ## Run web Playwright e2e against an isolated, disposable stack (own DB reset from scratch each run; no `make start` needed)
-	@$(DOCKER_COMPOSE_E2E_STACK) up -d postgres redis api nginx web
+	@$(DOCKER_COMPOSE_E2E_STACK) up -d postgres redis api web
 	@sh ops/scripts/wait-for-e2e-stack.sh
 	@echo "e2e stack: resetting database from scratch…"
 	@$(DOCKER_COMPOSE_E2E_STACK) exec -T postgres psql -U $${POSTGRES_USER:-app} -d $${POSTGRES_DB:-app} -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' >/dev/null

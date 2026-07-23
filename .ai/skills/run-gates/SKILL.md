@@ -16,7 +16,7 @@ The single source of truth for running this repo's CI gate. Other skills (`check
 
 ## The gates
 
-Every **lint and build gate** runs standalone in an ephemeral container (`docker compose run --rm --no-deps`) and needs **no postgres/api** — the PHP lint gates (`lint-api`, `lint-shared-kernel`) use an ephemeral `api` container exactly like the JS gates use a node container. The **PHP test gate** (`test-api`, which runs PHPUnit against a live DB) uses the shared per-worktree headless test stack (`up-test` → postgres + api). The **web e2e gate** (`test-e2e`) brings up its **own** isolated, disposable per-worktree stack (postgres + redis + api + nginx + web, no host ports) and manages its own lifecycle — no `make start`, and it coexists with the dev stack and other worktrees' e2e stacks. All `make` targets run inside containers — never invoke `pnpm`/`tsc`/`eslint`/`php` on the host.
+Every **lint and build gate** runs standalone in an ephemeral container (`docker compose run --rm --no-deps`) and needs **no postgres/api** — the PHP lint gates (`lint-api`, `lint-shared-kernel`) use an ephemeral `api` container exactly like the JS gates use a node container. The **PHP test gate** (`test-api`, which runs PHPUnit against a live DB) uses the shared per-worktree headless test stack (`up-test` → postgres + api). The **web e2e gate** (`test-e2e`) brings up its **own** isolated, disposable per-worktree stack (postgres + redis + api + web, no host ports) and manages its own lifecycle — no `make start`, and it coexists with the dev stack and other worktrees' e2e stacks. All `make` targets run inside containers — never invoke `pnpm`/`tsc`/`eslint`/`php` on the host.
 
 | Gate | Command | Stack | Checks |
 |------|---------|-------|--------|

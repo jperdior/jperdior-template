@@ -1,5 +1,5 @@
 #!/bin/sh
-# Blocks until the isolated web-e2e stack (postgres + api + nginx + web) is ready to
+# Blocks until the isolated web-e2e stack (postgres + api + web) is ready to
 # accept a test run, then exits 0. Used by `make test-e2e`.
 #
 # Readiness criteria:

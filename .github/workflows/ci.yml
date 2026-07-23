@@ -35,6 +35,7 @@ jobs:
       php: ${{ steps.filter.outputs.php }}
       web: ${{ steps.filter.outputs.web }}
       admin: ${{ steps.filter.outputs.admin }}
+      runtime: ${{ steps.filter.outputs.runtime }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -45,6 +46,12 @@ jobs:
               - '.github/workflows/ci.yml'
               - 'apps/api/**'
               - 'packages/shared-kernel-php/**'
+              - 'ops/docker/**'
+              - 'Makefile'
+            runtime:
+              - '.github/workflows/ci.yml'
+              - 'ops/docker/api/**'
+              - 'apps/api/**'
             web:
               - '.github/workflows/ci.yml'
               - 'pnpm-lock.yaml'
@@ -279,3 +286,54 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile=false
       - run: pnpm -C apps/admin build
+
+  # The only CI job that boots the actual container runtime. The native PHP jobs above run
+  # under setup-php, so they never exercise FrankenPHP — this builds the production image and
+  # asserts it serves. Gated on `runtime` (ops/docker/api/** or apps/api/**).
+  api-runtime-smoke:
+    name: API runtime smoke (FrankenPHP image boots + serves)
+    needs: changes
+    if: ${{ needs.changes.outputs.runtime == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the production API image
+        run: docker build -f ops/docker/api/Dockerfile --target runtime -t api-smoke .
+      - name: PHP extensions present
+        run: |
+          mods="$(docker run --rm api-smoke php -m)"
+          echo "$mods"
+          for ext in intl Zend\ OPcache pdo_pgsql bcmath zip redis apcu amqp; do
+            echo "$mods" | grep -qi "$ext" || { echo "::error::missing PHP extension: $ext"; exit 1; }
+          done
+      - name: Image runs as non-root
+        run: |
+          user="$(docker run --rm api-smoke whoami)"
+          echo "runtime user: $user"
+          [ "$user" = "www-data" ] || { echo "::error::runtime image is not running as www-data (got '$user')"; exit 1; }
+      - name: Container boots and serves
+        run: |
+          docker run -d --name api-smoke-run -p 8080:80 \
+            -e APP_ENV=prod -e APP_DEBUG=0 -e APP_SECRET=ci-secret \
+            -e DATABASE_URL="postgresql://app:app@127.0.0.1:5432/app?serverVersion=16&charset=utf8" \
+            -e REDIS_URL=redis://127.0.0.1:6379 -e LOCK_DSN=flock \
+            -e CORS_ALLOW_ORIGIN='^https?://localhost(:[0-9]+)?$' \
+            -e JWT_SECRET_KEY=/dev/null -e JWT_PUBLIC_KEY=/dev/null -e JWT_PASSPHRASE=ci \
+            -e JWT_TTL=3600 -e JWT_REFRESH_TTL=2592000 \
+            api-smoke
+          # Caddy serves /healthz directly (no kernel/DB) — poll it until the server is up.
+          for i in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/healthz || true)"
+            [ "$code" = "200" ] && break
+            sleep 1
+          done
+          [ "$code" = "200" ] || { echo "::error::/healthz did not return 200 (got '$code')"; docker logs api-smoke-run; exit 1; }
+          echo "/healthz OK"
+          # `GET /` boots the Symfony kernel with no XFF header — must not 500 (the empty
+          # X-Forwarded-Host crash the old nginx if_not_empty guard worked around).
+          root="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true)"
+          echo "GET / -> $root"
+          case "$root" in 5??) echo "::error::GET / returned $root"; docker logs api-smoke-run; exit 1 ;; esac
+      - name: Teardown
+        if: always()
+        run: docker rm -f api-smoke-run 2>/dev/null || true

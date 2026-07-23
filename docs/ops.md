@@ -9,9 +9,9 @@ How the template runs locally and how to ship it. The default deployment path is
 ```
 ops/
 ├── docker/
-│   ├── Dockerfile.api           PHP 8.4 + FPM + nginx in one image
-│   ├── Dockerfile.web           Node 22 + Next.js standalone build
-│   ├── nginx/api.conf           Nginx config: php-fpm upstream, /api/doc, CORS
+│   ├── api/Dockerfile           PHP 8.4 + FrankenPHP (Caddy) in one image
+│   ├── api/Caddyfile            FrankenPHP config: front controller, /healthz, compression
+│   ├── web/Dockerfile           Node 22 + Next.js standalone build
 │   ├── docker-compose.base.yml  Production-shaped base
 │   └── docker-compose.dev.yml   Dev overlay: source mounts, pnpm dev, exposed ports
 └── k8s/
@@ -24,7 +24,7 @@ ops/
 
 ## Runtime model
 
-`apps/api` is **one image, one service** — `api` (nginx + php-fpm). The three Messenger buses (command, query, event) run synchronously inside the request. No worker process, no external broker, no message queue to operate.
+`apps/api` is **one image, one service** — `api` (FrankenPHP, a Caddy web server with PHP embedded, serving HTTP directly). The three Messenger buses (command, query, event) run synchronously inside the request. No worker process, no external broker, no message queue to operate.
 
 This is a deliberate default for a template. Sync Messenger is simpler to understand and sufficient for most early-stage projects. When a specific command or event becomes a bottleneck (slow email, external API calls, bulk processing), you add an async transport for that route only — the template's `messenger.yaml` has the commented block ready.
 
@@ -57,8 +57,7 @@ This merges `docker-compose.base.yml` with `docker-compose.dev.yml` and starts:
 |-----------|-------|-------|
 | `postgres` | `postgres:16-alpine` | Exposed on `5432` (dev only) |
 | `redis` | `redis:7-alpine` | Exposed on `6379` (dev only) |
-| `api` | Local Dockerfile.api build | Source mounted at `/app/apps/api` |
-| `nginx` | `nginx:1.27-alpine` | Routes `api.localhost` → `api:9000` |
+| `api` | Local `api/Dockerfile` build (FrankenPHP) | Serves `api.localhost` on `:80`; source mounted at `/app/apps/api` |
 | `web` | `node:22-alpine` | `pnpm dev` with source mount |
 | `admin` | `node:22-alpine` | `pnpm dev` with source mount |
 | `traefik` | `traefik:v3` | Routes `*.localhost` domains |
@@ -76,7 +75,7 @@ The `api` container runs `bin/start` on boot:
 3. `doctrine:database:create --if-not-exists`
 4. `doctrine:migrations:migrate --no-interaction`
 5. `cache:warmup`
-6. `php-fpm`
+6. `frankenphp run` (serves HTTP on `:80`)
 
 JWT keys persist in the `api_jwt` named volume. Clear with `make clean` to regenerate.
 
@@ -114,7 +113,7 @@ Full reference in `.env.dist`. Highlights for operators:
 | `MESSENGER_TRANSPORT_DSN` | _(not set — sync by default)_ | Set to AMQP DSN when enabling async |
 | `CORS_ALLOW_ORIGIN` | `^https?://.*\.localhost` | Your production domain regex |
 | `NEXT_PUBLIC_API_URL` | `http://api.localhost` | Your production API URL |
-| `INTERNAL_API_URL` | `http://nginx:80` | Internal hostname inside Compose/k8s |
+| `INTERNAL_API_URL` | `http://api:80` | Internal hostname inside Compose/k8s |
 
 ---
 
@@ -151,7 +150,7 @@ docker compose -f ops/docker/docker-compose.base.yml \
                -f docker-compose.prod.yml --profile async up -d
 ```
 
-Add Traefik or Caddy in front for TLS termination. The `INTERNAL_API_URL` should point to `http://nginx:80` (same Compose network).
+Add Traefik in front for TLS termination (FrankenPHP serves plain HTTP on `:80`; `auto_https` is off since TLS terminates at the proxy). The `INTERNAL_API_URL` should point to `http://api:80` (same Compose network).
 
 ---
 
@@ -189,8 +188,9 @@ helm upgrade my-project ops/k8s -f my-values.yaml --atomic
 | `js-lint` | `lint-web` | tsc + ESLint (apps + packages) |
 | `js-tests` | `test-web` | Vitest (packages/auth-server-ts + apps/web + apps/admin) |
 | `js-build` | `build-web` | Production Next.js builds |
+| `api-runtime-smoke` | _(builds the image directly)_ | Builds the FrankenPHP production image, boots it, asserts `php -m` has all extensions, runs as non-root, and serves `/healthz` — the only job that exercises the container runtime (the PHP jobs run natively under setup-php) |
 
-A `changes` job (dorny/paths-filter) runs first and each job above gates on it with a job-level `if:`, so only the areas a PR touches actually run: a backend-only PR skips the JS jobs, a frontend-only PR skips the PHP jobs, and a docs-/spec-only PR skips the whole matrix. Skipped jobs report a "skipped" conclusion, which GitHub counts as a **passing** required check — so filtering never leaves a required check stuck "Expected". Shared infra (`.github/workflows/ci.yml`, `Makefile`, `ops/docker/**`, lockfiles) is listed under **both** areas, so touching it re-runs everything. Never convert these to a top-level `on.pull_request.paths` filter — that would leave required checks unreported and block merges.
+A `changes` job (dorny/paths-filter) runs first and each job above gates on it with a job-level `if:`, so only the areas a PR touches actually run: a backend-only PR skips the JS jobs, a frontend-only PR skips the PHP jobs, and a docs-/spec-only PR skips the whole matrix. Skipped jobs report a "skipped" conclusion, which GitHub counts as a **passing** required check — so filtering never leaves a required check stuck "Expected". The `php` filter includes `ops/docker/**` + `Makefile`, and a dedicated `runtime` filter (`ops/docker/api/**`, `apps/api/**`) gates `api-runtime-smoke`, so a runtime/image change actually runs a gate. Never convert these to a top-level `on.pull_request.paths` filter — that would leave required checks unreported and block merges.
 
 See `.ai/skills/integration-tests/SKILL.md` for the testing layers and how to add a new test.
 

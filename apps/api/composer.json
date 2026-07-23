@@ -21,6 +21,7 @@
         "nelmio/api-doc-bundle": "^5.10",
         "nelmio/cors-bundle": "^2.5",
         "predis/predis": "^2.0",
+        "runtime/frankenphp-symfony": "^1.0",
         "symfony/asset": "7.4.*",
         "symfony/console": "7.4.*",
         "symfony/doctrine-messenger": "7.4.*",

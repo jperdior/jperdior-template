@@ -95,7 +95,7 @@ The Swagger UI is at `http://api.localhost/api/doc`.
 
 | URL | Service |
 |-----|---------|
-| `http://api.localhost` | Symfony API (nginx → php-fpm) |
+| `http://api.localhost` | Symfony API (FrankenPHP) |
 | `http://api.localhost/api/doc` | Swagger UI |
 | `http://web.localhost` | Next.js public app |
 | `http://admin.localhost` | Next.js admin panel |
@@ -237,7 +237,7 @@ The full list is in `.env.dist`. Key variables:
 | `MESSENGER_TRANSPORT_DSN` | `doctrine://default?auto_setup=1` | Doctrine transport — no broker needed |
 | `CORS_ALLOW_ORIGIN` | `^https?://.*\.localhost` | Regex; extend for production origins |
 | `NEXT_PUBLIC_API_URL` | `http://api.localhost` | Browser-visible API URL |
-| `INTERNAL_API_URL` | `http://nginx:80` | Server-side fetch URL inside Compose |
+| `INTERNAL_API_URL` | `http://api:80` | Server-side fetch URL inside Compose |
 
 ---
 

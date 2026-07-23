@@ -3,15 +3,15 @@
 ## TLDR
 
 Replace the two-process API runtime (`php-fpm` on `:9000` fronted by a separate `nginx`
-reverse proxy) with a single **FrankenPHP** container that serves HTTP directly. Delivered
-in two phases on one branch: **Phase 1 — classic mode** (behaviour-identical drop-in,
-`nginx` service removed), **Phase 2 — worker mode** (persistent kernel for throughput,
-gated on a statefulness audit + a container-runtime smoke check). `symfony/runtime` is
-already a dependency, so app-side wiring is minimal.
+reverse proxy) with a single **FrankenPHP** container that serves HTTP directly, running in
+**worker mode** (the Symfony kernel is booted once and kept resident, streaming many requests
+through the hot kernel — the 2–4× throughput win). `symfony/runtime` is already a dependency,
+so app-side wiring is `runtime/frankenphp-symfony` + `APP_RUNTIME` + the trusted-proxy fix.
+Gated on a statefulness audit, a container-runtime smoke job, and the e2e journey.
 
 **Decisions (locked):** base image `dunglas/frankenphp:*-php8.4-bookworm`; the internal URL
-contract is renamed `http://nginx:80` → `http://api:80`; both phases ship in one PR; the k8s
-skeleton collapses to a single container.
+contract is renamed `http://nginx:80` → `http://api:80`; **worker mode from the start** (no
+classic intermediate); the k8s skeleton collapses to a single container.
 
 ## Overview
 
@@ -45,16 +45,19 @@ BEFORE                                     AFTER
   web/admin ─▶ http://nginx:80               web/admin ─▶ http://api:80
 ```
 
-Phase 1 runs FrankenPHP in **classic mode** (one request per PHP process, FPM-equivalent
-semantics) so behaviour is provably identical. Phase 2 flips on **worker mode** via
-`runtime/frankenphp-symfony` + `APP_RUNTIME`, after a statefulness audit, and uses
-FrankenPHP's `watch` in dev/e2e so live code reload is preserved.
+FrankenPHP runs in **worker mode** from the start: `runtime/frankenphp-symfony` +
+`APP_RUNTIME` keep the kernel resident, and worker mode is switched on per-environment via the
+`FRANKENPHP_CONFIG` env var (dev/e2e add FrankenPHP's `watch` so live code reload is
+preserved; prod runs without watch). Worker mode is set **on the api service definitions
+only**, never as an image ENV, so the shared `worker` (messenger) process keeps Symfony's
+default runtime. The `framework.yaml` `trusted_proxies` uses explicit private-range CIDRs
+(not the `REMOTE_ADDR` sentinel) to stay correct under a long-lived worker (symfony#57283).
 
 ## Architecture
 
 - **Bounded context(s) affected**: none — pure infrastructure/runtime change. No `Domain`/
   `Application`/`Presentation`/bus code changes. `deptrac`/layer rules unaffected. The one
-  app-config touch is `framework.yaml` `trusted_proxies` in **Phase 2 only** (see C2 below).
+  app-config touch is `framework.yaml` `trusted_proxies` (see C2 below).
 - **Buses used**: n/a. The three Messenger buses keep running synchronously in-request.
 
 ### The shared-image constraint (worker vs api) — CRITICAL
@@ -63,7 +66,7 @@ The API image is **shared** by two runtimes: `api` (serves HTTP) and `worker`
 (`php bin/console messenger:consume`, `ops/k8s/templates/worker.yaml:23-26`, commented in
 `docker-compose.base.yml:66-89`). Therefore:
 
-- `APP_RUNTIME=Runtime\FrankenPhpSymfony\Runtime` and `FRANKENPHP_CONFIG` (Phase 2) are set
+- `APP_RUNTIME=Runtime\FrankenPhpSymfony\Runtime` and `FRANKENPHP_CONFIG` are set
   **only on the `api` service definitions** (compose + k8s), **never as a Dockerfile `ENV`**.
   A console command inheriting the FrankenPHP runtime is invalid — the worker must run under
   Symfony's default runtime. The image default `CMD` is `frankenphp run`; the worker keeps
@@ -79,26 +82,31 @@ The API image is **shared** by two runtimes: `api` (serves HTTP) and `worker`
 | `ops/docker/api/php-fpm.conf` | **Removed** (no FPM). |
 | `ops/docker/api/php.ini`, `php-dev.ini` | Retained; opcache/preload kept (preload user = `www-data`, matches). |
 | `apps/api/bin/start` | Final `exec php-fpm --nodaemonize` → `exec frankenphp run --config /etc/frankenphp/Caddyfile`. Dev/test/e2e keep launching via `sh bin/start`. |
-| `ops/docker/docker-compose.base.yml` | Remove `nginx`; `api` gains `ports: ["${API_PORT:-8080}:80"]` (inherits nginx's host publish) + `expose: ["80"]`; web/admin `depends_on: api` at `condition: service_started` (parity with today's nginx dependency); `INTERNAL_API_URL` default → `http://api:80`. |
-| `ops/docker/docker-compose.dev.yml` | Remove `nginx`; move its Traefik `api` router labels **and** the `public` read-only mount onto `api`; `!reset []` the `api` `ports` (Traefik fronts it, as nginx did at `:106`); Phase 2 adds worker env + `watch`. |
-| `ops/docker/docker-compose.test.yml` | Remove the `nginx` neutralizer stanza. `api` still idles `sleep infinity` (gate execs phpunit — no HTTP). |
-| `ops/docker/docker-compose.e2e.yml` | Remove the `nginx` stanza; Phase 2 pins worker env on `api` so e2e exercises worker mode. |
+| `ops/docker/docker-compose.base.yml` | Remove `nginx`; `api` gains `ports: ["${API_PORT:-8080}:80"]` (inherits nginx's host publish) + `expose: ["80"]` + worker env (`APP_RUNTIME` + `FRANKENPHP_CONFIG=worker …`, prod: no watch); web/admin `depends_on: api` at `condition: service_started`; `INTERNAL_API_URL` default → `http://api:80`. |
+| `ops/docker/docker-compose.dev.yml` | Remove `nginx`; move its Traefik `api` router labels onto `api`; `!reset []` the `api` `ports`; add worker env with `watch` (dev live reload). |
+| `ops/docker/docker-compose.test.yml` | Remove the `nginx` neutralizer stanza; `!reset []` the `api` host publish (keep the stack port-free/parallel-safe). `api` still idles `sleep infinity` (gate execs phpunit — no HTTP). |
+| `ops/docker/docker-compose.e2e.yml` | Remove the `nginx` stanza. e2e is `base+dev+e2e`, so `api` inherits dev's worker env (`watch`) — e2e exercises worker mode. |
 | `Makefile` | `test-e2e` service list `… api nginx web` → `… api web` (`:237`). |
 | `ops/scripts/wait-for-e2e-stack.sh` | Header-comment only (it probes api+web, never nginx — no logic change). |
 | `ops/scripts/wait-for-stack.sh` | No change (probes via Traefik host headers). |
-| `ops/k8s/templates/api.yaml` | Collapse api+nginx two-container pod → **single FrankenPHP container**; **keep the port `name: http` on `containerPort: 80`** (Service `targetPort: http` + ingress backend depend on it); drop the `fpm`/`:9000` port, the `nginx` container, the `nginx-conf` volume/mount, the ConfigMap **and** its `{{ .Files.Get "../docker/nginx/api.conf" }}` (else `helm template` renders an orphan); move liveness/readiness probes onto the api container; Phase 2 adds `APP_RUNTIME`/`FRANKENPHP_CONFIG` env here (not on `worker.yaml`). |
+| `ops/k8s/templates/api.yaml` | Collapse api+nginx two-container pod → **single FrankenPHP container**; **keep the port `name: http` on `containerPort: 80`** (Service `targetPort: http` + ingress backend depend on it); drop the `fpm`/`:9000` port, the `nginx` container, the `nginx-conf` volume/mount, the ConfigMap **and** its `{{ .Files.Get "../docker/nginx/api.conf" }}` (else `helm template` renders an orphan); move liveness/readiness probes onto the api container; add `APP_RUNTIME`/`FRANKENPHP_CONFIG` as **container-specific env** here (appended after the shared `appEnv` include — NOT in the shared ConfigMap, which `worker.yaml` also reads). |
 | `ops/k8s/values.yaml` | Point probes at `/healthz` (served by Caddy) instead of `/api/doc`; leave `ingress.className: nginx` (that's the ingress *controller*, unrelated). |
 | `ops/k8s/templates/web.yaml`, `admin.yaml` | Confirm `INTERNAL_API_URL: "http://api"` still resolves (Service `api` still listens on `:80`); no value change needed, listed for completeness. |
 | `ops/k8s/templates/worker.yaml` | Confirm it does **not** set `APP_RUNTIME` (default runtime for the console consumer). |
 | `packages/api-client-ts/src/server.ts` | **In scope (was missing).** Fallback `?? 'http://api:8080'` (`:8`) → `?? 'http://api:80'`. This default feeds both `apiClient()` and `@jperdior/auth-server-ts` sign-in; `:8080` no longer resolves after nginx's host publish moves. |
 | `apps/web/.env.example`, `apps/admin/.env.example` | **In scope (was missing).** `INTERNAL_API_URL=http://api:8080` → `http://api:80`. `NEXT_PUBLIC_API_URL=http://localhost:8080` stays (browser → host publish, still `:8080`). |
-| `apps/api/config/packages/framework.yaml` | Phase 1: comment update only (`trusted_proxies` unchanged). **Phase 2**: replace the `REMOTE_ADDR` sentinel with explicit private-range CIDRs (see C2) to dodge symfony#57283. |
+| `apps/api/config/packages/framework.yaml` | Replace the `REMOTE_ADDR` sentinel with explicit private-range CIDRs (see C2) to dodge symfony#57283 under a long-lived worker; comment updated. |
 | `.github/workflows/ci.yml` | Add `ops/docker/**` + `Makefile` to the `php` paths-filter (so ops PRs run *some* gate — closes the "ops change = zero CI" gap), **and** add an `api-runtime-smoke` job that builds the api image, boots it, and asserts `php -m` lists all 8 extensions + `GET /healthz` = 200. This is the only CI job that exercises FrankenPHP. |
 | `.env.dist` | `INTERNAL_API_URL=http://nginx:80` → `http://api:80` (`:51`). |
-| Phase 2: `apps/api/composer.json` + `composer.lock` | Add `runtime/frankenphp-symfony`. |
+| `apps/api/composer.json` + `composer.lock` | Add `runtime/frankenphp-symfony` (via `composer require` so the lock updates). |
 | Docs: `docs/ops.md` (`:12,14,27,61,79,117,154,193`), `docs/getting-started.md` (`:98,240`), `docs/ARCHITECTURE.md` (`:211`), `ops/AGENTS.md` (`:8` shared-image invariant, `:24` the "Never modify nginx/api.conf" rule, `:31-32,40,47` layout), `apps/api/AGENTS.md` (intro "php-fpm" line), root `AGENTS.md` (`:148` nginx mention) | Present-tense rewrite: "single FrankenPHP process" replaces "nginx + php-fpm"; fix the stale `docs/ops.md:193` claim that `ops/docker/**` is CI-filtered; remove the FPM-only rules. |
 
-### Caddyfile (Phase 1 — classic)
+### Caddyfile
+
+The global `frankenphp` directive stays bare — worker mode is injected per-environment via the
+`FRANKENPHP_CONFIG` env var on the api service (dev/e2e append `watch`, prod does not), so one
+Caddyfile serves every environment and `php_server` routes requests through the worker when one
+is configured for `public/index.php`.
 
 ```caddyfile
 {
@@ -106,13 +114,13 @@ The API image is **shared** by two runtimes: `api` (serves HTTP) and `worker`
 	auto_https off
 	# Close the admin API (default localhost:2019) and expose no metrics.
 	admin off
+	# Worker mode is configured via the FRANKENPHP_CONFIG env var on the api service.
 	frankenphp
 
 	# Trust the upstream proxy network so Caddy resolves the real client IP.
-	# NOTE: the auth rate limiter keys on Symfony's getClientIp(), which reads
-	# HTTP_X_FORWARDED_FOR under framework.yaml trusted_proxies (unchanged in P1).
-	# php_server forwards the inbound header to PHP; this block keeps Caddy's own
-	# client_ip correct and mirrors nginx's explicit set_real_ip_from intent.
+	# The auth rate limiter keys on Symfony's getClientIp(), which reads
+	# HTTP_X_FORWARDED_FOR under framework.yaml trusted_proxies; php_server forwards
+	# the inbound header to PHP. Mirrors nginx's explicit set_real_ip_from intent.
 	servers {
 		trusted_proxies static private_ranges
 		client_ip_headers X-Forwarded-For
@@ -123,7 +131,8 @@ The API image is **shared** by two runtimes: `api` (serves HTTP) and `worker`
 	root * /app/apps/api/public
 	encode zstd br gzip
 
-	# Lightweight health endpoint for k8s probes + the CI smoke job.
+	# Lightweight health endpoint for k8s probes + the CI smoke job (Caddy-served,
+	# no kernel/DB — so it answers even before the worker warms up).
 	respond /healthz 200
 
 	# Subsumes nginx try_files + fastcgi_pass. public/ contains only index.php,
@@ -133,21 +142,14 @@ The API image is **shared** by two runtimes: `api` (serves HTTP) and `worker`
 }
 ```
 
-### Caddyfile (Phase 2 — worker) — delta
+Worker mode env, set **on the api service only** (never as an image ENV):
 
-```caddyfile
-frankenphp {
-	worker {
-		file /app/apps/api/public/index.php
-		# num defaults to 2×CPU. `watch` (dev/e2e only, via FRANKENPHP_CONFIG env)
-		# enables live reload.
-	}
-}
-```
+- `APP_RUNTIME=Runtime\FrankenPhpSymfony\Runtime` (+ `composer require runtime/frankenphp-symfony`).
+- prod: `FRANKENPHP_CONFIG=worker /app/apps/api/public/index.php`
+- dev/e2e: the same `worker { … }` block plus `watch` for live code reload.
 
-App-side (Phase 2), set **on the api service only**: `composer require
-runtime/frankenphp-symfony`; `APP_RUNTIME=Runtime\FrankenPhpSymfony\Runtime`. The runtime
-resets `kernel.reset`-tagged services (Doctrine `EntityManager` included) between requests.
+The runtime resets `kernel.reset`-tagged services (Doctrine `EntityManager` included) between
+requests, so the kernel stays booted while per-request state is cleared.
 
 ## Data Models
 
@@ -169,19 +171,45 @@ the dead `:8080`. Apps read the URL from env; no component code changes.
 
 ## Phasing
 
-| Phase | Goal | Deliverable (each ends with `make test` **and** `make test-e2e` green, plus the CI smoke job) |
-|-------|------|------------------------------------------------------------------------|
-| 1 | Classic-mode FrankenPHP drop-in | Dockerfile stage-rewritten on FrankenPHP bookworm; `Caddyfile` (with `admin off` + `trusted_proxies` + `/healthz`) added; `nginx` service + `nginx/api.conf` + `php-fpm.conf` removed; all 4 compose files, Makefile, wait scripts, k8s (single container, `http` port name kept), `.env.dist`, `server.ts`, both `.env.example`, CI (filter + smoke job), and docs updated; `INTERNAL_API_URL` = `http://api:80`. `php -m` shows all 8 extensions. Behaviour identical. |
-| 2 | Worker mode | `runtime/frankenphp-symfony` added; `APP_RUNTIME` + worker `Caddyfile` block set **on api services only**; dev/e2e use `watch`; `framework.yaml` `trusted_proxies` switched to explicit CIDRs; statefulness audit completed; e2e journey + smoke job pass against the **worker** api. Revertible by removing `APP_RUNTIME` + the worker block. |
+Single phase (worker mode from the start) — ends with `make test`, `make test-e2e`, and the CI
+smoke job all green:
 
-**Phase 2 statefulness audit checklist:**
+- Dockerfile stage-rewritten on FrankenPHP bookworm; `Caddyfile` (`admin off` + `trusted_proxies` + `/healthz`) added; `nginx` service + `nginx/api.conf` + `php-fpm.conf` removed.
+- All 4 compose files, Makefile, wait scripts, k8s (single container, `http` port name kept), `.env.dist`, `server.ts`, both `.env.example`, CI (filter + smoke job), and docs updated; `INTERNAL_API_URL` = `http://api:80`.
+- Worker mode wired: `runtime/frankenphp-symfony` + `APP_RUNTIME` + `FRANKENPHP_CONFIG` on the api services (dev/e2e with `watch`); `framework.yaml` `trusted_proxies` → explicit CIDRs.
+- Statefulness audit (below) completed; `php -m` shows all 8 extensions; the e2e journey passes against the worker api.
+- **Rollback**: whole-PR git revert (worker mode is not a runtime toggle here — it's the default). Dropping `APP_RUNTIME` + `FRANKENPHP_CONFIG` from the api services falls back to per-request (classic) execution without a rebuild, if ever needed as a hotfix.
+
+**Statefulness audit checklist:**
 - [ ] Doctrine `EntityManager` is reset per request (verify `kernel.reset` tag; no stale identity map across requests).
-- [ ] **Trusted-proxy `REMOTE_ADDR` sentinel replaced** — symfony#57283: in worker mode `setTrustedProxies()` runs once at `preBoot()` and freezes the `REMOTE_ADDR` sentinel against the first request. `framework.yaml` must use explicit private-range CIDRs (`127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16`), not the sentinel, so the auth rate-limiter client-IP resolution is correct per request.
+- [x] **Trusted-proxy `REMOTE_ADDR` sentinel replaced** — symfony#57283: in worker mode `setTrustedProxies()` runs once at `preBoot()` and freezes the `REMOTE_ADDR` sentinel against the first request. `framework.yaml` now uses explicit private-range CIDRs (`127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16`), not the sentinel, so the auth rate-limiter client-IP resolution is correct per request.
 - [ ] No mutable request-scoped state on singleton services (scan `static` properties / in-memory caches).
 - [ ] JWT/lexik key handling holds no per-user state across requests.
 - [ ] Locks use `flock`/redis (already do); no process-global lock state survives a request.
 - [ ] Messenger sync buses hold no cross-request handler state.
 - [ ] Container RSS does not grow unbounded across the e2e journey (spot-check).
+
+### OPEN ISSUE — Doctrine lazy-ghost proxy for `final` entities (blocks worker mode)
+
+Under worker mode + prod, the first request to a route that resolves any Doctrine proxy fails with:
+
+```
+Uncaught Exception: Cannot generate lazy ghost: class "App\User\Infrastructure\Security\RefreshToken" is final.
+```
+
+`RefreshToken` (`apps/api/src/User/Infrastructure/Security/RefreshToken.php`) is a `final`
+`#[ORM\Entity]`. Doctrine ORM 3 on PHP 8.4 uses native lazy objects for proxies, which cannot
+wrap a `final` class. `php bin/console cache:warmup` hits the same error, so warming at build
+is **not** a fix. Reproduces in the standalone prod image (`/healthz` and `/api/doc` work;
+routeless `/` 500s because the request pipeline resolves the proxy).
+
+**Candidate fixes (to decide + verify against the auth e2e journey):**
+1. Drop `final` from `RefreshToken` (+ any other `final` mapped entity) — smallest change; verify no design rule requires `final` on persistence models.
+2. Configure Doctrine to keep using the (deprecated) proxy autoloader instead of native lazy objects.
+3. Confirm whether this also affects dev/test (it did not surface there — dev uses `APP_DEBUG=1`), and whether real auth (refresh-token load) trips it at runtime, not just `/`.
+
+Status: **unresolved** — must be closed (and the `api-runtime-smoke` `GET /` assertion made
+green) before this branch is PR-ready.
 
 ## Risks & Impact Review
 
@@ -197,7 +225,7 @@ the dead `:8080`. Apps read the URL from env; no component code changes.
 | CI never exercised the container runtime | Medium | Coverage | New `api-runtime-smoke` CI job builds + boots the image; `ops/docker/**` added to the filter | Low |
 | Ext parity gap on bookworm/glibc (`amqp`/`redis`/preload) | Medium | API boot | `install-php-extensions` covers all 8; `php -m` + openapi-drift + smoke job | Low |
 | Non-root prod image can't bind `:80` | Low | Container start | FrankenPHP binary ships `cap_net_bind_service`; smoke job runs the prod-shaped image and curls `/healthz` (dev/test overlays run as root, so this is the only non-root check) | Low |
-| Unbounded worker memory growth | Low–Med | Prod (Phase 2) | Per-request reset; document optional worker restart threshold + monitoring in ops.md | Low–Med |
+| Unbounded worker memory growth | Low–Med | Prod | Per-request reset; document optional worker restart threshold + monitoring in ops.md | Low–Med |
 
 ## Integration Coverage
 
@@ -205,7 +233,7 @@ No new application code → no new PHPUnit/Vitest units. The gate is behavioural
 
 | Test ID | Type | Path / target | Asserts |
 |---------|------|---------------|---------|
-| TC-FP-01 | Playwright e2e (existing) | `apps/web/**` auth journey | anon → sign up → log out → log in (both locales) passes against the FrankenPHP stack — Phase 1 classic **and** Phase 2 worker (e2e `api` gets worker env). Exercises the `web→api:80` SSR fetch path. |
+| TC-FP-01 | Playwright e2e (existing) | `apps/web/**` auth journey | anon → sign up → log out → log in (both locales) passes against the FrankenPHP **worker** stack (e2e `api` inherits dev's worker env). Exercises the `web→api:80` SSR fetch path. |
 | TC-FP-02 | CI smoke job (**new**) | `.github/workflows/ci.yml` `api-runtime-smoke` | Builds the api image; `php -m` lists `intl opcache pdo_pgsql bcmath zip redis apcu amqp`; container boots **as non-root**; `GET /healthz` = 200; `GET /` (no XFF) does not 500. |
 | TC-FP-03 | PHPUnit (existing) | `make test-api` | Full suite green against the api container built on the FrankenPHP image. |
 | TC-FP-04 | openapi-drift (existing) | `make gen-api` | Kernel boots under the new image; `openapi.json` + `types.gen.ts` show **no diff**. |
@@ -255,4 +283,5 @@ Infra-only diff — no `Domain`/`Application`/`Presentation`/bus code is touched
 | Date | Change |
 |------|--------|
 | 2026-07-23 | Spec drafted. Decisions locked: bookworm base; `INTERNAL_API_URL` → `http://api:80`; two phases one PR; k8s single container. |
-| 2026-07-23 | Revised after pre-implementation audit: full Dockerfile stage rewrite (Alpine `.so` ABI); shared-image worker/`APP_RUNTIME` constraint; explicit Caddy `trusted_proxies` + `admin off` + `/healthz`; Phase-2 `framework.yaml` CIDR fix (symfony#57283); added `server.ts` + both `.env.example` + `API_PORT` publish + k8s `http` port name/ConfigMap to scope; new `api-runtime-smoke` CI job + `ops/docker/**` filter; documented the CI-does-not-boot-the-runtime gap. |
+| 2026-07-23 | Revised after pre-implementation audit: full Dockerfile stage rewrite (Alpine `.so` ABI); shared-image worker/`APP_RUNTIME` constraint; explicit Caddy `trusted_proxies` + `admin off` + `/healthz`; `framework.yaml` CIDR fix (symfony#57283); added `server.ts` + both `.env.example` + `API_PORT` publish + k8s `http` port name/ConfigMap to scope; new `api-runtime-smoke` CI job + `ops/docker/**` filter; documented the CI-does-not-boot-the-runtime gap. |
+| 2026-07-23 | Collapsed to a **single phase — worker mode from the start** (dropped the classic-mode intermediate) per user direction: worker enabled everywhere via `APP_RUNTIME` + `FRANKENPHP_CONFIG` on the api services, `framework.yaml` CIDRs applied up front. |

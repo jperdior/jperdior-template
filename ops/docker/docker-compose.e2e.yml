@@ -1,12 +1,12 @@
 # Isolated, disposable web-e2e stack overlay. Composed as base + dev + THIS file under a
 # per-worktree project name (DOCKER_COMPOSE_E2E_STACK in the Makefile) and brought up with
-# an explicit service list (`postgres redis api nginx web`), so the browser-facing app runs
+# an explicit service list (`postgres redis api web`), so the browser-facing app runs
 # fully isolated from `make start`:
 #
 #   - Its own postgres volume  → a disposable DB, reset from scratch on every `make test-e2e`
 #     (the Makefile drops + re-migrates the schema before each run).
 #   - No host ports: postgres's and redis's host-port publishes are dropped, and traefik /
-#     mailpit / rabbitmq / admin are simply never started (web / nginx / api are already
+#     mailpit / rabbitmq / admin are simply never started (web / api are already
 #     portless in the dev overlay — Traefik fronts them there). So this stack coexists with
 #     the dev stack AND with other worktrees' e2e stacks — no port collisions.
 #   - Keeps the dev overlay's source mounts + `next dev`, so it exercises the LIVE worktree
@@ -26,9 +26,6 @@ services:
     ports: !reset []
 
   api:
-    restart: "no"
-
-  nginx:
     restart: "no"
 
   web:

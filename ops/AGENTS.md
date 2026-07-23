@@ -5,14 +5,14 @@ Container builds (`docker/`), Kubernetes skeleton (`k8s/`), and CI shell scripts
 ## Always
 
 - Build context is **monorepo root** (`../..` from `ops/docker/`). Dockerfiles must reach across workspace boundaries — never per-app build contexts.
-- The API image is **shared** by `api` (php-fpm under nginx) and `worker` (`messenger:consume`). Only the runtime command differs.
+- The API image is **shared** by `api` (FrankenPHP, serving HTTP on `:80`) and `worker` (`messenger:consume`). Only the runtime command differs. Worker mode (`APP_RUNTIME=Runtime\FrankenPhpSymfony\Runtime`) is set on the **`api` service definitions only** (compose/k8s env), never as a Dockerfile `ENV` — the shared `worker` must run under Symfony's default runtime.
 - Production overlays go in `docker-compose.prod.yml` (if added) — never inline secrets, never override `APP_ENV` in the base file.
 - Dev compose mounts source. Production compose / k8s manifests use baked images.
 
 ## Ask First
 
 - Ask before adding a new top-level service to `docker-compose.base.yml`. Each one is another moving part and another `make` target.
-- Ask before introducing a new PHP extension (it goes in the API Dockerfile).
+- Ask before introducing a new PHP extension (it goes in the API Dockerfile's `install-php-extensions` line).
 - Ask before changing the Compose service names — the Makefile and the docs reference them.
 - Ask before deviating from the "one PHP image" rule. Splitting the worker image is a real cost.
 
@@ -21,15 +21,14 @@ Container builds (`docker/`), Kubernetes skeleton (`k8s/`), and CI shell scripts
 - **Never** commit JWT keys, `.env.local`, or any file under `apps/api/config/jwt/`.
 - **Never** add `--no-verify` style flags to CI scripts to mask failures.
 - **Never** run `php-cs-fixer fix` (writing) inside CI — only `--dry-run`. Fixes are local-only.
-- **Never** modify `nginx/api.conf` to expose `/ping` or `/status` outside the cluster — they're FPM status endpoints.
+- **Never** expose Caddy's admin API (`:2019`) or FrankenPHP metrics outside the container — the `Caddyfile` sets `admin off`. `/healthz` is the only intentionally public non-app endpoint.
 
 ## Layout
 
 ```
 ops/
 ├── docker/
-│   ├── api/         php-fpm Dockerfile + php.ini + php-fpm.conf
-│   ├── nginx/       nginx config that fronts php-fpm
+│   ├── api/         FrankenPHP Dockerfile + php.ini + Caddyfile
 │   ├── web/         apps/web standalone Dockerfile
 │   ├── admin/       apps/admin standalone Dockerfile
 │   ├── docker-compose.base.yml   production-shaped stack (no source mounts)
@@ -37,14 +36,14 @@ ops/
 ├── k8s/
 │   ├── Chart.yaml
 │   ├── values.yaml
-│   └── templates/   skeleton Helm chart (api+nginx pod, worker, web, admin, ingress)
+│   └── templates/   skeleton Helm chart (api pod, worker, web, admin, ingress)
 ```
 
 CI lives in `.github/workflows/ci.yml` and invokes the root Makefile targets directly — there are no separate CI scripts.
 
 ## Compose Patterns
 
-- **Base file** is production-shaped: builds happen, no source mounts, ports closed except via nginx.
+- **Base file** is production-shaped: builds happen, no source mounts, only the `api` host publish (`${API_PORT:-8080}:80`) + the web/admin ports are open.
 - **Dev overlay** uses `!reset` (Compose v2.24+) to neutralize the base `build:` for web/admin so they run as plain `node:22-alpine` with `pnpm dev`. The PHP services keep their build but mount source over `/app`.
 - The Makefile composes `-f base -f dev` for `make start`.
 

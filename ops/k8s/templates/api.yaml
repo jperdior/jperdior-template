@@ -16,28 +16,28 @@ spec:
         app.kubernetes.io/component: api
     spec:
       containers:
+        # Single FrankenPHP container — serves HTTP on :80 directly (no nginx sidecar,
+        # no FastCGI). The port keeps the name `http` so the Service targetPort + ingress
+        # backend selectors stay valid.
         - name: api
           image: {{ include "jperdior.image" (dict "Values" .Values "image" .Values.api.image) }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
-          command: ["php-fpm", "--nodaemonize"]
-          ports:
-            - { name: fpm, containerPort: 9000 }
-          env: {{ include "jperdior.appEnv" . | nindent 12 }}
-          resources: {{ toYaml .Values.api.resources | nindent 12 }}
-          volumeMounts:
-            - { name: jwt-keys, mountPath: /var/jwt, readOnly: true }
-        - name: nginx
-          image: nginx:1.27-alpine
           ports:
             - { name: http, containerPort: 80 }
-          volumeMounts:
-            - { name: nginx-conf, mountPath: /etc/nginx/conf.d, readOnly: true }
+          env:
+            {{- include "jperdior.appEnv" . | nindent 12 }}
+            # Worker mode — api container ONLY (not the shared appEnv ConfigMap, which
+            # worker.yaml also consumes; the messenger worker keeps the default runtime).
+            - name: APP_RUNTIME
+              value: 'Runtime\FrankenPhpSymfony\Runtime'
+            - name: FRANKENPHP_CONFIG
+              value: 'worker /app/apps/api/public/index.php'
+          resources: {{ toYaml .Values.api.resources | nindent 12 }}
           livenessProbe: {{ toYaml .Values.api.livenessProbe | nindent 12 }}
           readinessProbe: {{ toYaml .Values.api.readinessProbe | nindent 12 }}
+          volumeMounts:
+            - { name: jwt-keys, mountPath: /var/jwt, readOnly: true }
       volumes:
-        - name: nginx-conf
-          configMap:
-            name: {{ .Release.Name | default "jperdior" }}-nginx
         {{- include "jperdior.jwtVolume" . | nindent 8 }}
 ---
 apiVersion: v1
@@ -52,12 +52,4 @@ spec:
     app.kubernetes.io/component: api
   ports:
     - { name: http, port: {{ .Values.api.service.port }}, targetPort: http }
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Release.Name | default "jperdior" }}-nginx
-data:
-  default.conf: |
-{{ .Files.Get "../docker/nginx/api.conf" | indent 4 }}
 {{- end }}

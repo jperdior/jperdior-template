@@ -28,4 +28,4 @@ if [ "${APP_ENV:-prod}" = "dev" ]; then
   php bin/console app:user:seed-admin || true
 fi
 
-exec php-fpm --nodaemonize
+exec frankenphp run --config /etc/frankenphp/Caddyfile
