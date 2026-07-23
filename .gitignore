@@ -37,6 +37,9 @@ Thumbs.db
 .claude/worktrees/
 .ai/runs/
 
+# --- MkDocs build output ---
+/site/
+
 # --- Local tooling (created by superpowers / worktree harnesses) ---
 .clone/
 .superpowers/

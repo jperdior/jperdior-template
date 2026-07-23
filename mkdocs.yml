@@ -1,0 +1,85 @@
+site_name: jperdior-template
+site_description: >-
+  A spec-driven, AI-engineered monorepo template — PHP 8.4 + Symfony 7.4
+  (DDD + Hexagonal + CQRS) with Next.js 15 frontends and an AI harness.
+site_author: Julio Perdiguer
+site_url: https://jperdior.github.io/jperdior-template/
+
+repo_name: jperdior/jperdior-template
+repo_url: https://github.com/jperdior/jperdior-template
+edit_uri: edit/main/docs/
+
+# docs/*.md is the single source of truth — the site renders it directly,
+# it never forks the content. Keep new guides in docs/ and add them to `nav`.
+docs_dir: docs
+
+# Historical specs live in the repo but are not part of the published site.
+exclude_docs: |
+  superpowers/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Architecture: ARCHITECTURE.md
+  - Guides:
+      - Adding a Bounded Context: adding-a-bounded-context.md
+      - Auth: auth.md
+      - Persistence: persistence.md
+      - Domain Events: domain-events.md
+      - Ops: ops.md
+      - AI Workflow: ai-workflow.md
+  - Decisions (ADR):
+      - Handler / UseCase Split: adr/0001-keep-handler-usecase-split.md

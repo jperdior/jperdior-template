@@ -1,0 +1,52 @@
+name: Docs
+
+# Builds the MkDocs site from docs/ and publishes it to GitHub Pages.
+# Enable once in repo Settings → Pages → Build and deployment → Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+# Least privilege by default: only the deploy job gets pages/id-token write.
+permissions:
+  contents: read
+
+# Allow one concurrent deployment; skip queued runs in favor of the latest.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r docs/requirements.txt
+      - run: mkdocs build --strict
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
