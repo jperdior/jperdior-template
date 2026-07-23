@@ -7,7 +7,7 @@ description: Run the CI verification gate — dispatch each in-scope gate (lint-
 
 The single source of truth for running this repo's CI gate. Other skills (`check-and-commit`, `code-review`, `implement-spec`) invoke this rather than re-describing the commands.
 
-**Two principles:** run gates in **parallel**, and run only what the diff touches — both at the *gate* level (skip the PHP gates for a frontend-only change) and at the *test* level (a change to one bounded context runs that context's tests, not the whole PHPUnit suite).
+**Three principles:** run gates in **parallel**; run only what the diff touches — both at the *gate* level (skip the PHP gates for a frontend-only change) and at the *test* level (a change to one bounded context runs that context's tests, not the whole PHPUnit suite); and **always tear the stacks down when the run finishes** (Step 6) — a gate run that leaves a per-worktree stack up is an incomplete gate run. Leaked stacks accumulate across worktrees and fill the disk.
 
 ## Superpowers Integration
 
@@ -55,7 +55,9 @@ Run `git diff --name-only <base>...HEAD`, then map the changed paths:
 ```sh
 make up-test
 ```
-Only `test-api` needs this — it runs PHPUnit against a live DB. The lint/build gates (PHP *and* JS) are standalone and need no such step. The web **`test-e2e`** gate manages its **own** isolated stack (`make test-e2e` brings it up, resets its DB from scratch, runs, then `make stop-e2e` tears it down) — it needs neither `up-test` nor `make start`.
+Only `test-api` needs this — it runs PHPUnit against a live DB. The lint/build gates (PHP *and* JS) are standalone and need no such step. The web **`test-e2e`** gate manages its **own** isolated stack (`make test-e2e` brings it up, resets its DB from scratch, and runs) — it needs neither `up-test` nor `make start`, but it does **not** stop itself: you tear it down with `make stop-e2e` in Step 6.
+
+Whatever stack this run brings up, **you own tearing it down** — see Step 6. Neither the individual `make test-api` gate nor `make test-e2e` stops its stack on its own (only the aggregate `make test` target self-stops), so an ungated `up-test` or `test-e2e` leaks a running stack for this worktree.
 
 ### 3. Dispatch one subagent per in-scope gate, all in a single message (parallel)
 
@@ -69,8 +71,24 @@ Every in-scope gate MUST report `PASS`. Any `FAIL` is blocking — a finding to 
 
 A compact table of gate → PASS/FAIL with evidence, and note explicitly what was scoped out (e.g. "test-api scoped to `User`; other contexts not run").
 
+### 6. Tear down the stacks — ALWAYS, pass or fail
+
+This step is **not optional and is not skipped on failure**. As soon as the gate results are collected (Step 4), tear down every stack this run brought up, before you report or fix anything:
+
+```sh
+make stop-test    # REQUIRED if `test-api` (or any DB-backed gate) ran — you ran `make up-test`, so you stop it
+make stop-e2e     # REQUIRED if `test-e2e` ran — it does not self-stop; this drops its disposable DB volume
+```
+
+- Run `make stop-test` whenever `test-api` was in scope — i.e. whenever Step 2 ran `make up-test`. It stops+removes this worktree's headless test stack (the cache volumes survive on purpose for the next run).
+- Run `make stop-e2e` whenever `test-e2e` ran — it leaves its isolated stack up otherwise.
+- A lint/build/`test-web`-only run brings up **no** stack — nothing to tear down.
+- Tear down even when a gate **FAILED**. Fix on a fresh run; don't leave the stack up "to iterate" — re-running `make test-api` transparently brings the stack back up.
+- After tearing down, confirm nothing leaked with `docker ps --filter name=-test- --format '{{.Names}}'` — it should not list this worktree's stack.
+
 ## Never
 
+- **Never** finish a gate run with `test-api` or `test-e2e` leaving its per-worktree stack up — Step 6 (`make stop-test` / `make stop-e2e`) is mandatory, pass or fail. Leaked stacks are what fill the disk.
 - Don't run the frontend gates through `up-test` — they are standalone by design; routing them through the PHP stack wastes time and reintroduces the coupling this split removed.
 - Don't run the **full** `test-api` when the diff is confined to a single context — scope it with `ARG` (that's the point). Escalate to the full run only for shared/config/cross-cutting changes, or when unsure.
 - Don't run `test-e2e` for a diff that can't affect the auth journey (pure backend, docs, or an isolated non-journey page with unit coverage) — but DO run it for routing/middleware/auth/home/nav changes.
@@ -86,4 +104,5 @@ Verification gate ({N} gates, scoped to diff)
   make test-web                 PASS ({M} unit tests)
   make build-web                PASS
   (scoped out: full PHP suite — change confined to User)
+  teardown                      make stop-test ✓ (no leaked stack)
 ```
