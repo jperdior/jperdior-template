@@ -5,7 +5,7 @@ import { createApiClient, type ApiClient } from './apiClient';
 const REFRESH_COOKIE = 'rt';
 const ACCESS_COOKIE  = 'at';
 
-const baseUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://api:8080';
+const baseUrl = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://api:80';
 
 const cookieOptions = () => ({
   httpOnly: true as const,

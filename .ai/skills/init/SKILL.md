@@ -28,8 +28,8 @@ Onboarding wizard for a fresh clone. Checks the environment, sets up config, and
 
 4. **Explain the three stack modes**:
    - **Headless test stack** (default for development) — the DB-backed gates (`make test` / `make test-api`) auto-start it per-worktree on first use; the standalone gates (`make lint`, `make lint-web`, `make build-web`) need no DB and run in ephemeral containers. Port-free, parallel-safe. No `make start` needed for development.
-   - **Isolated e2e stack** (for `make test-e2e`) — a disposable, **port-free** per-worktree stack (postgres + redis + api + nginx + web) that `make test-e2e` brings up, resets from scratch, runs the Playwright journey against, then `make stop-e2e` tears down. No `make start` needed; it coexists with the dev stack and other worktrees.
-   - **Full dev stack** (for browser testing) — `make start` brings up Traefik + nginx + Postgres + Redis + Mailpit with host ports. Needed only when you want to see the app in a browser.
+   - **Isolated e2e stack** (for `make test-e2e`) — a disposable, **port-free** per-worktree stack (postgres + redis + api + web) that `make test-e2e` brings up, resets from scratch, runs the Playwright journey against, then `make stop-e2e` tears down. No `make start` needed; it coexists with the dev stack and other worktrees.
+   - **Full dev stack** (for browser testing) — `make start` brings up Traefik + Postgres + Redis + Mailpit with host ports. Needed only when you want to see the app in a browser.
 
 5. **Report next steps**.
 

@@ -120,8 +120,9 @@ In tests both are bumped to 1000/min via a `when@test:` block, and the cache poo
 the in-memory array adapter.
 
 `config/packages/framework.yaml` sets `trusted_proxies` + `trusted_headers` so the limiter sees
-the real client IP — without it, every request looks like it came from Traefik+nginx and the
-limit becomes effectively global.
+the real client IP — without it, every request looks like it came from the Traefik/ingress proxy
+and the limit becomes effectively global. FrankenPHP's `Caddyfile` sets a matching
+`trusted_proxies` block so Caddy forwards the real client IP for `X-Forwarded-For`.
 
 ## Tests
 

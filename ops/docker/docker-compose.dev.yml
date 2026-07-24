@@ -1,14 +1,14 @@
 name: ${COMPOSE_PROJECT_NAME:-jperdior}
 
 # Local development overlays for docker-compose.base.yml. Adds:
-#   - Traefik reverse proxy (replaces direct port exposure on nginx/web/admin).
+#   - Traefik reverse proxy (replaces direct port exposure on api/web/admin).
 #   - Source mounts so edits are live.
 #   - Dev commands (bin/start for api; pnpm dev for web/admin).
 #   - Exposed ports for direct DB/Redis access.
 #   - JWT key auto-generation on first start (handled by bin/start).
 #
 # Routes (all on port 80 via Traefik):
-#   http://api.localhost     → nginx → php-fpm (Symfony)
+#   http://api.localhost     → FrankenPHP (Symfony)
 #   http://web.localhost     → Next.js web app
 #   http://admin.localhost   → Next.js admin app
 #   http://localhost:8080    → Traefik dashboard
@@ -47,6 +47,13 @@ services:
     environment:
       APP_ENV: dev
       APP_DEBUG: "1"
+      # Worker mode + `watch`: FrankenPHP restarts the worker when source changes, so live
+      # edits are picked up without a container restart. APP_RUNTIME is inherited from base.
+      FRANKENPHP_CONFIG: |
+        worker {
+          file /app/apps/api/public/index.php
+          watch
+        }
     volumes:
       - ./api/php-dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
       - ../../apps/api:/app/apps/api
@@ -59,6 +66,14 @@ services:
     user: "0:0"
     working_dir: /app/apps/api
     command: ["sh", "bin/start"]
+    # Traefik fronts the API in dev — neutralize the base file's host publish and
+    # route api.localhost straight to FrankenPHP on :80 (labels formerly on nginx).
+    ports: !reset []
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.services.api.loadbalancer.server.port=80"
 
   mailpit:
     image: axllent/mailpit:latest
@@ -102,16 +117,6 @@ services:
   #       done
   #       exec php bin/console messenger:consume async -vv
 
-  nginx:
-    ports: !reset []
-    volumes:
-      - ../../apps/api/public:/app/apps/api/public:ro
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
-      - "traefik.http.routers.api.entrypoints=web"
-      - "traefik.http.services.api.loadbalancer.server.port=80"
-
   web:
     build: !reset
     image: node:22-alpine
@@ -120,7 +125,7 @@ services:
       NODE_ENV: development
       PORT: "3000"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.localhost}
-      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://api:80}
       CI: "true"
       # `@jperdior/web` carries `@playwright/test` (devDep) for `make test-e2e`; the e2e
       # browsers come from the dedicated Playwright runner image, so skip the browser
@@ -161,7 +166,7 @@ services:
       NODE_ENV: development
       PORT: "3001"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.localhost}
-      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://nginx:80}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://api:80}
       CI: "true"
       # `@jperdior/web` carries `@playwright/test` (devDep) for `make test-e2e`; the e2e
       # browsers come from the dedicated Playwright runner image, so skip the browser

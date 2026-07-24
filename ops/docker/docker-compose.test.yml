@@ -6,7 +6,7 @@ name: ${COMPOSE_PROJECT_NAME:-jperdior}
 #
 # Differences from the dev overlay (docker-compose.dev.yml):
 #   - Publishes NO host ports → any number of worktrees run lint/test/build at once.
-#   - No Traefik / nginx / redis / minio / mailpit / rabbitmq.
+#   - No Traefik / redis / minio / mailpit / rabbitmq.
 #   - `postgres` + `api` are brought up persistently by `make up-test` (the only
 #     DB-backed gates: test-api, build-api, migrate*, gen-api, jwt-keys, db-create).
 #     `api` idles (`sleep infinity`); DB-backed targets `exec` into it.
@@ -29,15 +29,11 @@ services:
   postgres:
     restart: "no"
 
-  # nginx is never started by `make up-test` (it starts an explicit service list and
-  # nothing depends on nginx here), but neutralize its inherited host port so even a
-  # bare `docker compose up` on this stack cannot collide with the dev stack's :8080.
-  nginx:
-    restart: "no"
-    ports: !reset []
-
   api:
     restart: "no"
+    # Drop the base file's host publish: the headless stack must expose NO host
+    # ports so any number of worktrees run the gate in parallel without collisions.
+    ports: !reset []
     depends_on: !override
       postgres: { condition: service_healthy }
     environment:
@@ -46,6 +42,10 @@ services:
       # The headless stack runs no redis. Use a file-based lock (same fallback CI
       # uses) so lock-guarded endpoints work without a redis dependency.
       LOCK_DSN: flock
+      # This stack never runs the FrankenPHP HTTP server (it idles on `sleep infinity`
+      # and execs phpunit / bin/console). Force Symfony's default runtime so console
+      # commands don't inherit base's worker runtime.
+      APP_RUNTIME: 'Symfony\Component\Runtime\SymfonyRuntime'
     volumes:
       - ./api/php-dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
       - ../../apps/api:/app/apps/api

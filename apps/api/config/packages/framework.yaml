@@ -2,10 +2,16 @@ framework:
     secret: '%env(APP_SECRET)%'
     handle_all_throwables: true
 
-    # Behind Traefik + nginx in dev, and behind ingress controllers in prod, every request
+    # Behind Traefik in dev, and behind ingress controllers in prod, every request
     # appears to come from the proxy IP. Trust the X-Forwarded-* headers so the real client
-    # IP reaches the rate limiter. REMOTE_ADDR means "trust whoever is directly connected to us".
-    trusted_proxies: '127.0.0.1,REMOTE_ADDR'
+    # IP reaches the rate limiter.
+    #
+    # Explicit private-range CIDRs (not the REMOTE_ADDR sentinel): under FrankenPHP worker
+    # mode the kernel is long-lived and setTrustedProxies() runs once at preBoot(), which
+    # would freeze the REMOTE_ADDR sentinel against the first request (symfony#57283). Fixed
+    # CIDRs cover the Docker/Traefik (172.16/12) and k8s pod (10/8) networks and re-resolve
+    # per request correctly.
+    trusted_proxies: '127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
     trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
 
     session:

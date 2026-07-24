@@ -1,6 +1,6 @@
 # apps/api — Agents Guidelines
 
-Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context>/`. Single image, two runtime processes: `api` (php-fpm) and `worker` (`messenger:consume async`).
+Symfony 7.4 modular monolith. One app, many bounded contexts under `src/<Context>/`. Single image, two runtime processes: `api` (FrankenPHP, serving HTTP directly) and `worker` (`messenger:consume async`).
 
 ## Always
 
