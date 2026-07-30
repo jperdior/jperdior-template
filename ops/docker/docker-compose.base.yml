@@ -55,8 +55,8 @@ services:
       # default Symfony runtime. Dev/e2e override FRANKENPHP_CONFIG to add `watch`.
       APP_RUNTIME: 'Runtime\FrankenPhpSymfony\Runtime'
       FRANKENPHP_CONFIG: 'worker /app/apps/api/public/index.php'
-    # FrankenPHP serves HTTP directly on :80 (no nginx sidecar). The host publish
-    # that nginx used to own lives here now; the dev overlay !resets it (Traefik fronts it).
+    # FrankenPHP serves HTTP directly on :80 — no reverse-proxy sidecar. The host
+    # publish lives here; the dev overlay !resets it (Traefik fronts it).
     expose:
       - "80"
     ports:

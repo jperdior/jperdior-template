@@ -5,9 +5,8 @@
 # command differs. The `api` service runs `frankenphp run`; the `worker` service
 # overrides the CMD with `php bin/console messenger:consume`.
 #
-# FrankenPHP (Caddy web server + embedded PHP) replaces the old php-fpm + nginx
-# split: it terminates HTTP directly, so there is no FastCGI hop and no separate
-# reverse-proxy container.
+# FrankenPHP (Caddy web server + embedded PHP) terminates HTTP directly, so there
+# is no FastCGI hop and no separate reverse-proxy container.
 # -----------------------------------------------------------------------------
 
 # ---- Composer binary ----

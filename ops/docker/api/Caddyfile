@@ -1,6 +1,5 @@
-# FrankenPHP server config for the Symfony API. Replaces the old nginx reverse
-# proxy: FrankenPHP terminates HTTP directly and serves the Symfony front
-# controller, so there is no FastCGI hop.
+# FrankenPHP server config for the Symfony API. FrankenPHP terminates HTTP
+# directly and serves the Symfony front controller, so there is no FastCGI hop.
 
 {
 	# TLS terminates upstream (Traefik in dev, ingress in prod) — serve plain HTTP.
@@ -14,7 +13,7 @@
 	# The auth rate limiter keys on Symfony's getClientIp(), which reads
 	# HTTP_X_FORWARDED_FOR under framework.yaml `trusted_proxies`; php_server
 	# forwards the inbound header to PHP. This block keeps Caddy's own client-IP
-	# handling correct and mirrors nginx's explicit `set_real_ip_from` intent.
+	# handling correct: only the trusted proxy network may set the real client IP.
 	servers {
 		trusted_proxies static private_ranges
 		client_ip_headers X-Forwarded-For
@@ -25,15 +24,14 @@
 {$SERVER_NAME::80} {
 	root * /app/apps/api/public
 
-	# HTTP compression (nginx gave us none without extra config).
+	# HTTP compression.
 	encode zstd br gzip
 
 	# Health endpoint for k8s probes and the CI runtime smoke job. Served by
 	# Caddy itself — not a Symfony route, so it never touches the kernel/DB.
 	respond /healthz 200
 
-	# Front-controller routing. Subsumes the old nginx try_files + fastcgi_pass.
-	# public/ contains only index.php, so index.php is the sole executable PHP
-	# surface (parity with nginx's `return 404` on any other .php).
+	# Front-controller routing. public/ contains only index.php, so index.php is
+	# the sole executable PHP surface — any other .php request 404s.
 	php_server
 }

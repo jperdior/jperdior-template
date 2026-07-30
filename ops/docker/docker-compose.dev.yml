@@ -67,7 +67,7 @@ services:
     working_dir: /app/apps/api
     command: ["sh", "bin/start"]
     # Traefik fronts the API in dev — neutralize the base file's host publish and
-    # route api.localhost straight to FrankenPHP on :80 (labels formerly on nginx).
+    # route api.localhost straight to FrankenPHP on :80.
     ports: !reset []
     labels:
       - "traefik.enable=true"

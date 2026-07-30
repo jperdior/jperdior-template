@@ -329,8 +329,8 @@ jobs:
           done
           [ "$code" = "200" ] || { echo "::error::/healthz did not return 200 (got '$code')"; docker logs api-smoke-run; exit 1; }
           echo "/healthz OK"
-          # `GET /` boots the Symfony kernel with no XFF header — must not 500 (the empty
-          # X-Forwarded-Host crash the old nginx if_not_empty guard worked around).
+          # `GET /` boots the Symfony kernel with no XFF header — must not 500 on an
+          # empty X-Forwarded-Host.
           root="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true)"
           echo "GET / -> $root"
           case "$root" in 5??) echo "::error::GET / returned $root"; docker logs api-smoke-run; exit 1 ;; esac
