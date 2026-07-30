@@ -84,7 +84,9 @@ Follow SDD's Setup step exactly, with these project specifics:
    first line.
 4. Read the spec once. Note its Global Constraints (version floors, naming/copy
    rules, BRs that bind every phase). Scan for cross-phase conflicts and batch
-   them to the user before dispatching phase 1 (SDD's pre-flight scan).
+   them to the user before dispatching phase 1 (SDD's pre-flight scan). This
+   batch is an **escalation, not a routine confirmation** — it happens even in
+   autonomous mode, and phase 1 waits until the conflicts are resolved.
 
 ## Per-phase loop
 
@@ -210,7 +212,7 @@ End of each phase:
 ✅ Phase {N}: {Title}
    Files:   {count} touched, {count} tests added
    Gates:   {lint/test/build/e2e} PASS
-   Ledger:  Task {N}: complete (commits {base7}..{head7})
+   Ledger:  Task {N}: complete (commits {base7}..{head7}, gates green)
    Next:    Phase {N+1}: {Title} — proceed?
 ```
 
@@ -218,7 +220,7 @@ After all phases:
 
 ```
 ✅ All phases complete on branch `feat-<slug>`.
-   Final whole-branch code review: clean
+   Final whole-branch code review: {clean | {count} parked minor findings}
    Next step: /open-pr
 
    Cleanup after merge:
@@ -229,5 +231,13 @@ After all phases:
    5. make stop-test
 ```
 
+Report `clean` only when **no** unresolved findings remain. Anything parked or
+deferred by SDD's breaker is listed by count and severity, never folded into
+`clean`.
+
 If autonomous (the user said "implement all phases without stopping"), proceed
-without asking — per SDD's continuous-execution rule.
+without asking — per SDD's continuous-execution rule. Autonomous mode skips
+**routine confirmations only** (the end-of-phase "proceed?" pause). It does
+**not** suppress an escalation: a failed precondition, an unresolved cross-phase
+conflict from the pre-flight scan, a BLOCKED implementer report, or a fix loop
+that hits its round cap still stops the run and goes to the user.
