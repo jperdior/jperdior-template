@@ -102,18 +102,49 @@ Deployments contain `fsGroup: 33`; the jwt volume renders `mode: 0440` for `priv
 - `apps/web/public/.gitkeep`
 - `apps/admin/public/.gitkeep`
 
-**`.dockerignore`** (repo root) — required by the `COPY . .` install so the build context
-excludes host `node_modules`, build output, VCS, and worktrees. Create if absent; otherwise
-ensure it covers at least:
+**`.dockerignore`** (repo root) — **security-critical**. The build context is the monorepo
+root (`docker-compose.base.yml` sets `context: ../..`), so `COPY . .` sweeps the *entire*
+repo. Without a `.dockerignore` (none exists today), a developer's `.env.local`, the JWT
+`private.pem` signing key, and `node_modules` all get baked into the web/admin builder
+layers — the worst case being `NEXT_PUBLIC_*` values from a dev `.env.local` inlined into the
+shipped client bundle. This single root file also governs the **API** image build
+(`ci.yml` api-smoke + `make start`), so it must **only exclude secrets and bloat — never
+`apps/api/**` sources**. Excluding pems/`.env.local` is behavior-neutral for the API image
+(both are gitignored and already absent from CI's context). Create with:
 
-```
+```gitignore
+# --- secrets: never bake into any image ---
+**/.env.local
+**/.env.*.local
+ops/docker/.env
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/id_rsa*
+apps/api/config/jwt/
+
+# --- deps / build output / bloat (context is the whole monorepo) ---
 **/node_modules
 **/.next
 **/.turbo
+**/vendor
+**/var
+.pnpm-store
+**/dist
+**/coverage
+
+# --- VCS / tooling / nested worktrees ---
 .git
+.github
 .claude
-apps/api/var
 ```
+
+Do **not** add `apps/api/**`, `packages/**`, `pnpm-lock.yaml`, or `pnpm-workspace.yaml` —
+the JS workspace install and the API build both need those. During verification, confirm
+the API smoke build (`docker build -f ops/docker/api/Dockerfile --target runtime .`) still
+succeeds under the shared ignore (it does not depend on any excluded path — vendor is
+installed in-image, `var` is `mkdir`ed, jwt keys arrive via the Helm mount).
 
 **`ops/docker/web/Dockerfile`** — collapse `deps`+`builder` into one builder stage that
 installs the full workspace in one shot; keep the runtime stage (which already copies
