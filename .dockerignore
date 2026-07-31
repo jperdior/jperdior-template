@@ -1,0 +1,25 @@
+# --- secrets: never bake into any image ---
+**/.env.local
+**/.env.*.local
+ops/docker/.env
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/id_rsa*
+apps/api/config/jwt/
+
+# --- deps / build output / bloat (build context is the whole monorepo) ---
+**/node_modules
+**/.next
+**/.turbo
+**/vendor
+**/var
+.pnpm-store
+**/dist
+**/coverage
+
+# --- VCS / tooling / nested worktrees ---
+.git
+.github
+.claude

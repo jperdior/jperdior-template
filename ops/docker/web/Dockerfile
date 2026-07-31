@@ -5,43 +5,29 @@
 
 ARG NODE_VERSION=22-alpine
 
-# ---- Stage 1: workspace install ----
-FROM node:${NODE_VERSION} AS deps
-
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-
-WORKDIR /repo
-
-# Manifests first for cache.
-COPY package.json pnpm-workspace.yaml turbo.json ./
-COPY apps/web/package.json ./apps/web/
-COPY apps/admin/package.json ./apps/admin/
-COPY packages/ui-react/package.json ./packages/ui-react/
-COPY packages/api-client-ts/package.json ./packages/api-client-ts/
-
-RUN pnpm install --filter "./apps/web..."
-
-# ---- Stage 2: build ----
+# ---- Stage 1: build ----
+# The whole workspace is copied and installed in one shot. pnpm's workspace linking needs
+# every referenced package's source present, so a split "copy only some node_modules" scheme
+# is fragile and silently omits packages/auth-server-ts's own deps. A single install against
+# the full tree is what `make build-web` does natively (see ops/ci/scripts/js-workspace-install.sh).
 FROM node:${NODE_VERSION} AS builder
 
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 WORKDIR /repo
-COPY --from=deps /repo/node_modules ./node_modules
-COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
-COPY --from=deps /repo/packages/ui-react/node_modules ./packages/ui-react/node_modules
-COPY --from=deps /repo/packages/api-client-ts/node_modules ./packages/api-client-ts/node_modules
 
-# Now copy the source tree.
-COPY apps/web ./apps/web
-COPY packages/ui-react ./packages/ui-react
-COPY packages/api-client-ts ./packages/api-client-ts
-COPY package.json pnpm-workspace.yaml turbo.json ./
+# Full source (a .dockerignore keeps node_modules/.next and secrets out of the context).
+COPY . .
+
+# Install apps/web AND every workspace package's own external deps. `--filter "./packages/*"`
+# is required — without it, ui-react / api-client-ts / auth-server-ts don't get their own
+# dependencies (lucide-react, zod, …) installed.
+RUN pnpm install --filter "@jperdior/web..." --filter "./packages/*"
 
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm -C apps/web build
 
-# ---- Stage 3: runtime ----
+# ---- Stage 2: runtime ----
 FROM node:${NODE_VERSION} AS runtime
 
 WORKDIR /app
@@ -51,7 +37,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# `outputFileTracingRoot` set in next.config.ts puts the standalone output rooted at /repo.
+# `outputFileTracingRoot` in next.config.ts roots the standalone output at /repo.
 COPY --from=builder /repo/apps/web/.next/standalone ./
 COPY --from=builder /repo/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /repo/apps/web/public ./apps/web/public
