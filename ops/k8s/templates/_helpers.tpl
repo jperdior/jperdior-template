@@ -43,6 +43,9 @@ Shared template helpers.
   secret:
     secretName: {{ .Values.secrets.jwt }}
     items:
-      - { key: private.pem, path: private.pem, mode: 0400 }
+      # api/worker run as www-data (uid/gid 33). The private key is group-readable (0440)
+      # and the pod sets fsGroup: 33; a root-only 0400 makes Lexik fail to load the signing
+      # key → /auth/login 500s.
+      - { key: private.pem, path: private.pem, mode: 0440 }
       - { key: public.pem,  path: public.pem,  mode: 0444 }
 {{- end -}}
