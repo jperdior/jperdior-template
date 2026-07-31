@@ -30,6 +30,8 @@ This is a deliberate default for a template. Sync Messenger is simpler to unders
 
 `apps/web` and `apps/admin` are independent Next.js 15 standalone builds. They share UI primitives via the `@jperdior/ui-react` workspace package and hit the API via the generated `@jperdior/api-client-ts` client.
 
+Static assets placed in `apps/web/public/` and `apps/admin/public/` are served by the prod images: each Next.js standalone build omits `public/`, so the runtime stage of `ops/docker/web/Dockerfile` and `ops/docker/admin/Dockerfile` copies the directory in explicitly. The JWT private key is mounted group-readable (`0440`) and the api/worker pods set `securityContext.fsGroup: 33`, so the `www-data` (GID 33) runtime user can read the key without it being world-readable.
+
 ### Async processing with RabbitMQ
 
 The template is ready for async processing when you need it. The API image includes the PHP `amqp` extension, and RabbitMQ + a worker container are defined as a Compose profile (`async`) — off by default.

@@ -15,6 +15,10 @@ spec:
       labels:
         app.kubernetes.io/component: api
     spec:
+      # www-data (uid/gid 33) is the FrankenPHP runtime user; fsGroup makes the mounted
+      # JWT secret (private.pem 0440) group-readable so Lexik can sign tokens.
+      securityContext:
+        fsGroup: 33
       containers:
         # Single FrankenPHP container — serves HTTP on :80 directly (no nginx sidecar,
         # no FastCGI). The port keeps the name `http` so the Service targetPort + ingress

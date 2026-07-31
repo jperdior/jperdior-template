@@ -15,6 +15,9 @@ spec:
       labels:
         app.kubernetes.io/component: worker
     spec:
+      # Match the api pod: www-data (gid 33) must be able to read the mounted JWT key.
+      securityContext:
+        fsGroup: 33
       containers:
         - name: worker
           image: {{ include "jperdior.image" (dict "Values" .Values "image" .Values.worker.image) }}

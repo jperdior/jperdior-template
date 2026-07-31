@@ -6,38 +6,23 @@
 
 ARG NODE_VERSION=22-alpine
 
-FROM node:${NODE_VERSION} AS deps
-
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
-
-WORKDIR /repo
-
-COPY package.json pnpm-workspace.yaml turbo.json ./
-COPY apps/web/package.json ./apps/web/
-COPY apps/admin/package.json ./apps/admin/
-COPY packages/ui-react/package.json ./packages/ui-react/
-COPY packages/api-client-ts/package.json ./packages/api-client-ts/
-
-RUN pnpm install --filter "./apps/admin..."
-
+# ---- Stage 1: build ----
+# See ops/docker/web/Dockerfile — single full-tree install so every workspace package
+# (incl. packages/auth-server-ts) gets its own deps. Mirrors ops/ci/scripts/js-workspace-install.sh.
 FROM node:${NODE_VERSION} AS builder
 
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 WORKDIR /repo
-COPY --from=deps /repo/node_modules ./node_modules
-COPY --from=deps /repo/apps/admin/node_modules ./apps/admin/node_modules
-COPY --from=deps /repo/packages/ui-react/node_modules ./packages/ui-react/node_modules
-COPY --from=deps /repo/packages/api-client-ts/node_modules ./packages/api-client-ts/node_modules
 
-COPY apps/admin ./apps/admin
-COPY packages/ui-react ./packages/ui-react
-COPY packages/api-client-ts ./packages/api-client-ts
-COPY package.json pnpm-workspace.yaml turbo.json ./
+COPY . .
+
+RUN pnpm install --filter "@jperdior/admin..." --filter "./packages/*"
 
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm -C apps/admin build
 
+# ---- Stage 2: runtime ----
 FROM node:${NODE_VERSION} AS runtime
 
 WORKDIR /app
@@ -49,6 +34,7 @@ ENV HOSTNAME=0.0.0.0
 
 COPY --from=builder /repo/apps/admin/.next/standalone ./
 COPY --from=builder /repo/apps/admin/.next/static ./apps/admin/.next/static
+COPY --from=builder /repo/apps/admin/public ./apps/admin/public
 
 USER node
 
