@@ -272,4 +272,15 @@ images.
 
 ## Changelog
 
-- _(to be filled after implementation)_
+- **Phase 1** (`3ae64e3`): `_helpers.tpl` mounts `private.pem` `0440`; `api.yaml` +
+  `worker.yaml` set pod `securityContext.fsGroup: 33`. Verified via `helm template` — both
+  Deployments render `fsGroup: 33` on the pod-template spec; `private.pem` renders `0440`,
+  `public.pem` stays `0444`.
+- **Phase 2** (`f4b6321`): web + admin Dockerfiles collapsed to a single full-tree
+  `pnpm install --filter "@jperdior/<app>..." --filter "./packages/*"` (installs the
+  previously-omitted `packages/auth-server-ts`); both runtime stages copy `public/`;
+  `apps/{web,admin}/public/.gitkeep` added; security-critical root `.dockerignore` added.
+  Verified via real `docker build` of **all three** images (web, admin, and api under the
+  shared `.dockerignore`) — all succeed; both JS runtime images contain `public/`. The
+  `.dockerignore` excludes only secrets + bloat, never `apps/api/**` sources / `packages/**`
+  / lockfiles, so the API build is unaffected. `docs/ops.md` updated.
