@@ -73,8 +73,17 @@ Check and update these docs if the branch affected their subject matter:
 | `docs/ai-workflow.md` | New skill, changed workflow step, new automation pattern |
 | `.ai/specs/{file}.md` | Update the spec's **Changelog** with phase completion date and summary |
 | `.ai/lessons.md` | New pitfall discovered during implementation — add an L-### entry |
+| The project's roadmap/status doc, if it has one (e.g. `docs/roadmap-status.md`) | The branch completes or advances a phase, or unblocks one that depended on it |
 
 Read the existing doc, determine what changed, and update the relevant section. Don't rewrite unchanged sections.
+
+**The status doc is the row people forget.** If the project keeps one, it is the only source of truth for *what actually exists* — a roadmap kept elsewhere (Drive, an issue tracker) describes *intended* scope, not shipped scope. A stale ✅ sends the next person to build something twice; a stale ⬜ sends them to re-plan something already merged. Update it in the same PR that changes a phase's status.
+
+When a phase's status changes, update **three** things, not one:
+
+1. The phase's own row — status marker, what actually shipped (not what was planned), and a link to its spec.
+2. **Every other row that named it as a dependency.** A phase that said "Depends on A1" now depends on less, and one that was blocked may now be open.
+3. Any **open decisions / carried risks** entry the work resolved or invalidated — mark it resolved rather than leaving a closed question open.
 
 ### Step 4 — Check the root `AGENTS.md` Task Router
 
@@ -91,6 +100,8 @@ git add apps/api/src/*/AGENTS.md apps/api/src/*/CLAUDE.md \
        .ai/specs/ .ai/lessons.md
 git commit -m "docs: sync project docs after <feature-name>"
 ```
+
+Add the project's roadmap/status doc to that `git add` list if it has one — naming a path that doesn't exist makes `git add` fail the whole command.
 
 ---
 
