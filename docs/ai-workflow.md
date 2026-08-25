@@ -49,10 +49,12 @@ Several skills spawn parallel subagents to do work faster and more thoroughly th
 
 - **`/pre-implement-spec`** — after reading the spec, launches three agents simultaneously: a Gap & Compliance reviewer, a Backward Compatibility auditor, and a Risk & Security assessor. Each has a focused role prompt and reports findings independently; the orchestrator synthesises them into the Readiness Report.
 - **`/code-review`** — launches an Architecture reviewer, a Security reviewer, and a Frontend reviewer in parallel while the CI gate runs at the same time. The separate role prompts keep each agent narrowly focused.
-- **`/implement-spec`** — before coding each phase, spawns Explore agents in parallel to map call sites, test coverage, event subscribers, and migration scope. All writes stay in the main agent.
+- **`/implement-spec`** — runs on `superpowers:subagent-driven-development`. One spec phase = one task, dispatched to a **fresh implementer subagent with zero inherited session context**; that subagent writes the code and commits the phase. The controller session holds only the spec, the ledger, and gate results.
 - **`/parallel-research`** — standalone skill for ad-hoc multi-angle codebase exploration. Use it before implementing anything in unfamiliar territory.
 
-The rule throughout: **spawn in parallel, write in the main agent**. Subagents are readers and analysts; they never produce commits.
+The rule for **research and review** skills: spawn in parallel, write in the main agent — those subagents are readers and analysts, and never produce commits.
+
+`/implement-spec` is the deliberate exception: its implementer subagents *do* write and commit. That is the point. A phase implemented by a context-free subagent cannot drift on half-remembered conversation, and the controller's context stays flat across the whole feature instead of growing with every phase. Long runs — including "implement all phases without stopping" — stay well inside the context window, and the ledger survives compaction.
 
 ### Lessons (`.ai/lessons.md`)
 
@@ -72,7 +74,8 @@ Tailwind + shadcn/ui token rules for frontend work. Semantic tokens only (`bg-ba
 1. Create worktree   →  /new-feature
 2. Write spec        →  /spec-writing (auto-proceeds to audit)
 3. Audit spec        →  /pre-implement-spec
-4. Implement         →  /implement-spec (per-phase: sync-context-docs → CI → code-review)
+4. Implement         →  /implement-spec (per-phase: fresh implementer subagent →
+                        sync-context-docs → CI gate; single /code-review at the end)
 5. PR                →  /open-pr
 6. Clean up          →  exit worktree, delete worktree/branch, make stop-test
 ```
@@ -96,7 +99,7 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 | `/new-feature` | Creates an isolated git worktree + branch from `main`. One worktree covers spec + implementation (no separate spec branch or spec PR). |
 | `/spec-writing` | Produces a `.ai/specs/{YYYY-MM-DD}-{slug}.md` with the full spec format. Committed locally, no spec-only PR. Auto-proceeds to `/pre-implement-spec`. |
 | `/pre-implement-spec` | Audits the local spec against the codebase using parallel specialized agents; flags gaps, BC risks, and missing tests; produces a Readiness Report. |
-| `/implement-spec` | Implements an approved spec phase by phase on the same `feat-<slug>` branch. Runs `/sync-context-docs`, CI gate, and `/code-review` per phase. Single PR at the end. |
+| `/implement-spec` | Implements an approved spec on the same `feat-<slug>` branch, one phase per fresh implementer subagent (`superpowers:subagent-driven-development`), tracked in a resumable ledger. Per phase: `/sync-context-docs` + CI gate. `/code-review` runs **once** over the whole branch at the end. Single PR. |
 | `/sync-context-docs` | Updates `AGENTS.md` files for every bounded context touched by the branch. Run per-phase inside `/implement-spec`. |
 | `/code-review` | Reviews the current branch diff using parallel specialized reviewer agents (architecture, security, frontend) and runs the CI gate simultaneously. |
 | `/open-pr` | Opens the single GitHub PR for the feature branch (spec + implementation). |
