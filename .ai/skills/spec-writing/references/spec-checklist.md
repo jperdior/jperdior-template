@@ -6,6 +6,11 @@
 - [ ] TLDR present, 2-3 sentences
 - [ ] Open Questions block cleared before research phase
 - [ ] Phases declared; each phase deliverable is testable
+- [ ] `## Delivery` ledger present; one checklist line per delivery unit, each naming its branch in backticks
+- [ ] Units sized at 1-3 phases each; no unit needs "and" to name it
+- [ ] Every unit leaves `main` deployable — no half-wired feature, no reader without its migration
+- [ ] Required merge order stated where one exists (mitigation before the feature it protects, contract before consumer)
+- [ ] A **one-unit** ledger justifies itself — one context, no migration, no new contract, ≤ 2 phases
 - [ ] Changelog section present
 
 ## 2. Architecture

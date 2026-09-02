@@ -81,3 +81,46 @@ At the `<Context>/Infrastructure/Persistence/` boundary, a persistence class MAY
 - Map the FK as `#[ORM\ManyToOne(targetEntity: OtherModel::class)]` + `#[ORM\JoinColumn(name: '<col>_id', onDelete: 'CASCADE')]`. Set it from the repository via `em->getReference(OtherModel::class, $id)`; filter reads with `IDENTITY(x.assoc) = :id` so the read repository needs no cross-context import.
 - Add a `skip_violations` entry in `apps/api/deptrac.yaml` for **each** coupled persistence class (the `*Model` and any repository importing the other `*Model`), listing the specific import.
 - Raw-SQL JOINs on table names need **no** `skip_violations` — deptrac sees PHP imports, not SQL strings. Prefer raw SQL when the repository is already DBAL-shaped.
+
+---
+
+## L-010 — A merge event cannot tell you a spec is finished
+
+Archiving a spec on `pull_request.closed` reads the merging PR's diff and nothing else. That diff says
+which spec file was *added*; it cannot say whether the spec is *done*, because "done" is a fact about
+the union of PRs, and the last one has not necessarily been written yet. A four-PR spec therefore gets
+archived after PR 1 — the workflow fires, `git mv`s the spec into `.ai/specs/implemented/`, and the three
+branches still owed go looking for their spec in `.ai/specs/` and find an empty directory.
+
+**Widening the CI condition does not fix it.** Any signal available at merge time is either the diff (too
+narrow, as above) or the presence of unarchived specs (too broad — it archives every draft in the folder).
+Completeness is knowledge the *implementing run* has and the merge does not.
+
+**How to apply**: the spec carries its own `## Delivery` ledger — one `- [ ]` per delivery unit, each
+naming its branch — and it works because the spec file travels to `main` with every one of its PRs.
+`/implement-spec` scopes to the unit matching the current branch and ticks it; `/archive-spec` archives
+only when nothing is left unticked. Archival is a reviewed commit on the last delivery PR, never a side
+effect of merging. The same reasoning applies to anything else phrased as "on merge, conclude the work is
+complete" — a merge is one PR landing, not a feature finishing.
+
+---
+
+## L-011 — An oversized delivery unit degrades quality without ever failing
+
+A spec implemented as one big branch does not blow up. It gets slower, spends its budget carrying context
+instead of writing code, and returns work that is *worse* — and every gate stays green while that happens,
+because nothing in the harness measures how well a phase was implemented, only whether it lints and passes.
+That is the failure mode to fear: not an error, a quiet decline you only notice when reviewing the result.
+
+**The branch is the unit of every quality mechanism here, which is why its size decides quality.** The
+final `/code-review` reads the branch diff. `/run-gates` scopes to the branch diff. `/implement-spec`'s
+controller carries the branch's whole context and reviews it once at the end. Grow the branch and all three
+degrade at once — the review spans work whose reasoning no longer fits in one pass, the gate matrix runs
+wide on every push, and the run has less room for the actual implementation.
+
+**How to apply**: split a spec into **delivery units** — one branch, one PR, 1-3 phases, every unit
+leaving `main` deployable and green — and treat splitting as the default rather than the fallback. A unit
+you cannot name without "and" is two units. Boundaries fall on real seams: a security mitigation before the
+feature it protects, a migration together with its reader, a backend contract before its frontend consumer.
+`.ai/skills/spec-writing/references/delivery-units.md` is the full rule; the spec's `## Delivery` ledger is
+where the split is declared and tracked across PRs.

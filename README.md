@@ -38,12 +38,13 @@ The template ships a set of slash commands for Claude Code (and Codex) that alre
 **Workflow:**
 - `/init` — bootstrap a fresh clone: check prerequisites, copy `.env.local`, personalize the project
 - `/customize-project` — rename all template placeholders and add your project description to `AGENTS.md` — run once after cloning
-- `/new-feature` — create an isolated git worktree + branch from main for your feature
+- `/new-feature` — create an isolated git worktree + branch from main, once per delivery unit
 - `/spec-writing` — brainstorm and write a feature spec, auto-proceeds to audit
 - `/pre-implement-spec` — audit a spec for gaps, BC risks, and missing tests before coding
-- `/implement-spec` — implement an approved spec phase by phase with CI gate between phases
+- `/implement-spec` — implement one delivery unit of an approved spec, phase by phase, with CI gate between phases
 - `/code-review` — review a diff or branch against DDD/CQRS/security rules; runs the CI gate
-- `/open-pr` — open a single PR (spec + implementation) from the feature branch
+- `/archive-spec` — tick this branch's unit in the spec's Delivery ledger; archive the spec once none are left
+- `/open-pr` — open this delivery unit's PR from the feature branch
 
 **Backend development:**
 - `/scaffold-bounded-context` — generate the full 4-layer DDD skeleton for a new context
@@ -69,13 +70,19 @@ The template ships a set of slash commands for Claude Code (and Codex) that alre
 
 The recommended flow for any non-trivial feature:
 
-1. `/new-feature feat-<slug>` — create a worktree + branch from main
+1. `/new-feature feat-<slug>` — create a worktree + branch from main, for this delivery unit
 2. `/spec-writing` — design the feature, produce a spec doc in `.ai/specs/` (auto-proceeds to audit)
 3. `/pre-implement-spec` — audit the spec for gaps, BC risks, and missing tests
-4. `/implement-spec` — implement from the approved spec, phase by phase (CI + code-review after each)
+4. `/implement-spec` — implement this unit from the approved spec, phase by phase (CI + code-review after each)
 5. `/sync-context-docs` — update AGENTS.md and cross-cutting docs (runs per-phase inside implement-spec)
-6. `/open-pr` — single PR (spec + code) to main
+6. `/open-pr` — this unit's PR to main (the first one carries the spec)
 7. **Clean up** after merge — remove worktree, prune branch
+8. **Next unit** — repeat from 1 while the spec's `## Delivery` ledger has unticked units
+
+Steps 2-3 run only for the first unit. A spec is split across several delivery units by default —
+1-3 phases each, every unit leaving `main` deployable — because the delivery unit is the granularity
+at which the code review, the gate matrix and the implementation run each stay small enough to be
+done well. See [.ai/skills/spec-writing/references/delivery-units.md](.ai/skills/spec-writing/references/delivery-units.md).
 
 For bug fixes: `/root-cause` → `/fix` → `/auto-create-pr`.
 

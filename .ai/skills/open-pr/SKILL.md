@@ -34,6 +34,8 @@ Invoke before starting this workflow:
 
    ## Why
    Implements spec: <!-- .ai/specs/{file}.md — or "N/A" if no spec -->
+   Delivery unit: <!-- PR {N} of {total} from the spec's ## Delivery ledger. Say whether this
+                       PR archives the spec, and if not, which units are still owed. Omit if no spec. -->
 
    ## How
    <!-- Key implementation decisions. Skip the obvious. -->
@@ -87,4 +89,7 @@ Invoke before starting this workflow:
 - NEVER force-push to a shared base branch.
 - Always use a HEREDOC for the body to preserve formatting.
 - Always include the spec link in the body if one exists.
+- If the branch carries a spec, read its `## Delivery` ledger and state the unit in the body. A spec
+  still sitting in `.ai/specs/` with every unit ticked means `/archive-spec` has not run — run it
+  before opening the PR, since archival belongs in the last delivery PR and nothing archives on merge.
 - Always check `git status` first — uncommitted changes mean the PR will be incomplete.

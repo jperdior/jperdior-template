@@ -16,3 +16,4 @@ Run before declaring a spec ready for implementation. Every row MUST pass.
 | `strict_types` | Every PHP file in `src/` and `tests/`? | Yes. |
 | Tests | Coverage planned (PHPUnit Functional for API + Vitest + RTL for frontend)? | Yes. |
 | BC | Any contract surface removed/renamed without deprecation bridge? | No. |
+| Delivery | Is the `## Delivery` ledger present, units sized at 1-3 phases, each leaving `main` deployable, merge order stated? | Yes — and a one-unit ledger justifies itself. See `references/delivery-units.md`. |

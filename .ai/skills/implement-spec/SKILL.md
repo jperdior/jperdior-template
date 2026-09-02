@@ -13,7 +13,16 @@ is, and what the reviewer's rubric is.
 
 ## The Execution Model — one spec phase = one SDD task
 
-The spec's **phases are the SDD tasks.** SDD dispatches a fresh implementer
+A spec is delivered in **delivery units**, each one branch and one PR, declared
+as a checklist in the spec's `## Delivery` section (see `/archive-spec`). Specs
+are split across several units by default, at 1-3 phases each. This run
+implements **exactly one** unit — the one whose backticked branch name is the
+current branch — and the phases of that unit are its tasks. Phases belonging to
+other units are out of scope for this run, however small they look; that
+boundary is what keeps this run's context, its gate matrix and its final code
+review at a size each can actually handle.
+
+Within the unit, the spec's **phases are the SDD tasks.** SDD dispatches a fresh implementer
 subagent per task; here that subagent implements exactly one spec phase, with
 **zero inherited session context** — you construct its brief from the phase
 text plus the interfaces earlier phases produced. This is the whole reason to
@@ -55,9 +64,11 @@ the spec still runs phase-as-task.
 
 ## Prerequisites
 
-- The spec exists under `.ai/specs/` on the current `feat-<slug>` branch
-  (committed locally).
-- The spec passed `/pre-implement-spec` with verdict = ready.
+- The spec exists under `.ai/specs/` — committed on this branch for a first
+  delivery unit, already on `main` for a later one.
+- The spec's `## Delivery` ledger names this branch as an unticked unit.
+- The spec passed `/pre-implement-spec` with verdict = ready. For a later unit,
+  that verdict must still hold against today's `main` (see Setup step 6).
 - An isolated worktree on a `feat-<slug>` branch exists (created by
   `/new-feature`). SDD requires an isolated workspace; never implement on `main`.
 - No manual container startup needed. The **lint/build gates** (`make lint-api`,
@@ -87,6 +98,25 @@ Follow SDD's Setup step exactly, with these project specifics:
    them to the user before dispatching phase 1 (SDD's pre-flight scan). This
    batch is an **escalation, not a routine confirmation** — it happens even in
    autonomous mode, and phase 1 waits until the conflicts are resolved.
+5. **Resolve this run's delivery unit** from the spec's `## Delivery` ledger:
+   ```sh
+   awk '/^## Delivery/{f=1;next} /^## /{f=0} f' <spec-file> | grep '^- \[[ xX]\]'
+   ```
+   The unit whose backticked branch name equals the current branch is this run's
+   scope; its phases are the SDD tasks, and phases belonging to other units are
+   out of scope — do not implement them, even when they look small. A unit
+   already ticked `- [x]` means this branch's work is claimed as landed: stop and
+   ask. A ledger that names no unit for this branch, or a spec with no `## Delivery`
+   section at all, is a **failed precondition** — stop and ask the user to place
+   this branch in the ledger. Both are escalations; autonomous mode does not skip
+   them.
+6. **If earlier units are already ticked, the spec is describing a `main` that has
+   moved.** Before dispatching phase 1, re-verify the spec's **Current State**
+   section and any `file.php:123` references it leans on — line numbers rot
+   fastest, and a fresh implementer briefed on a stale line number writes against
+   code that is no longer there. Anything the spec assumed and `main` has since
+   changed goes back through `/pre-implement-spec` for this unit; fold the
+   corrections into the spec on this branch. A first unit skips this step.
 
 ## Per-phase loop
 
@@ -177,8 +207,15 @@ ruling, or STOP + BLOCKED on load-bearing findings).
    the full branch diff, pointed at the ledger's deferred-minor/parked lines.
    Resolve every Critical and High finding — one fix wave max, one scoped
    re-review, then adjudicate residuals. Commit the fixes.
-3. Push: `git push -u origin $(git rev-parse --abbrev-ref HEAD)`.
-4. Open the single PR (spec + all phases) via `/open-pr`.
+3. **Delivery ledger + archival decision**: run `/archive-spec <spec-file>`. It
+   ticks this branch's unit and then decides: with every unit ticked, this branch
+   is the spec's **last** delivery PR and the skill archives the spec into
+   `.ai/specs/implemented/` in this same PR; with units still owed, the spec
+   stays in `.ai/specs/` and only the tick is committed. Nothing archives specs
+   on merge — this is the only place it happens, so the decision is made by the
+   run that knows how much of the spec it just built.
+4. Push: `git push -u origin $(git rev-parse --abbrev-ref HEAD)`.
+5. Open the PR for this delivery unit (spec + its phases) via `/open-pr`.
 
 ## Cleanup — after the PR merges
 
@@ -221,6 +258,9 @@ After all phases:
 ```
 ✅ All phases complete on branch `feat-<slug>`.
    Final whole-branch code review: {clean | {count} parked minor findings}
+   Delivery: {done}/{total} units ticked
+             {spec archived to .ai/specs/implemented/ — last delivery PR
+              | spec stays open, still owed: PR {M} — `{branch}`}
    Next step: /open-pr
 
    Cleanup after merge:

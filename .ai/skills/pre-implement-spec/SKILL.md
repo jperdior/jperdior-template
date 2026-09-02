@@ -18,6 +18,9 @@ Audit a spec under `.ai/specs/` before any code is written. Output a **Readiness
 
 1. **Identify the spec.** Confirm the file path (e.g. `.ai/specs/2026-06-04-add-notes.md`). If unclear, ask.
 2. **Read the spec end-to-end.** Note every aggregate, endpoint, migration, and integration test it proposes.
+
+    **Read the `## Delivery` ledger** before spawning anything. It says which delivery unit this audit covers and which already landed. Two things follow. First, audit the **whole** spec — a boundary problem in unit 3 is cheapest to fix now — but state findings per unit, so a later unit's gap does not block the one about to be implemented. Second, when units are already ticked, the spec is describing a `main` that has moved: re-verify its **Current State** section and every `file.php:123` reference against today's tree, since a stale line number is what a fresh implementer will be briefed on. Also check the ledger itself — units sized past 3 phases, a unit that leaves `main` undeployable, or a missing merge order (mitigation before the feature it protects, migration together with its reader) is a **High** finding against `.ai/skills/spec-writing/references/delivery-units.md`.
+
 3. **Spawn three audit agents in parallel** — see **Parallel Audit Strategy** below. Each agent receives: the full spec text, the list of files/contexts it references, and `.ai/lessons.md`.
 4. **Synthesise**: merge the three agents' outputs into the Readiness Report. Where agents contradict, trust the one with more specific `file:line` evidence.
 
@@ -47,6 +50,7 @@ Launch these three subagents simultaneously after step 2. Do not wait for one be
 
 **Spec**: `.ai/specs/{file}.md`
 **Phases**: {N}
+**Delivery units**: {N} — {ticked}/{N} already landed; auditing unit {M} (`{branch}`)
 **Aggregates affected**: {list}
 **Contexts affected**: {list}
 

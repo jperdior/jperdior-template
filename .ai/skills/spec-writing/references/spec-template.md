@@ -70,6 +70,21 @@ For each endpoint, include:
 | 0 | …  | … (each phase ends with `make test` green) |
 | 1 | …  | … |
 
+## Delivery
+
+One checklist line per delivery unit (= one branch, one PR), each naming its branch in backticks.
+**Split by default** — 1-3 phases per unit, every unit leaving `main` deployable and green. See
+`.ai/skills/spec-writing/references/delivery-units.md` for the sizing rule and the seams a boundary
+must fall on. `/implement-spec` scopes its run to the unit matching the current branch and ticks it;
+`/archive-spec` moves this file to `.ai/specs/implemented/` once no line is left unticked. Required —
+the harness stops without it.
+
+- [ ] **PR 1** — `feat-{slug}-{scope}` — {what it delivers} (merge first — {why})
+- [ ] **PR 2** — `feat-{slug}-{scope}` — {what it delivers}
+- [ ] **PR 3** — `feat-{slug}-{scope}` — {what it delivers}
+
+State any required merge order inline, as above. A one-unit ledger is for genuinely small specs only
+(one context, no migration, no new contract, ≤ 2 phases) — say why in the line.
 
 ## Risks & Impact Review
 
