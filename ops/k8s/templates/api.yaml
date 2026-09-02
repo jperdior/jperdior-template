@@ -20,8 +20,8 @@ spec:
       securityContext:
         fsGroup: 33
       containers:
-        # Single FrankenPHP container — serves HTTP on :80 directly (no nginx sidecar,
-        # no FastCGI). The port keeps the name `http` so the Service targetPort + ingress
+        # Single FrankenPHP container — serves HTTP on :80 directly, no reverse-proxy
+        # sidecar and no FastCGI. The port keeps the name `http` so the Service targetPort + ingress
         # backend selectors stay valid.
         - name: api
           image: {{ include "jperdior.image" (dict "Values" .Values "image" .Values.api.image) }}
