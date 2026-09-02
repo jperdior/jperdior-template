@@ -198,13 +198,15 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Workflow** | |
 | First-time project customization (rename placeholders, add project context) | `.ai/skills/customize-project/SKILL.md` |
 | First-time local setup (hosts, .env.local, project personalization) | `.ai/skills/init/SKILL.md` |
-| Starting an implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — one `feat-<slug>` worktree covers spec + implementation |
+| Starting an implementation branch (worktree from main) | `.ai/skills/new-feature/SKILL.md` — one `feat-<slug>` worktree per delivery unit; the first also carries the spec |
 | Committing and pushing with CI gate | `.ai/skills/check-and-commit/SKILL.md` |
 | **Specs & PR Automation** | |
 | Writing a spec for a new feature | `.ai/skills/spec-writing/SKILL.md` + `.ai/specs/AGENTS.md` |
 | Pre-implementation audit | `.ai/skills/pre-implement-spec/SKILL.md` |
 | Implementing an approved spec | `.ai/skills/implement-spec/SKILL.md` |
 | Syncing context AGENTS.md after implementation | `.ai/skills/sync-context-docs/SKILL.md` |
+| Splitting a spec across several PRs; sizing delivery units | `.ai/skills/spec-writing/references/delivery-units.md` + `.ai/specs/AGENTS.md` → Delivery ledger |
+| Deciding whether this PR is the spec's last; moving a spec to `.ai/specs/implemented/` | `.ai/skills/archive-spec/SKILL.md` |
 | Code review (CI gate) | `.ai/skills/code-review/SKILL.md` |
 | Auto PR workflows | `.ai/skills/auto-create-pr/SKILL.md`, `.ai/skills/auto-review-pr/SKILL.md`, `.ai/skills/merge-buddy/SKILL.md` |
 | Cutting a release (CHANGELOG entry + GitHub release) | `.ai/skills/auto-update-changelog/SKILL.md` + Workflow Orchestration → Release path |
@@ -225,7 +227,6 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Docker, compose, K8s | `docs/ops.md` + `ops/AGENTS.md` |
 | CI / GitHub Actions | `.github/workflows/ci.yml` — lint + test + build on every push |
 | | `.github/workflows/release.yml` — release workflow |
-| | `.github/workflows/archive-specs.yml` — archives implemented specs on PR merge |
 | | `.github/workflows/skills-tiers-lint.yml` — validates skills tiers.json |
 
 ## Core Principles
@@ -239,29 +240,47 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 
 **Full spec-driven path (any non-trivial feature — 3+ steps or architectural decisions):**
 
-```
-Step 1 — Create worktree
-  /new-feature feat-<slug>     ← one worktree covers both spec and implementation
+A spec is delivered in **delivery units** — one branch, one PR, one full cycle each. **Split by
+default**: 1-3 phases per unit, each leaving `main` deployable and green. Step 1 → Step 4 below run
+once per unit; only Step 2 is unique to the first one.
 
-Step 2 — Design (inside the worktree)
-  /spec-writing                ← draft spec locally (committed to feat-<slug>, no separate spec PR)
+```
+Step 1 — Create worktree (once per delivery unit)
+  /new-feature feat-<slug>     ← this unit's worktree and branch, from an up-to-date main
+
+Step 2 — Design (first unit only, inside its worktree)
+  /spec-writing                ← draft spec locally, including its ## Delivery ledger
+                                 (committed to feat-<slug>, no separate spec PR)
   /pre-implement-spec .ai/specs/{file}.md   ← readiness report; fix gaps before coding
 
-Step 3 — Implement (all on the same feat-<slug> branch, one PR at the end)
+Step 3 — Implement this unit (on this unit's branch, one PR at the end)
   /implement-spec .ai/specs/{file}.md       ← runs on superpowers:subagent-driven-development —
+                                             scopes to the ledger unit matching this branch;
                                              one spec phase = one SDD task, implemented by a
                                              fresh context-free subagent; CI gate after each
-                                             phase; single code review once all phases are done
+                                             phase; single code review once this unit is done
                                              ← sync-context-docs runs per-phase as part of /implement-spec
-  /open-pr                     ← single PR to main (includes spec + code)
+                                             ← /archive-spec at the end: ticks this branch's Delivery
+                                               unit and archives the spec if it was the last one
+  /open-pr                     ← this unit's PR to main (the first one carries the spec)
 
-Step 4 — Clean up (after PR merges)
+Step 4 — Clean up (after this unit's PR merges)
   Exit worktree                ← or cd to main repo root
   sudo rm -rf .claude/worktrees/<name>
   git worktree prune
   git branch -d feat-<slug>
   make stop-test               ← tear down the headless test stack
+
+  → units still unticked in the ledger? back to Step 1 for the next one.
 ```
+
+**Why splitting is the default, not a fallback.** A unit is the granularity at which every quality
+mechanism here operates: the final `/code-review` reads the branch diff, `/run-gates` scopes to the
+branch diff, and `/implement-spec` carries the branch's whole context. One oversized branch degrades
+all three at once — and quietly, producing worse work rather than failing. A later unit starting from
+a moved `main` re-verifies the spec's Current State first. Sizing rule and the seams a unit boundary
+must fall on: `.ai/skills/spec-writing/references/delivery-units.md`. A one-unit spec is the
+exception, for genuinely small work: one context, no migration, no new contract, at most two phases.
 
 **Bug-fixing path (failing test, production error, security finding):**
 
@@ -329,12 +348,13 @@ git push origin v<version>            ← release.yml extracts the `[v<version>]
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
-| `/new-feature` | Setup | Creates a `feat-<slug>` worktree+branch from `main`. Called **once** per feature. |
-| `/spec-writing` | Design | Drafts the spec locally on the feature branch. Does **not** open a spec-only PR. |
+| `/new-feature` | Setup | Creates a `feat-<slug>` worktree+branch from `main`. Called **once per delivery unit** — a split spec calls it again for each. |
+| `/spec-writing` | Design | Drafts the spec, including its `## Delivery` ledger (split by default), on the first unit's branch. Does **not** open a spec-only PR. |
 | `/pre-implement-spec` | Audit | Audits the local spec for gaps, missing tests, BC risks. Verdict must be "ready" before coding starts. |
-| `/implement-spec` | Implement | Project overlay on `superpowers:subagent-driven-development`. Maps one spec phase to one SDD task, each implemented by a fresh context-free subagent; the CI gate stack is the per-phase review rubric, and SDD's ledger + fix loop drive recovery. A single `/code-review` runs over the whole branch once all phases are done. |
+| `/implement-spec` | Implement | Project overlay on `superpowers:subagent-driven-development`. Scopes to the ledger unit matching the current branch, then maps one spec phase to one SDD task, each implemented by a fresh context-free subagent; the CI gate stack is the per-phase review rubric, and SDD's ledger + fix loop drive recovery. A single `/code-review` runs over the whole branch once that unit's phases are done. |
 | `/sync-context-docs` | Document | Updates `apps/api/src/<Context>/AGENTS.md` for every context touched by the branch. Run per-phase inside `/implement-spec` before the verification gate. |
-| `/open-pr` | Ship | Opens the implementation PR (spec + code) using the repository PR template. |
+| `/archive-spec` | Close out | Ticks the current branch's unit in the spec's `## Delivery` ledger, and moves the spec to `.ai/specs/implemented/` **only** when no unit is left unticked. Run at the end of `/implement-spec`. Nothing archives specs on merge. |
+| `/open-pr` | Ship | Opens this delivery unit's PR using the repository PR template. The first unit's PR carries the spec. |
 | **Bug fixing** | | |
 | `/root-cause` | Diagnose | Drills from a failure to the offending change (file:line, commit, PR). Never fixes — hands off to `/fix`. |
 | `/fix` | Repair | Regression test first, then minimal fix, CI gate, code review, hands off to `/auto-create-pr`. |

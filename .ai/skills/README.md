@@ -58,9 +58,10 @@ Skills also trigger automatically when a task matches the skill's `description`.
 
 | Skill | When to use |
 |-------|-------------|
-| `spec-writing` | Drafting a new spec under `.ai/specs/`. Includes the Open-Questions gate and phased breakdown. |
+| `spec-writing` | Drafting a new spec under `.ai/specs/`. Includes the Open-Questions gate, the phased breakdown and the `## Delivery` ledger (split into several PRs by default). |
 | `pre-implement-spec` | Auditing a spec before implementing it — gaps, risks, contract impact. |
-| `implement-spec` | Executing an approved spec phase by phase with subagents and the code-review gate. |
+| `implement-spec` | Executing one delivery unit of an approved spec, phase by phase, with subagents and the code-review gate. |
+| `archive-spec` | Ticking this branch's unit in a spec's `## Delivery` ledger, and moving the spec to `.ai/specs/implemented/` once no unit is left unticked. |
 | `code-review` | Reviewing a PR/diff/commit against architecture, security, naming, and quality rules. Runs the CI gate. |
 | `integration-tests` | Running and creating PHPUnit functional tests (API) and Vitest + RTL tests (apps/web, apps/admin) from a spec or description. |
 | `check-and-commit` | Run `make lint && make test && make build-web`, fix obvious issues, commit and push. |
@@ -76,7 +77,7 @@ Skills also trigger automatically when a task matches the skill's `description`.
 | `scaffold-nextjs-page` | App Router page with `loading.tsx` + `error.tsx` + Server Action stub. |
 | `scaffold-shadcn-form` | React-hook-form + zod schema + shadcn `Form` primitives. |
 | `regenerate-api-client` | Run OpenAPI gen against the running API and refresh `packages/api-client-ts`. |
-| `new-feature` | Create a `feat-<slug>` git worktree + branch from an up-to-date `main`. Called once per feature. |
+| `new-feature` | Create a `feat-<slug>` git worktree + branch from an up-to-date `main`. Called once per delivery unit. |
 | `sync-context-docs` | Update bounded-context `AGENTS.md` files after implementation. Run per-phase before opening a PR. |
 | `parallel-research` | Spawn multiple Explore agents in parallel to map unfamiliar code before touching it. |
 | `run-gates` | Run the CI verification gate — dispatch each in-scope gate as a parallel subagent, scoped to the diff. |

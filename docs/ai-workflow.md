@@ -29,6 +29,21 @@ A spec is a structured document written **before** implementation. It covers:
 
 Specs are flat files named `.ai/specs/{YYYY-MM-DD}-{slug}.md` (e.g. `2026-06-06-add-notes.md`). The AI reads the spec before writing a line of code, which means implementation stays aligned with the agreed design rather than drifting as the codebase evolves.
 
+Every spec ends with a `## Delivery` ledger — one checklist line per **delivery unit**, where a unit is one branch, one PR, one full cycle (its own worktree, phases, gates and code review):
+
+```markdown
+## Delivery
+
+- [x] **PR 1** — `feat-notes-aggregate` — the Note aggregate, its write path, M1
+- [ ] **PR 2** — `feat-notes-read-model` — the query side and the list endpoint
+- [ ] **PR 3** — `feat-notes-ui` — the page, the create form, the catalogs
+- [ ] **PR 4** — `feat-notes-sharing` — the share command and its subscriber
+```
+
+**A spec is split across several PRs by default** — 1-3 phases per unit, each leaving `main` deployable and green. That is not bureaucracy: the unit is the granularity at which the harness's quality mechanisms operate. The final `/code-review` reads the branch diff, `/run-gates` scopes to the branch diff, and `/implement-spec` carries the branch's whole context. One oversized branch degrades all three simultaneously, and it degrades them *quietly* — the run produces worse work rather than failing outright. A one-unit spec is the exception, for genuinely small work. `.ai/skills/spec-writing/references/delivery-units.md` has the sizing rule and the seams a unit boundary must fall on (a security mitigation before the feature it protects, a migration together with its reader, a backend contract before its frontend consumer).
+
+The ledger is how the harness knows where a spec stands: `/implement-spec` scopes its run to the unit matching the current branch and ticks it, and `/archive-spec` moves the spec to `implemented/` only once nothing is left unticked. The spec file is its own ledger because it is the one artefact that travels to `main` with every one of its PRs — and archival is therefore a reviewed commit on the last delivery PR, not a side effect of merging.
+
 The spec format is enforced by `/spec-writing`. It's not optional ceremony — it's how you catch "we'll need a migration for that" before someone writes 300 lines of code against the wrong schema.
 
 ### Skills (`.ai/skills/`)
@@ -71,13 +86,15 @@ Tailwind + shadcn/ui token rules for frontend work. Semantic tokens only (`bg-ba
 ## The spec-first workflow
 
 ```
-1. Create worktree   →  /new-feature
-2. Write spec        →  /spec-writing (auto-proceeds to audit)
-3. Audit spec        →  /pre-implement-spec
-4. Implement         →  /implement-spec (per-phase: fresh implementer subagent →
-                        sync-context-docs → CI gate; single /code-review at the end)
+1. Create worktree   →  /new-feature                (once per delivery unit)
+2. Write spec        →  /spec-writing (auto-proceeds to audit)   ← first unit only
+3. Audit spec        →  /pre-implement-spec                      ← first unit only
+4. Implement         →  /implement-spec (scopes to this branch's Delivery unit; per-phase:
+                        fresh implementer subagent → sync-context-docs → CI gate; single
+                        /code-review at the end, then /archive-spec to tick the ledger)
 5. PR                →  /open-pr
 6. Clean up          →  exit worktree, delete worktree/branch, make stop-test
+7. Next unit         →  back to 1 while the ledger has unticked units
 ```
 
 ### When to write a spec
@@ -96,12 +113,13 @@ One-liners, bug fixes, and isolated changes that don't affect public contracts o
 
 | Skill | What it does |
 |-------|-------------|
-| `/new-feature` | Creates an isolated git worktree + branch from `main`. One worktree covers spec + implementation (no separate spec branch or spec PR). |
-| `/spec-writing` | Produces a `.ai/specs/{YYYY-MM-DD}-{slug}.md` with the full spec format. Committed locally, no spec-only PR. Auto-proceeds to `/pre-implement-spec`. |
+| `/new-feature` | Creates an isolated git worktree + branch from `main`, once per delivery unit. The first unit's worktree covers spec + implementation (no separate spec branch or spec PR). |
+| `/spec-writing` | Produces a `.ai/specs/{YYYY-MM-DD}-{slug}.md` with the full spec format, including the `## Delivery` ledger that splits it across PRs. Committed locally, no spec-only PR. Auto-proceeds to `/pre-implement-spec`. |
 | `/pre-implement-spec` | Audits the local spec against the codebase using parallel specialized agents; flags gaps, BC risks, and missing tests; produces a Readiness Report. |
 | `/implement-spec` | Implements an approved spec on the same `feat-<slug>` branch, one phase per fresh implementer subagent (`superpowers:subagent-driven-development`), tracked in a resumable ledger. Per phase: `/sync-context-docs` + CI gate. `/code-review` runs **once** over the whole branch at the end. Single PR. |
 | `/sync-context-docs` | Updates `AGENTS.md` files for every bounded context touched by the branch. Run per-phase inside `/implement-spec`. |
 | `/code-review` | Reviews the current branch diff using parallel specialized reviewer agents (architecture, security, frontend) and runs the CI gate simultaneously. |
+| `/archive-spec` | Ticks the current branch's unit in the spec's `## Delivery` ledger, and moves the spec to `.ai/specs/implemented/` only when no unit is left unticked. Runs at the end of `/implement-spec`. |
 | `/open-pr` | Opens the single GitHub PR for the feature branch (spec + implementation). |
 | `/check-and-commit` | Lint + test + commit |
 | `/fix-specs` | Normalises spec filenames under `.ai/specs/` to the `{YYYY-MM-DD}-{slug}.md` convention |
@@ -228,10 +246,11 @@ Short entries get read. Long entries get skipped.
 # Step 2 — Design: write the spec locally, auto-audit
 # (spec-writing creates .ai/specs/{date}-add-notes.md, commits, runs pre-implement-spec)
 
-# Step 3 — Implement: phase by phase on the same branch
+# Step 3 — Implement this delivery unit: phase by phase on the same branch
+#   (ends with /archive-spec — ticks this unit, archives the spec if it was the last)
 /implement-spec .ai/specs/2026-06-06-add-notes.md
 
-# Step 4 — Open the single PR (spec + implementation)
+# Step 4 — Open this unit's PR (the first one carries the spec)
 /open-pr
 
 # Step 5 — Clean up after the PR merges
@@ -240,6 +259,8 @@ Short entries get read. Long entries get skipped.
 #   git worktree prune
 #   git branch -d feat-add-notes
 #   make stop-test
+#
+# Step 6 — Next delivery unit: back to Step 1 while the ledger has unticked units
 ```
 
 ### Bug fixing

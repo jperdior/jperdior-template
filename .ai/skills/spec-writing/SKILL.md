@@ -26,14 +26,29 @@ For research-heavy specs (new bounded context, cross-cutting concern), spawn an 
 4. **Apply Answers**: remove the Open Questions block and fill the skeleton.
 5. **Research**: when relevant, compare against open-source leaders / RFCs / Symfony recipes. Quote evidence.
 6. **Design**: write the Architecture, Data Models, API Contracts sections. For every aggregate, declare which **bounded context** it lives in. For every endpoint, declare which **bus** it dispatches to. For every cross-context need, declare the **domain event** (react) or the **bus-dispatched published `*Command`/`*Query`** (act/read) used — never a direct import of another context's internals.
-7. **Phasing**: break delivery into testable phases. Each phase ends with `make test` passing and a working app. All phases ship together in a single PR (the spec commits as the first commit, then phases accumulate on the same `feat-<slug>` branch). Define phases at a granularity that is independently reviewable and leaves the app in a valid state at each checkpoint.
+7. **Phasing and the Delivery ledger**: break delivery into testable phases. Each phase ends with `make test` passing and a working app. Define phases at a granularity that is independently reviewable and leaves the app in a valid state at each checkpoint.
+
+    Then declare a `## Delivery` section listing the spec's **delivery units** as a checklist, one line per PR, each naming its branch in backticks:
+
+    ```markdown
+    ## Delivery
+
+    - [ ] **PR 1** — `feat-<slug>-mitigations` — nonce fence + prompt-id bump (merge first)
+    - [ ] **PR 2** — `feat-<slug>-retrieval` — M1/M2, the port and its two adapters
+    - [ ] **PR 3** — `feat-<slug>-ui` — the panel, the source picker, the catalogs
+    ```
+
+    **Split by default.** Several delivery units per spec is the standard shape; a one-unit spec is the exception, reserved for genuinely small work (one bounded context, no migration, no new contract, one or two phases). Apply [references/delivery-units.md](references/delivery-units.md) — it carries the sizing rule, the seams a unit boundary must fall on, and the deployability constraint every unit has to satisfy.
+
+    The ledger is the spec's own record of what has landed. `/implement-spec` scopes its run to the unit matching the current branch and ticks it; `/archive-spec` moves the spec to `.ai/specs/implemented/` only once no unit is left unticked. A spec without this section cannot be implemented — the harness stops and asks.
+
 8. **Risks & Impact**: document concrete failure scenarios (severity, affected area, mitigation, residual risk).
 9. **Integration Coverage**: list the PHPUnit Functional tests (API) and Vitest + RTL tests (apps/web, apps/admin) that must exist for the new behaviour.
 10. **Compliance Gate**: apply [references/compliance-gate.md](references/compliance-gate.md).
 11. **Output**: finalise the spec. If any new business rules were introduced, add them to `.ai/business-rules.md`.
 12. **Commit the spec locally** on the current `feat-<slug>` branch:
     - `git add .ai/specs/{file} && git commit -m "spec: {title}"`
-    - No spec-only PR is opened. The spec travels with the implementation in the same PR.
+    - No spec-only PR is opened. The spec travels with the implementation, in the **first** delivery unit's PR — and stays in `.ai/specs/` until the last unit's PR archives it.
     - **Auto-proceed** to `/pre-implement-spec .ai/specs/{file}.md` — the audit runs next. If gaps are found, update the spec and re-audit before coding starts.
     - After the audit passes, run `/implement-spec .ai/specs/{file}.md`.
 
@@ -86,6 +101,7 @@ See [references/spec-checklist.md](references/spec-checklist.md).
 ## Reference Materials
 
 - [references/spec-template.md](references/spec-template.md) — the canonical skeleton
+- [references/delivery-units.md](references/delivery-units.md) — how to split a spec across PRs
 - [references/spec-checklist.md](references/spec-checklist.md) — the review checklist
 - [references/compliance-gate.md](references/compliance-gate.md) — final compliance gate
 - Root [`AGENTS.md`](../../../AGENTS.md) — Task Router

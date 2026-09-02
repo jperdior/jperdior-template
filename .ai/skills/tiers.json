@@ -8,6 +8,7 @@
         "spec-writing",
         "pre-implement-spec",
         "implement-spec",
+        "archive-spec",
         "code-review",
         "integration-tests",
         "check-and-commit",
