@@ -176,7 +176,13 @@ test-web: _ensure-volume-mountpoints ## Run JS unit tests (packages + web + admi
 # ----- Lint / static analysis -----
 
 lint: _ensure-volume-mountpoints ## Lint everything — standalone, no postgres/api stack
-	@$(MAKE) lint-shared-kernel lint-api lint-web
+	@$(MAKE) lint-shared-kernel lint-api lint-web lint-rules
+
+# Runs on the host, not in a container: it reads `.git`, `.ai/` and the per-context rule files,
+# none of which the api container mounts. Plain bash and POSIX text tooling, so it passes under
+# BSD grep on macOS as well as on the Linux runner. See the script's header.
+lint-rules: ## Business-rule + lesson index — statement/why shape, filing, citations
+	@bash ops/ci/check-business-rules-index.sh
 
 lint-shared-kernel: _ensure-volume-mountpoints ## PHPStan for packages/shared-kernel-php — standalone, no postgres
 	@${PHP_RUN} sh -c '${PHP_INSTALL} && \

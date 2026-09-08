@@ -84,6 +84,8 @@ Do **not** start any new work until the user has acknowledged the merged state.
 
 All `make` targets run inside Docker containers — **never** invoke `php`, `pnpm`, `tsc`, or `eslint` directly on the host.
 
+The one exception is `make lint-rules` (part of `make lint`), which runs `ops/ci/check-business-rules-index.sh` on the host in plain bash: it reads `.git`, `.ai/` and the per-context rule files, none of which the api container mounts. It invokes none of those four tools, and it is written to POSIX text tooling so it passes under macOS's BSD `grep` as well as on the Linux runner.
+
 Choose the smallest relevant set for the change:
 
 ```bash
@@ -182,6 +184,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Adding a Doctrine migration | `.ai/skills/scaffold-doctrine-migration/SKILL.md` |
 | Adding a domain event subscriber / cross-context communication (one context reacts to another's event) | `docs/domain-events.md` + `apps/api/AGENTS.md` → Events & Subscribers + `.ai/skills/add-event-subscriber/SKILL.md` |
 | Adding context AGENTS.md / guidelines | `.ai/skills/create-agents-md/SKILL.md` |
+| Adding or changing a business rule (`BR-*`) | **Conventions** → A business rule is two lines + the context's own `apps/api/src/<Context>/business-rules.md` + `.ai/business-rules.md` for the prefix table |
+| Retiring a rule, or renaming a context's prefix | `.ai/business-rules.md` → Retired ids — a citation that resolves to nothing fails `make lint` |
 | **Auth** | |
 | User aggregate, JWT, refresh tokens, security.yaml | `apps/api/src/User/AGENTS.md` + `docs/auth.md` |
 | Adding ROLE_* checks | `apps/api/AGENTS.md` → Security |
@@ -389,6 +393,26 @@ docs/         ARCHITECTURE, getting-started, auth, adding-a-bounded-context, dom
 ```
 
 ## Conventions (project-wide)
+
+### A business rule is two lines, filed with its context
+
+A rule is one `- **BR-XXnn** — statement` line and one `  **Why:** …` line, neither wrapping and
+neither over 300 characters, in `apps/api/src/<Context>/business-rules.md`. It carries **no**
+`Context:` line (the file it is in says the context), **no** `Enforcement:` paragraph (the id is the
+link — `grep -rn <id> apps/api` is the query), and **no** pointer to a spec (a pointer to 400 lines
+is an invitation to read 400 lines). `.ai/business-rules.md` holds only the prefix table, the
+retired ids, and the rules every context needs.
+
+This is a **bound, not a style preference**. The registry is read by id, and nothing can read one
+rule out of a file — a session that needs one reads all of them. Left unbounded, each rule accretes
+its history, its alternatives and its worked examples until the file is tens of thousands of tokens
+and every session pays for all of it to learn one thing.
+`ops/ci/check-business-rules-index.sh` enforces the shape, the filing and the citations; it runs in
+`make lint` and as its own CI job, and its header explains each check and why it is scoped as it is.
+
+Reasoning that does not fit the why line belongs in the spec that introduced the rule, under
+`.ai/specs/implemented/`, and in `git log -S`. Lessons in `.ai/lessons.md` take the same discipline
+— trap, symptom, fix — and the same script checks their ids are unique.
 
 - **PHP**: `declare(strict_types=1);` at the top of every file. Final classes by default. `readonly` for value objects, DTOs, queries, responses. `DateTimeImmutable` everywhere in domain code, never `DateTime`.
 - **Bounded contexts**: plural-or-singular PascalCase (`User`, `Order`, `Subscription`).

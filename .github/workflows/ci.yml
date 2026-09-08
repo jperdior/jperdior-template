@@ -69,6 +69,18 @@ jobs:
               - 'packages/ui-react/**'
               - 'packages/api-client-ts/**'
 
+  business-rules-index:
+    name: Rule and lesson ids are declared and filed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Deliberately NOT gated on `needs.changes`: the citations this verifies live in PHP, in docs
+      # and in every AGENTS.md, so any single-area filter would let a dangling id through whenever
+      # the edit landed outside that area — and `.ai/**` matches no filter at all, so the edit most
+      # likely to break it would run zero jobs. It takes under a second.
+      - name: Every rule is one line plus a why, filed with its context, and every citation resolves
+        run: bash ops/ci/check-business-rules-index.sh
+
   php-lint:
     name: PHP lint (PHPStan + cs-fixer + deptrac)
     needs: changes
